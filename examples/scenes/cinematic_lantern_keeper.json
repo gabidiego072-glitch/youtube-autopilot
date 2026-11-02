@@ -1,0 +1,147 @@
+{
+  "engine": "cinematic",
+  "title": "The Lantern Keeper",
+  "duration_seconds": 8,
+  "fps": 24,
+  "seed": 7,
+  "environment": {
+    "time_of_day": "dusk",
+    "trees": 45,
+    "rocks": 22,
+    "flowers": 70,
+    "fireflies": 26,
+    "firefly_center": [
+      1.0,
+      3.0
+    ]
+  },
+  "characters": [
+    {
+      "id": "pip",
+      "start": [
+        -7.5,
+        6.0
+      ],
+      "facing": -120,
+      "palette": {
+        "body": "#2f5d8a",
+        "skin": "#e8b48c",
+        "accent": "#d94f30",
+        "hair": "#3b2618"
+      }
+    }
+  ],
+  "props": [
+    {
+      "id": "lantern",
+      "type": "lantern_post",
+      "location": [
+        1.6,
+        2.6,
+        0
+      ],
+      "facing": 90
+    }
+  ],
+  "actions": [
+    {
+      "type": "walk",
+      "character": "pip",
+      "from": [
+        -7.5,
+        6.0
+      ],
+      "to": [
+        0.5,
+        1.7
+      ],
+      "start": 0.2,
+      "end": 4.4
+    },
+    {
+      "type": "turn",
+      "character": "pip",
+      "towards": "lantern",
+      "start": 4.4,
+      "end": 4.8
+    },
+    {
+      "type": "raise_arm",
+      "character": "pip",
+      "side": "right",
+      "start": 4.8,
+      "end": 5.3,
+      "hold": 0.8
+    },
+    {
+      "type": "light_on",
+      "prop": "lantern",
+      "at": 5.3
+    },
+    {
+      "type": "look_at",
+      "character": "pip",
+      "target": "camera",
+      "start": 6.6
+    }
+  ],
+  "camera": {
+    "fstop": 2.8,
+    "handheld": 0.02,
+    "portrait_lens_scale": 1.2,
+    "shots": [
+      {
+        "time": 0.0,
+        "location": [
+          5.0,
+          -8.0,
+          1.7
+        ],
+        "target": "pip",
+        "lens": 30
+      },
+      {
+        "time": 4.4,
+        "location": [
+          2.6,
+          -4.6,
+          1.25
+        ],
+        "target": "pip",
+        "lens": 38
+      },
+      {
+        "time": 5.6,
+        "location": [
+          -1.4,
+          -2.6,
+          0.9
+        ],
+        "target": "lantern",
+        "lens": 28
+      },
+      {
+        "time": 8.0,
+        "location": [
+          0.2,
+          -2.3,
+          1.45
+        ],
+        "target": "pip",
+        "lens": 45
+      }
+    ]
+  },
+  "captions": [
+    {
+      "start": 0.4,
+      "end": 3.8,
+      "text": "Every evening, someone has to light the way."
+    },
+    {
+      "start": 5.4,
+      "end": 7.8,
+      "text": "Tonight, that someone is Pip."
+    }
+  ]
+}

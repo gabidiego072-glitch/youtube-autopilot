@@ -10,6 +10,7 @@ class IntegrationState(BaseModel):
 class IntegrationsStatus(BaseModel):
     claude: IntegrationState
     ffmpeg: IntegrationState
+    blender: IntegrationState
     youtube_data_api: IntegrationState
     youtube_analytics_api: IntegrationState
     publishing_enabled: bool

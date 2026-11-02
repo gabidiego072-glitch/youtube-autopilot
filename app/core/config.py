@@ -56,6 +56,8 @@ class Settings(BaseSettings):
     youtube_publishing_enabled: bool = False
 
     # --- Video rendering --------------------------------------------------
+    blender_binary: str = "blender"
+    blender_timeout_seconds: int = 4 * 3600
     ffmpeg_binary: str = "ffmpeg"
     ffprobe_binary: str = "ffprobe"
     media_root: Path = Path("./media")

@@ -222,3 +222,4 @@ __marimo__/
 # YouTube-Autopilot
 media/
 *.db
+out/

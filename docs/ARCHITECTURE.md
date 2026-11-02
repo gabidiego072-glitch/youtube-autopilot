@@ -35,12 +35,17 @@ app/
     production/formats.py     Shorts vs long-form specs (modules 1 + 2)
     production/pipeline.py    project lifecycle state machine
     scripts/                  prompts + script generation (module 3)
-    rendering/ffmpeg.py       FFmpeg/FFprobe wrapper (module 4)
+    rendering/ffmpeg.py       FFmpeg/FFprobe wrapper: encode, audio, subtitles (module 4)
+    rendering/blender.py      runs the 3D engines headless (module 4)
+    rendering/scene3d.py      scene spec -> Blender frames -> MP4 (module 4)
     metadata/                 metadata generation + YouTube limits (module 5)
     youtube/                  publishing + analytics interfaces (modules 6 + 7)
     analytics/metrics.py      derived metrics (module 7)
     learning/analyzer.py      performance analysis (module 8)
     reporting/builder.py      reports (module 9)
+render_engines/               procedural 3D engines that run inside Blender (see docs/3D_ENGINES.md)
+examples/scenes/              example 3D scene specs
+scripts/                      render_3d.py (spec -> MP4), install_blender.sh
 alembic/                      migrations
 tests/                        pytest suite
 ```
