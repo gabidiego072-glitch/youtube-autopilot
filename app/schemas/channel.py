@@ -9,7 +9,7 @@ from app.schemas.common import ORMModel
 class ChannelCreate(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     niche: str | None = Field(default=None, max_length=200)
-    language: str = Field(default="en", max_length=16)
+    language: str = Field(default="es", max_length=16)
     description: str | None = None
     style_guide: str | None = None
 

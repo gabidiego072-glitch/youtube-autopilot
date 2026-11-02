@@ -5,6 +5,7 @@ from app.core.config import Settings
 from app.schemas.system import IntegrationsStatus, IntegrationState
 from app.services.rendering.blender import Blender
 from app.services.rendering.ffmpeg import FFmpeg
+from app.services.voice.piper import PiperTTS
 
 router = APIRouter(prefix="/system", tags=["system"])
 
@@ -28,6 +29,29 @@ def integrations_status(settings: Settings, ffmpeg: FFmpeg) -> IntegrationsStatu
             configured=blender_version is not None,
             implemented=True,
             detail=blender_version or "blender not found (scripts/install_blender.sh or BLENDER_BINARY)",
+        ),
+        ai_images=IntegrationState(
+            configured=settings.image_provider_name is not None,
+            implemented=True,
+            detail=settings.image_provider_name
+            or "not configured: set COMFYUI_URL + COMFYUI_IMAGE_WORKFLOW (self-hosted) or HF_TOKEN",
+        ),
+        ai_video=IntegrationState(
+            configured=bool(settings.comfyui_url and settings.comfyui_video_workflow),
+            implemented=True,
+            detail="comfyui image-to-video workflow"
+            if settings.comfyui_url and settings.comfyui_video_workflow
+            else "not configured: stills are animated with free FFmpeg camera motion",
+        ),
+        voice=IntegrationState(
+            configured=PiperTTS(settings.piper_binary, settings.piper_voice_model).is_available(),
+            implemented=True,
+            detail=f"piper {settings.piper_voice_model}" if settings.piper_voice_model else "PIPER_VOICE_MODEL not set",
+        ),
+        research=IntegrationState(
+            configured=settings.research_enabled,
+            implemented=True,
+            detail=f"wikipedia ({settings.wikipedia_language}), free; reachability is checked per request",
         ),
         youtube_data_api=IntegrationState(
             configured=settings.youtube_configured,

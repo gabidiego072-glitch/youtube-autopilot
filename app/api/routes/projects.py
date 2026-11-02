@@ -8,7 +8,7 @@ from sqlalchemy import select
 from app.api.deps import DbSession, SettingsDep
 from app.api.lookups import get_channel_or_404, get_project_or_404
 from app.models import VideoProject
-from app.models.enums import JobStatus, ProjectStatus, VideoFormat
+from app.models.enums import FactCheckStatus, JobStatus, ProjectStatus, VideoFormat
 from app.schemas.project import ProjectCreate, ProjectRead, ProjectUpdate
 from app.services.production.formats import DEFAULT_TARGET_DURATION, get_format_spec, validate_target_duration
 from app.services.production.pipeline import transition
@@ -30,6 +30,7 @@ def create_project(payload: ProjectCreate, db: DbSession, settings: SettingsDep)
         working_title=payload.working_title,
         topic=payload.topic,
         format=payload.format,
+        category=payload.category,
         target_duration_seconds=duration,
         language=payload.language or channel.language,
         notes=payload.notes,
@@ -82,8 +83,10 @@ def update_project(project_id: uuid.UUID, payload: ProjectUpdate, db: DbSession,
 
 @router.post("/{project_id}/approve", response_model=ProjectRead)
 def approve_for_publishing(project_id: uuid.UUID, db: DbSession) -> VideoProject:
-    """Human sign-off. Requires metadata and a successful render."""
+    """Human sign-off. Requires a fact-checked script, metadata and a successful render."""
     project = get_project_or_404(db, project_id)
+    if not project.scripts or project.scripts[-1].fact_check_status != FactCheckStatus.PASSED:
+        raise HTTPException(status_code=409, detail="The latest script must pass the fact-check before approving.")
     if not project.metadata_versions:
         raise HTTPException(status_code=409, detail="Generate metadata before approving.")
     if not any(job.status == JobStatus.SUCCEEDED for job in project.render_jobs):

@@ -10,24 +10,23 @@ from render_engines.core.colors import hex_to_linear
 from render_engines.core.noise import fbm, value_noise
 from render_engines.core.spec import SpecError, build_context, load_spec, resolution, validate_spec
 from render_engines.core.timeline import PositionTrack, Timeline
-from render_engines.voxel.grid import VoxelGrid, block_hash
-from render_engines.voxel.models import BOT_PALETTE, chest, explorer_bot
-from render_engines.voxel.world import generate_world
 
 EXAMPLES = Path(__file__).resolve().parent.parent / "examples" / "scenes"
-CINEMATIC = EXAMPLES / "cinematic_lantern_keeper.json"
-VOXEL = EXAMPLES / "voxel_crystal_quest.json"
+CINEMATIC = EXAMPLES / "what_if_grow_each_step.json"
 
 
-@pytest.mark.parametrize(("path", "engine"), [(CINEMATIC, "cinematic"), (VOXEL, "voxel")])
-def test_example_specs_are_valid(path, engine):
-    spec = load_spec(path)
-    assert spec["engine"] == engine
-    assert 5 <= spec["duration_seconds"] <= 10
+def test_example_specs_are_valid_and_on_theme():
+    specs = sorted(EXAMPLES.glob("*.json"))
+    assert specs
+    for path in specs:
+        spec = load_spec(path)
+        assert spec["engine"] == "cinematic"
+        assert 5 <= spec["duration_seconds"] <= 10
+        assert spec["title"].startswith("¿Qué pasaría si")
 
 
 def _minimal(**overrides) -> dict:
-    spec = {"engine": "voxel", "duration_seconds": 5, "camera": {"shots": [{"time": 0, "location": [0, -5, 2]}]}}
+    spec = {"engine": "cinematic", "duration_seconds": 5, "camera": {"shots": [{"time": 0, "location": [0, -5, 2]}]}}
     return {**spec, **overrides}
 
 
@@ -35,6 +34,7 @@ def _minimal(**overrides) -> dict:
     ("overrides", "message"),
     [
         ({"engine": "unreal"}, "engine"),
+        ({"engine": "voxel"}, "engine"),  # the game-style engine was removed
         ({"duration_seconds": 0}, "duration"),
         ({"fps": 23}, "fps"),
         ({"camera": {"shots": []}}, "shots"),
@@ -101,40 +101,10 @@ def test_position_track_interpolates():
     assert timeline.focus_point("bot", 5) == (1, 2, 1.5)
 
 
-def test_voxel_face_culling():
-    grid = VoxelGrid()
-    grid.set((0, 0, 0), "stone")
-    assert len(list(grid.exposed_faces())) == 6
-    grid.set((1, 0, 0), "stone")
-    assert len(list(grid.exposed_faces())) == 10  # shared face hidden on both blocks
-    grid.set((0, 1, 0), "water")
-    faces = list(grid.exposed_faces(frozenset({"water"})))
-    # The stone face behind the water stays visible; the water face touching stone is hidden.
-    assert ((0, 0, 0), 2) in faces and ((0, 1, 0), 3) not in faces
-
-
-def test_block_hash_is_stable():
-    assert block_hash((1, 2, 3)) == block_hash((1, 2, 3))
-    assert 0 <= block_hash((5, -4, 9), 7) <= 1
-
-
-def test_world_generation_is_deterministic_with_flat_clear_stage():
-    path = ((-6.0, 3.0), (2.0, 1.0))
-    a = generate_world(11, paths=[path])
-    b = generate_world(11, paths=[path])
-    assert a.terrain.blocks == b.terrain.blocks
-    assert a.terrain.blocks != generate_world(12, paths=[path]).terrain.blocks
-    for x in range(-5, 6):
-        for y in range(-5, 6):
-            if math.hypot(x, y) < 6:
-                assert a.ground_z(x, y) == 0  # stage surface at z=0
-                assert (x, y, 0) not in a.terrain  # nothing standing on the stage
-    assert len(a.clouds) > 0 and len(a.decor) > 0
-
-
-def test_voxel_models_are_consistent():
-    bot = explorer_bot()
-    assert all(part.parent is None or part.parent in bot for part in bot.values())
-    used = {block for part in bot.values() for block in part.grid.blocks.values()}
-    assert used <= set(BOT_PALETTE)
-    assert set(chest()) == {"base", "lid"}
+def test_focus_point_follows_scale():
+    timeline = Timeline()
+    timeline.register("giant", (0, 0, 0), focus_height=1.0, scale=1.0)
+    timeline.scales["giant"].add(10, (1.0, 0, 0))
+    timeline.scales["giant"].add(20, (5.0, 0, 0))
+    assert timeline.focus_point("giant", 20)[2] == 5.0
+    assert timeline.focus_point("giant", 15)[2] == 3.0

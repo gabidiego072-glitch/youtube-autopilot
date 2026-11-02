@@ -43,12 +43,16 @@ class Timeline:
     def __init__(self) -> None:
         self.tracks: dict[str, PositionTrack] = {}
         self.heights: dict[str, float] = {}
+        self.scales: dict[str, PositionTrack] = {}  # uniform scale stored in x
 
-    def register(self, name: str, position: Vec3, focus_height: float = 0.0) -> PositionTrack:
+    def register(self, name: str, position: Vec3, focus_height: float = 0.0, scale: float = 1.0) -> PositionTrack:
         self.tracks[name] = PositionTrack(position)
         self.heights[name] = focus_height
+        self.scales[name] = PositionTrack((scale, 0.0, 0.0))
         return self.tracks[name]
 
     def focus_point(self, name: str, frame: float) -> Vec3:
+        """Where the camera aims: the entity's position plus its (scaled) focus height."""
         x, y, z = self.tracks[name].at(frame)
-        return (x, y, z + self.heights.get(name, 0.0))
+        scale = self.scales[name].at(frame)[0] if name in self.scales else 1.0
+        return (x, y, z + self.heights.get(name, 0.0) * scale)

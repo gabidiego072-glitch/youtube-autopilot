@@ -31,7 +31,15 @@ app/
   api/
     deps.py                   settings, DB session, API-key auth, AI + FFmpeg providers
     routes/                   one module per area (module 10: dashboard API)
+  content/profile.py          the channel's editorial definition ("What would happen if...?");
+                              every prompt is built from it, and it filters off-topic (gaming) output
   services/
+    ideas/                    idea generation, de-duplication and ranking
+    research/                 Wikipedia client + research briefs (free)
+    factcheck/                scientific review of labelled claims
+    visuals/                  shot prompts with visual continuity; ComfyUI / Hugging Face providers
+    voice/                    Piper TTS (free, offline)
+    editing/                  FFmpeg editor: voice-paced shots, subtitles, music ducking
     production/formats.py     Shorts vs long-form specs (modules 1 + 2)
     production/pipeline.py    project lifecycle state machine
     scripts/                  prompts + script generation (module 3)
@@ -43,7 +51,7 @@ app/
     analytics/metrics.py      derived metrics (module 7)
     learning/analyzer.py      performance analysis (module 8)
     reporting/builder.py      reports (module 9)
-render_engines/               procedural 3D engines that run inside Blender (see docs/3D_ENGINES.md)
+render_engines/               procedural 3D visualisation engine for Blender (see docs/3D_ENGINES.md)
 examples/scenes/              example 3D scene specs
 scripts/                      render_3d.py (spec -> MP4), install_blender.sh
 alembic/                      migrations
@@ -56,12 +64,14 @@ tests/                        pytest suite
 | --- | --- |
 | `channels` | A YouTube channel we produce for: niche, language, style guide |
 | `video_projects` | One video, `format` = `short` or `long`, `status` follows the pipeline |
-| `scripts` | Versioned scripts: hook, scenes (narration + visual + duration), provider/model/prompt version |
+| `scripts` | Versioned scripts: question title, hook, scenes (beat, narration, visual, duration, labelled claims), ending type, visual bible, fact-check result |
 | `render_jobs` | Render requests with output resolution, status and timing |
 | `video_metadata` | Versioned title/description/tags/hashtags/thumbnail concept |
-| `media_assets` | Files used or produced (voiceover, images, renders, thumbnails) |
+| `media_assets` | Files used or produced (images, clips, voice per scene, final render), linked to script and scene |
 | `publish_jobs` | Upload attempts (used from Phase 5) |
 | `analytics_snapshots` | Cumulative metrics per video over time; names mirror YouTube Analytics metrics |
+| `ideas` | Candidate premises with scores, category and status (new / used / rejected) |
+| `research_briefs` | Concepts, Wikipedia sources and key facts per project |
 | `insights` | Findings from the analyzer, with evidence |
 | `reports` | Generated period reports (JSON content) |
 

@@ -79,7 +79,7 @@ def test_missing_blender_is_reported(tmp_path):
 
     with pytest.raises(IntegrationNotConfiguredError):
         Blender("definitely-not-blender").render_frames(
-            EXAMPLES / "voxel_crystal_quest.json", tmp_path, aspect="16:9", quality="test"
+            EXAMPLES / "what_if_grow_each_step.json", tmp_path, aspect="16:9", quality="test"
         )
 
 
@@ -88,10 +88,8 @@ def test_missing_blender_is_reported(tmp_path):
 @pytest.mark.parametrize(
     ("spec", "aspect"),
     [
-        ("cinematic_lantern_keeper.json", "16:9"),
-        ("cinematic_lantern_keeper.json", "9:16"),
-        ("voxel_crystal_quest.json", "16:9"),
-        ("voxel_crystal_quest.json", "9:16"),
+        ("what_if_grow_each_step.json", "16:9"),
+        ("what_if_grow_each_step.json", "9:16"),
     ],
 )
 def test_real_blender_render_to_mp4(tmp_path, spec, aspect):

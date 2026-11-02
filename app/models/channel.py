@@ -11,7 +11,7 @@ class Channel(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     # Filled in once the YouTube integration links a real channel.
     youtube_channel_id: Mapped[str | None] = mapped_column(String(64), unique=True)
     niche: Mapped[str | None] = mapped_column(String(200))
-    language: Mapped[str] = mapped_column(String(16), default="en", nullable=False)
+    language: Mapped[str] = mapped_column(String(16), default="es", nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     # Free-form brand/voice guidance passed to the script generator.
     style_guide: Mapped[str | None] = mapped_column(Text)

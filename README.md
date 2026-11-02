@@ -1,106 +1,90 @@
 # YouTube-Autopilot
 
-AI-powered YouTube automation platform for **Shorts** (vertical 9:16, up to 3 min) and **long-form** videos (horizontal 16:9).
+Plataforma en la nube para automatizar un canal de YouTube de **curiosidades, ciencia, situaciones hipotéticas
+y experimentos mentales**, centrado en vídeos del estilo **«¿Qué pasaría si…?»**, tanto **Shorts** (9:16)
+como **vídeos largos** (16:9). Prioriza herramientas gratuitas y de código abierto.
 
-> **Status: foundation (v0.1.0).** The architecture, database, API and core services are in place and tested.
-> Nothing is published to YouTube; publishing is disabled by default and the upload itself is not implemented yet.
-> See [docs/ROADMAP.md](docs/ROADMAP.md) for what is done and what is next.
+> El canal **no** trata videojuegos ni contenido gaming. Los generadores de ideas, guiones y metadatos lo
+> prohíben en sus prompts y además filtran cualquier resultado que lo mencione (`app/content/profile.py`).
 
-## What works today
+> **Estado (v0.2):** el pipeline de producción funciona de principio a fin a través de la API, con proveedores
+> reales que se activan al configurarlos. **No se publica nada en YouTube**: la publicación está desactivada
+> por defecto y la subida aún no está implementada. Ver [docs/ROADMAP.md](docs/ROADMAP.md).
 
-| Area | Status |
-| --- | --- |
-| Channels and video projects (Shorts + long-form) | ✅ CRUD API, per-format duration rules, lifecycle state machine |
-| Script generation | ✅ Real Claude integration (needs `ANTHROPIC_API_KEY`), versioned scripts |
-| Metadata + thumbnail concept | ✅ Claude generates title/description/tags/thumbnail text; checked against YouTube limits |
-| **3D animation engines** | ✅ Two procedural Blender engines, **cinematic** and **voxel/game-style**, render real 3D scenes to MP4 in 9:16 and 16:9. See [docs/3D_ENGINES.md](docs/3D_ENGINES.md) |
-| Video post-processing | ✅ FFmpeg encodes frames to H.264, muxes audio, burns in subtitles, synthesizes an ambient soundtrack; also renders image slideshows and extracts thumbnail frames |
-| Render jobs via the API | ⏳ Jobs are queued, but **no worker runs them yet**. 3D renders run from the command line for now |
-| YouTube publishing | ⏳ Interface + safety gates only. Always refuses (disabled / not configured / not implemented) |
-| Analytics | ✅ Manual metric entry + derived metrics. ⏳ YouTube Analytics API collector not implemented |
-| Performance analysis | ✅ Evidence-based insights from stored analytics (minimum sample sizes) |
-| Reporting | ✅ Period reports built from the database |
-| Dashboard API | ✅ Summary endpoint + honest integration status |
+## Pipeline
 
-## Tech stack
+```
+ideas ─► selección ─► investigación ─► guion ─► verificación ─► imágenes IA ─► voz ─► montaje ─► metadatos ─► aprobación ─► (publicación)
+  ▲                                                                                                                         │
+  └──────────────────────────────── estadísticas ─► análisis ─► pesos por categoría / mejores premisas ◄──────────────────┘
+```
 
-Python 3.12+ · FastAPI · SQLAlchemy 2 · Alembic · PostgreSQL (Supabase) · Blender 4.5 LTS (Cycles) · FFmpeg · Anthropic SDK (Claude)
+| Etapa | Qué hace | Herramienta | Coste | Estado |
+| --- | --- | --- | --- | --- |
+| Ideas | Premisas «¿Qué pasaría si…?» puntuadas (curiosidad, potencial visual, base científica, perennidad), sin duplicados ni gaming, ponderadas por el rendimiento pasado | Claude | API de pago por uso | ✅ |
+| Investigación | Conceptos científicos de la premisa + resúmenes de Wikipedia + hechos clave con su URL | Claude + Wikipedia | Wikipedia gratis | ✅ |
+| Guion | Gancho ≤ 8 palabras (~2 s), consecuencias que escalan, clímax, final sorprendente o pregunta; cada afirmación etiquetada como *establecida / estimación / especulación*; «biblia visual» para coherencia | Claude | — | ✅ |
+| Verificación | Revisión científica de cada afirmación; la aprobación exige que pase | Claude | — | ✅ |
+| Imágenes | Una imagen hiperrealista por escena, con los mismos sujetos descritos y la misma semilla | ComfyUI propio (FLUX, SDXL…) o Hugging Face | Gratis (GPU propia) o capa gratuita | ✅ al configurarlo |
+| Vídeo IA | Imagen → clip con movimiento real | ComfyUI (Wan 2.x, LTX-Video…) | Gratis con GPU propia | ✅ al configurarlo; si no, movimiento de cámara con FFmpeg |
+| Voz | Narración por escena en español, offline | Piper (open source) | Gratis | ✅ |
+| Montaje | Planos al ritmo de la voz, subtítulos sincronizados, música con *ducking* | FFmpeg | Gratis | ✅ |
+| Visualización 3D | Escenas 3D procedurales (escala, crecimiento…) sin IA ni GPU | Blender (Cycles CPU) | Gratis | ✅ |
+| Metadatos | Título-pregunta, descripción con «ciencia vs. hipótesis» y fuentes, etiquetas, comentario fijado | Claude | — | ✅ |
+| Publicación | Subida a YouTube | YouTube Data API | Gratis (cuota) | ⏳ Fase 5 (bloqueada por seguridad) |
+| Estadísticas | Entrada manual hoy; recolector automático después | YouTube Analytics API | Gratis | ✅ manual / ⏳ automático |
+| Aprendizaje | Compara categorías, formatos y tipos de final; reajusta el ranking de ideas | — | — | ✅ |
 
-## Quick start
+Detalle de cada etapa, prompts y opciones gratuitas: [docs/PIPELINE.md](docs/PIPELINE.md).
+
+## Puesta en marcha
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
-cp .env.example .env          # then fill in DATABASE_URL, and ANTHROPIC_API_KEY if you want AI generation
-alembic upgrade head          # create the database schema
+cp .env.example .env            # DATABASE_URL, ANTHROPIC_API_KEY, etc.
+alembic upgrade head
+scripts/install_voice.sh        # voz española gratuita de Piper (opcional)
 uvicorn app.main:app --reload
 ```
 
-Open <http://localhost:8000/docs> for the interactive API.
-Check `GET /api/v1/system/integrations` to see which external services are configured.
+API interactiva: <http://localhost:8000/docs>. Qué servicios están conectados: `GET /api/v1/system/integrations`.
+Requiere FFmpeg. Para la visualización 3D, `scripts/install_blender.sh` (ver [docs/3D_ENGINES.md](docs/3D_ENGINES.md)).
 
-FFmpeg must be installed (`apt install ffmpeg` / `brew install ffmpeg`).
-For the 3D engines install Blender with `scripts/install_blender.sh` (official build, checksum verified).
-
-## Render the 3D examples
-
-```bash
-python scripts/render_3d.py examples/scenes/cinematic_lantern_keeper.json --aspect 16:9 --quality draft --ambient
-python scripts/render_3d.py examples/scenes/voxel_crystal_quest.json --aspect 9:16 --quality draft --ambient
-```
-
-Output goes to `out/`. All commands and options are in [docs/3D_ENGINES.md](docs/3D_ENGINES.md).
-
-### Supabase
-
-Use the connection string from **Project Settings → Database**, with the `postgresql+psycopg://` scheme, as `DATABASE_URL`.
-Run `alembic upgrade head` against it to create the tables.
-
-## Configuration
-
-All configuration and secrets come from environment variables. See [.env.example](.env.example) for the full list.
-In `ENVIRONMENT=production` the app refuses to start without a PostgreSQL `DATABASE_URL` and an `API_KEY`.
-
-When `API_KEY` is set, every `/api/v1` request needs the header `X-API-Key: <key>`. `/health` and `/health/ready` stay open for load balancers.
-
-## Production workflow (API)
+## Flujo por la API
 
 ```
-POST /api/v1/channels                               create a channel
-POST /api/v1/projects                               create a Short or long-form project   -> draft
-POST /api/v1/projects/{id}/scripts/generate         Claude writes the script               -> script_ready
-POST /api/v1/projects/{id}/renders                  queue a render job (worker: Phase 2)
-POST /api/v1/projects/{id}/metadata/generate        title, description, tags, thumbnail    -> metadata_ready
-POST /api/v1/projects/{id}/approve                  human sign-off (needs a finished render) -> ready_to_publish
-POST /api/v1/projects/{id}/publish                  refused until Phase 5
-POST /api/v1/projects/{id}/analytics                record metrics manually
-POST /api/v1/insights/analyze                       find patterns in performance
-POST /api/v1/reports                                build a period report
-GET  /api/v1/dashboard/summary                      overview for the dashboard
+POST /api/v1/channels                                    canal (idioma por defecto: es)
+POST /api/v1/channels/{id}/ideas/generate                ideas puntuadas
+POST /api/v1/ideas/{id}/select  {"format": "short"}      la idea se convierte en proyecto
+POST /api/v1/projects/{id}/research                      fuentes y hechos clave
+POST /api/v1/projects/{id}/scripts/generate              guion «¿Qué pasaría si…?»
+POST /api/v1/projects/{id}/scripts/{sid}/fact-check      verificación científica
+POST /api/v1/projects/{id}/visuals/generate              imágenes (y clips) por escena
+POST /api/v1/projects/{id}/voice/generate                narración por escena
+POST /api/v1/projects/{id}/assemble                      MP4 final
+POST /api/v1/projects/{id}/metadata/generate             título, descripción, etiquetas, comentario fijado
+POST /api/v1/projects/{id}/approve                       aprobación humana
+POST /api/v1/projects/{id}/analytics                     métricas (manual por ahora)
+POST /api/v1/insights/analyze                            aprendizaje
+GET  /api/v1/dashboard/summary                           panel
 ```
 
 ## Tests
 
 ```bash
-pytest                       # SQLite, plus real FFmpeg and Blender renders when those are installed
+pytest                       # SQLite; usa FFmpeg, Blender y Piper reales si están instalados
 ruff check . && ruff format --check .
 ```
 
-Run against PostgreSQL too (the databases are wiped):
+Con PostgreSQL: `TEST_DATABASE_URL=... TEST_POSTGRES_URL=... pytest` (se borran esas bases).
+Los tests nunca llaman a Claude, YouTube, Hugging Face ni ComfyUI: usan dobles de prueba en `tests/`.
 
-```bash
-TEST_DATABASE_URL=postgresql+psycopg://user:pass@localhost/autopilot_test \
-TEST_POSTGRES_URL=postgresql+psycopg://user:pass@localhost/autopilot_migrations \
-pytest
-```
+## Despliegue
 
-Tests never call Claude or YouTube. AI responses come from a stub provider defined in `tests/conftest.py`.
+`Dockerfile` (API + FFmpeg). `alembic upgrade head` como paso de release. En producción la app exige
+PostgreSQL y `API_KEY`. CI: `.github/workflows/ci.yml` (lint + tests contra PostgreSQL 16 + Blender).
 
-## Deployment
+## Estructura
 
-The `Dockerfile` builds the API image with FFmpeg (Blender is not in the image yet; 3D rendering is local for now). Run `alembic upgrade head` as a release step, then start the container; it listens on `$PORT` (default 8000).
-CI (`.github/workflows/ci.yml`) runs lint and the full test suite against PostgreSQL 16.
-
-## Project layout
-
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Ver [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).

@@ -3,7 +3,7 @@ from sqlalchemy import func, select
 
 from app.api.deps import DbSession, FFmpegDep, SettingsDep
 from app.api.routes.system import integrations_status
-from app.models import Channel, Insight, RenderJob, VideoProject
+from app.models import Channel, Idea, Insight, RenderJob, VideoProject
 from app.schemas.system import DashboardSummary
 from app.services.reporting.builder import performances
 
@@ -11,7 +11,8 @@ router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 
 def _counts(db, column) -> dict[str, int]:
-    return {str(k.value): n for k, n in db.execute(select(column, func.count()).group_by(column)).all()}
+    rows = db.execute(select(column, func.count()).group_by(column)).all()
+    return {str(k.value): n for k, n in rows if k is not None}
 
 
 @router.get("/summary", response_model=DashboardSummary)
@@ -22,6 +23,8 @@ def summary(db: DbSession, settings: SettingsDep, ffmpeg: FFmpegDep) -> Dashboar
         channels=db.scalar(select(func.count()).select_from(Channel)) or 0,
         projects_by_status=_counts(db, VideoProject.status),
         projects_by_format=_counts(db, VideoProject.format),
+        projects_by_category=_counts(db, VideoProject.category),
+        ideas_by_status=_counts(db, Idea.status),
         render_jobs_by_status=_counts(db, RenderJob.status),
         videos_with_analytics=len(perf),
         total_views=sum(p.metrics.views for p in perf),

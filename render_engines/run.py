@@ -42,10 +42,8 @@ def main() -> None:
     Path(args.frames_dir).mkdir(parents=True, exist_ok=True)
 
     scene = reset_scene()
-    if spec["engine"] == "cinematic":
-        from render_engines import cinematic as engine
-    else:
-        from render_engines import voxel as engine
+    from render_engines import cinematic as engine
+
     started = time.time()
     engine.build(spec, ctx, scene, str(Path(args.frames_dir).resolve()))
     if args.threads:

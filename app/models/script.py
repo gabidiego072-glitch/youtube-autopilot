@@ -5,6 +5,8 @@ from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstr
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, JSONType, UUIDPrimaryKeyMixin, utcnow
+from app.models._types import enum_column
+from app.models.enums import FactCheckStatus
 
 
 class Script(UUIDPrimaryKeyMixin, Base):
@@ -16,8 +18,18 @@ class Script(UUIDPrimaryKeyMixin, Base):
     )
     version: Mapped[int] = mapped_column(Integer, nullable=False)
     hook: Mapped[str] = mapped_column(Text, nullable=False)
-    # List of {"narration": str, "visual": str, "duration_seconds": float}
+    title_question: Mapped[str | None] = mapped_column(String(200))
+    # List of {"beat", "narration", "visual", "duration_seconds", "claims": [{"text", "type", "source"}]}
     scenes: Mapped[list[dict]] = mapped_column(JSONType, nullable=False)
+    # "question" (invites comments) or "surprising_conclusion"
+    ending_type: Mapped[str | None] = mapped_column(String(32))
+    # {"look", "recurring_subjects": [{"name", "description"}], "palette", "camera_language"}
+    visual_bible: Mapped[dict | None] = mapped_column(JSONType)
+    fact_check_status: Mapped[FactCheckStatus] = mapped_column(
+        enum_column(FactCheckStatus), default=FactCheckStatus.NOT_CHECKED, server_default="not_checked", nullable=False
+    )
+    # {"verdicts": [{"claim", "verdict", "note", "correction"}], "summary": str}
+    fact_check: Mapped[dict | None] = mapped_column(JSONType)
     call_to_action: Mapped[str | None] = mapped_column(Text)
     full_text: Mapped[str] = mapped_column(Text, nullable=False)
     estimated_duration_seconds: Mapped[float] = mapped_column(nullable=False)

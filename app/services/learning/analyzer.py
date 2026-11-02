@@ -18,6 +18,9 @@ class VideoPerformance:
     title: str
     format: VideoFormat
     metrics: DerivedMetrics
+    category: str | None = None
+    ending_type: str | None = None
+    comments: int = 0
 
 
 @dataclass
@@ -95,6 +98,23 @@ def analyze(videos: list[VideoPerformance]) -> list[InsightDraft]:
         )
     )
 
+    insights += _compare_groups(
+        videos,
+        key=lambda v: v.category,
+        kind="category_comparison",
+        label="Category",
+        metric=lambda v: v.metrics.views,
+        metric_name="median views",
+    )
+    insights += _compare_groups(
+        videos,
+        key=lambda v: v.ending_type,
+        kind="ending_comparison",
+        label="Ending",
+        metric=lambda v: 1000 * v.comments / v.metrics.views if v.metrics.views else 0.0,
+        metric_name="median comments per 1k views",
+    )
+
     with_retention = [v for v in videos if v.metrics.retention_ratio is not None]
     if len(with_retention) >= MIN_SAMPLE:
         avg_retention = mean(v.metrics.retention_ratio for v in with_retention)
@@ -118,3 +138,24 @@ def analyze(videos: list[VideoPerformance]) -> list[InsightDraft]:
                 )
             )
     return insights
+
+
+def _compare_groups(videos, *, key, kind: str, label: str, metric, metric_name: str) -> list[InsightDraft]:
+    """One insight naming the best group, only when at least two groups have MIN_SAMPLE videos."""
+    groups: dict[str, list[float]] = {}
+    for v in videos:
+        if key(v):
+            groups.setdefault(key(v), []).append(metric(v))
+    eligible = {name: median(values) for name, values in groups.items() if len(values) >= MIN_SAMPLE}
+    if len(eligible) < 2:
+        return []
+    ranked = sorted(eligible.items(), key=lambda item: item[1], reverse=True)
+    best, worst = ranked[0], ranked[-1]
+    return [
+        InsightDraft(
+            kind=kind,
+            title=f"{label} '{best[0]}' performs best",
+            detail=f"{metric_name}: '{best[0]}' {best[1]:.1f} vs '{worst[0]}' {worst[1]:.1f}.",
+            evidence={"groups": {name: {"videos": len(groups[name]), metric_name: value} for name, value in ranked}},
+        )
+    ]
