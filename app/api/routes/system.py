@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.api.deps import FFmpegDep, SettingsDep
 from app.core.config import Settings
 from app.schemas.system import IntegrationsStatus, IntegrationState
+from app.services.rendering.blender import Blender
 from app.services.rendering.ffmpeg import FFmpeg
 
 router = APIRouter(prefix="/system", tags=["system"])
@@ -10,6 +11,7 @@ router = APIRouter(prefix="/system", tags=["system"])
 
 def integrations_status(settings: Settings, ffmpeg: FFmpeg) -> IntegrationsStatus:
     ffmpeg_version = ffmpeg.version()
+    blender_version = Blender(settings.blender_binary).version()
     youtube_note = "credentials present" if settings.youtube_configured else "YOUTUBE_* credentials not set"
     return IntegrationsStatus(
         claude=IntegrationState(
@@ -21,6 +23,11 @@ def integrations_status(settings: Settings, ffmpeg: FFmpeg) -> IntegrationsStatu
             configured=ffmpeg_version is not None,
             implemented=True,
             detail=ffmpeg_version or "ffmpeg/ffprobe not found on PATH",
+        ),
+        blender=IntegrationState(
+            configured=blender_version is not None,
+            implemented=True,
+            detail=blender_version or "blender not found (scripts/install_blender.sh or BLENDER_BINARY)",
         ),
         youtube_data_api=IntegrationState(
             configured=settings.youtube_configured,

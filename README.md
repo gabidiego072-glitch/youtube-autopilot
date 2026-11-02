@@ -13,7 +13,9 @@ AI-powered YouTube automation platform for **Shorts** (vertical 9:16, up to 3 mi
 | Channels and video projects (Shorts + long-form) | ✅ CRUD API, per-format duration rules, lifecycle state machine |
 | Script generation | ✅ Real Claude integration (needs `ANTHROPIC_API_KEY`), versioned scripts |
 | Metadata + thumbnail concept | ✅ Claude generates title/description/tags/thumbnail text; checked against YouTube limits |
-| Video rendering | ✅ FFmpeg service renders image + audio slideshows at 1080×1920 or 1920×1080, extracts thumbnail frames. ⏳ Render jobs are queued but **no worker runs them yet** |
+| **3D animation engines** | ✅ Two procedural Blender engines, **cinematic** and **voxel/game-style**, render real 3D scenes to MP4 in 9:16 and 16:9. See [docs/3D_ENGINES.md](docs/3D_ENGINES.md) |
+| Video post-processing | ✅ FFmpeg encodes frames to H.264, muxes audio, burns in subtitles, synthesizes an ambient soundtrack; also renders image slideshows and extracts thumbnail frames |
+| Render jobs via the API | ⏳ Jobs are queued, but **no worker runs them yet**. 3D renders run from the command line for now |
 | YouTube publishing | ⏳ Interface + safety gates only. Always refuses (disabled / not configured / not implemented) |
 | Analytics | ✅ Manual metric entry + derived metrics. ⏳ YouTube Analytics API collector not implemented |
 | Performance analysis | ✅ Evidence-based insights from stored analytics (minimum sample sizes) |
@@ -22,7 +24,7 @@ AI-powered YouTube automation platform for **Shorts** (vertical 9:16, up to 3 mi
 
 ## Tech stack
 
-Python 3.12+ · FastAPI · SQLAlchemy 2 · Alembic · PostgreSQL (Supabase) · FFmpeg · Anthropic SDK (Claude)
+Python 3.12+ · FastAPI · SQLAlchemy 2 · Alembic · PostgreSQL (Supabase) · Blender 4.5 LTS (Cycles) · FFmpeg · Anthropic SDK (Claude)
 
 ## Quick start
 
@@ -38,6 +40,16 @@ Open <http://localhost:8000/docs> for the interactive API.
 Check `GET /api/v1/system/integrations` to see which external services are configured.
 
 FFmpeg must be installed (`apt install ffmpeg` / `brew install ffmpeg`).
+For the 3D engines install Blender with `scripts/install_blender.sh` (official build, checksum verified).
+
+## Render the 3D examples
+
+```bash
+python scripts/render_3d.py examples/scenes/cinematic_lantern_keeper.json --aspect 16:9 --quality draft --ambient
+python scripts/render_3d.py examples/scenes/voxel_crystal_quest.json --aspect 9:16 --quality draft --ambient
+```
+
+Output goes to `out/`. All commands and options are in [docs/3D_ENGINES.md](docs/3D_ENGINES.md).
 
 ### Supabase
 
@@ -70,7 +82,7 @@ GET  /api/v1/dashboard/summary                      overview for the dashboard
 ## Tests
 
 ```bash
-pytest                       # SQLite, plus real FFmpeg renders when ffmpeg is installed
+pytest                       # SQLite, plus real FFmpeg and Blender renders when those are installed
 ruff check . && ruff format --check .
 ```
 
@@ -86,7 +98,7 @@ Tests never call Claude or YouTube. AI responses come from a stub provider defin
 
 ## Deployment
 
-The `Dockerfile` builds an image with FFmpeg. Run `alembic upgrade head` as a release step, then start the container; it listens on `$PORT` (default 8000).
+The `Dockerfile` builds the API image with FFmpeg (Blender is not in the image yet; 3D rendering is local for now). Run `alembic upgrade head` as a release step, then start the container; it listens on `$PORT` (default 8000).
 CI (`.github/workflows/ci.yml`) runs lint and the full test suite against PostgreSQL 16.
 
 ## Project layout
