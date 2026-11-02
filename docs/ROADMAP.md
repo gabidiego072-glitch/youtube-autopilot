@@ -1,100 +1,71 @@
-# Development roadmap
+# Hoja de ruta
 
-Each phase ends with working, tested code. Nothing is marked done until it works against the real service.
+Línea editorial fija: curiosidades, ciencia, situaciones hipotéticas y experimentos mentales («¿Qué pasaría
+si…?»). Sin videojuegos ni gaming. Prioridad: automatización en la nube con herramientas gratuitas.
+Cada fase termina con código probado; nada se marca como hecho si no funciona contra el servicio real.
 
-## Phase 0 — Foundation ✅ (v0.1.0)
+## Fase 0 — Base ✅ (v0.1)
 
-- [x] Project structure, configuration from environment variables, Dockerfile, CI
-- [x] PostgreSQL/Supabase schema for all 10 modules + Alembic migration (tested on PostgreSQL 16 and SQLite)
-- [x] Channels and projects API for Shorts and long-form, with per-format duration rules
-- [x] Project lifecycle state machine
-- [x] Claude provider (structured output, streaming, refusal fallbacks, error handling)
-- [x] Script generation and metadata generation services + endpoints
-- [x] YouTube metadata rules (title, description, tag limits)
-- [x] FFmpeg service: slideshow render for both formats, probing, frame extraction
-- [x] YouTube Data API / Analytics API interfaces with safety gates (publishing disabled by default)
-- [x] Manual analytics entry, derived metrics, performance analyzer, reports, dashboard summary
-- [x] Automated tests (API, services, real FFmpeg renders, migrations)
+- [x] FastAPI, PostgreSQL/Supabase, migraciones Alembic, configuración por variables de entorno, Docker, CI
+- [x] Canales, proyectos Short/largo, máquina de estados, proveedor Claude, metadatos, analítica manual, informes, panel
+- [x] Interfaces de YouTube con bloqueo de seguridad (sin publicación)
 
-## Phase 0.5 — Procedural 3D engines ✅ (this release)
+## Fase 0.5 — Visualización 3D ✅ (v0.1)
 
-- [x] Cinematic 3D engine (Blender, Cycles): procedural characters, environments, materials, lighting and shadows, character/prop animation, camera moves, depth of field, motion blur
-- [x] Voxel / game-style engine: procedural block worlds, block characters, interactive props (breakable crystal, treasure chest), camera moves
-- [x] JSON scene specs shared by both engines; 9:16 and 16:9; quality presets
-- [x] FFmpeg post-processing only: H.264 encode, audio mux, ambient soundtrack, burned-in subtitles
-- [x] One original 8-second example per engine, rendered to MP4
-- [x] Tests: pure engine logic without Blender, plus real Blender renders of both engines in both aspects
+- [x] Motor 3D procedural en Blender (Cycles, CPU, sin GPU): personajes, entornos, luz, cámara, 9:16 y 16:9
+- [x] Ejemplo «¿Qué pasaría si cada paso que das crecieras un centímetro?»
+- [x] El motor voxel/estilo videojuego se retiró al fijar la línea editorial (sigue en el historial de git)
 
-## Phase 1 — 3D content generation
+## Fase 1 — Pipeline «¿Qué pasaría si…?» ✅ (v0.2, esta versión)
 
-- [ ] Claude writes scene specs from a script (characters, actions, camera shots, captions), validated by `render_engines/core/spec.py`
-- [ ] Larger asset vocabulary: more character types, props, environments (interiors, city, space) per engine
-- [ ] Skinned characters with an armature, facial expressions and lip sync
-- [ ] Voice-over (free/open-source TTS such as Piper) timed to captions; music and sound-effect library
-- [ ] Render worker that runs 3D jobs from the API queue and stores the MP4
+- [x] Perfil editorial único que alimenta todos los prompts; filtro anti-gaming en ideas, guiones y metadatos
+- [x] Generación de ideas puntuadas, sin duplicados, ponderadas por el rendimiento por categoría
+- [x] Investigación con Wikipedia (gratis) y hechos clave con fuente
+- [x] Guiones con gancho ≤ 2 s, escalada de consecuencias, final con pregunta o conclusión, afirmaciones etiquetadas
+- [x] Verificación científica obligatoria antes de aprobar
+- [x] Biblia visual + prompts hiperrealistas coherentes; proveedores ComfyUI (gratis, propio) y Hugging Face
+- [x] Vídeo IA vía ComfyUI image-to-video; si no hay, movimiento de cámara con FFmpeg
+- [x] Voz en español con Piper (gratis, offline)
+- [x] Montaje FFmpeg: ritmo de voz, subtítulos sincronizados, música con ducking
+- [x] Metadatos con fuentes, «ciencia vs. hipótesis» y comentario fijado
+- [x] Aprendizaje por categoría y tipo de final
 
-## Phase 1b — Content quality
+## Fase 2 — Calidad de contenido
 
-- [ ] Topic/idea generation per channel, with deduplication against past videos
-- [ ] Script editing endpoint (human edits create a new version)
-- [ ] Fact-check / review pass on generated scripts
-- [ ] Store token usage and cost per generation; per-channel spending limits
-- [ ] Prompt evaluation set to compare prompt versions
+- [ ] Regeneración automática de un guion cuando la verificación falla, usando las correcciones
+- [ ] Más fuentes gratuitas (Wikidata, NASA Open APIs, arXiv) y citas por escena en la descripción
+- [ ] Coste y tokens por vídeo; límite de gasto por canal
+- [ ] Conjunto de evaluación de guiones (ganchos, precisión) para comparar versiones de prompts
+- [ ] Biblioteca de música y efectos libres de derechos
 
-## Phase 2 — Rendering pipeline
+## Fase 3 — Coherencia visual avanzada
 
-- [ ] Background job queue and render worker (moves jobs `queued → running → succeeded/failed`, updates project status) for both the 3D engines and the slideshow renderer
-- [ ] Cloud rendering: Blender in a worker image, GPU nodes, splitting long videos into frame ranges across workers
-- [ ] Text-to-speech provider interface + first provider (voiceover assets)
-- [ ] Visual asset sourcing (stock footage / AI images) per scene
-- [ ] Burned-in captions (word-timed for Shorts), background music with ducking
-- [ ] Object storage for media (Supabase Storage or S3) instead of local disk
+- [ ] Imagen de referencia del sujeto principal reutilizada en todas las escenas (IP-Adapter / PuLID en ComfyUI)
+- [ ] Control de calidad automático de cada imagen (texto no deseado, deformaciones) y regeneración
+- [ ] Miniaturas: imagen + texto compuesto a 1280×720, varias variantes
 
-## Phase 3 — Format-specific production
+## Fase 4 — Ejecución en la nube
 
-- [ ] Shorts: fast cuts, animated captions, safe areas for the Shorts UI, loop endings
-- [ ] Long-form: chapters, section transitions, B-roll, chunked TTS for long scripts
-- [ ] Optional: cut Shorts out of long-form videos
+- [ ] Cola de trabajos y worker para investigación, imágenes, voz y montaje (fuera de la petición HTTP)
+- [ ] Almacenamiento de medios en Supabase Storage o S3
+- [ ] Worker de GPU para ComfyUI (bajo demanda) y worker de CPU para Blender/FFmpeg
 
-## Phase 4 — Thumbnails
+## Fase 5 — Publicación en YouTube
 
-- [ ] Image generation provider interface
-- [ ] Text overlay compositing at 1280×720
-- [ ] Multiple thumbnail variants per video
+- [ ] OAuth por canal (tokens cifrados), subida reanudable, miniatura, programación, comentario fijado
+- [ ] Control de cuota; subidas en `private` por defecto; aprobación humana obligatoria
 
-## Phase 5 — YouTube publishing
+## Fase 6 — Estadísticas automáticas
 
-- [ ] OAuth 2.0 consent flow to obtain refresh tokens per channel (stored encrypted)
-- [ ] Resumable upload via YouTube Data API v3, thumbnail upload, scheduled publishing
-- [ ] Quota tracking and retry/backoff
-- [ ] Uploads default to `private`; human approval stays required
+- [ ] Recolector programado de la YouTube Analytics API (vistas, CTR, retención, comentarios)
+- [ ] Curvas de retención por escena (¿en qué consecuencia se va la gente?)
 
-## Phase 6 — Analytics collection
+## Fase 7 — Aprendizaje avanzado
 
-- [ ] Scheduled collector using the YouTube Analytics API (views, impressions, CTR, retention, subscribers)
-- [ ] Audience retention curves per video
-- [ ] Backfill for existing channel videos
+- [ ] Retención por tramo del guion para ajustar el ritmo de la escalada
+- [ ] Experimentos A/B de gancho, duración y hora de publicación
+- [ ] Informes automáticos semanales con resumen escrito
 
-## Phase 7 — Learning system
+## Fase 8 — Panel y multiusuario
 
-- [ ] Feed insights back into topic selection and script prompts
-- [ ] Track experiments (hook style, length, posting time) and measure their effect
-- [ ] Topic scoring model from past performance
-
-## Phase 8 — Automated reporting
-
-- [ ] Scheduled daily/weekly/monthly reports
-- [ ] Delivery by email or Slack
-- [ ] Claude-written report summaries on top of the computed numbers
-
-## Phase 9 — Dashboard and multi-user
-
-- [ ] Web dashboard on top of the API
-- [ ] User accounts (Supabase Auth) and per-user/channel permissions, replacing the shared API key
-- [ ] Row-level security on Supabase
-
-## Phase 10 — Production hardening
-
-- [ ] Structured logging, metrics, tracing, error alerts
-- [ ] Rate limiting, request size limits
-- [ ] Deployment templates (e.g. Cloud Run / Fly.io / Railway) and backups
+- [ ] Panel web, cuentas (Supabase Auth), permisos y RLS

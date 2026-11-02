@@ -22,12 +22,15 @@ def generate(project_id: uuid.UUID, db: DbSession, ai: AIProviderDep) -> VideoMe
         raise HTTPException(status_code=409, detail="Generate a script first.")
     if not can_transition(project.status, ProjectStatus.METADATA_READY):
         raise InvalidStateTransitionError(f"Cannot generate metadata while project is '{project.status.value}'.")
+    script = project.scripts[-1]
     draft = generate_metadata(
         ai,
         video_format=project.format,
-        working_title=project.working_title,
-        script_text=project.scripts[-1].full_text,
+        working_title=script.title_question or project.working_title,
+        script_text=script.full_text,
         language=project.language,
+        ending_line=script.call_to_action,
+        sources=project.research_briefs[-1].sources if project.research_briefs else None,
     )
     metadata = VideoMetadata(
         project_id=project.id,

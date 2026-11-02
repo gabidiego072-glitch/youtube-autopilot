@@ -17,7 +17,7 @@ from render_engines.core.noise import fbm
 TIME_OF_DAY = {
     # sun elevation, azimuth, sun colour, sun strength, sky strength, fill colour, fill power
     "dawn": (6, 70, "#ffb070", 2.5, 0.5, "#8fa8ff", 120),
-    "day": (45, 140, "#fff2dc", 4.0, 1.0, "#cfe0ff", 60),
+    "day": (42, 140, "#fff2dc", 3.2, 0.35, "#cfe0ff", 60),
     "dusk": (1.5, 235, "#ff8a40", 1.6, 0.22, "#6a7cff", 150),
 }
 
@@ -179,7 +179,7 @@ def build_environment(env: dict, ctx, scene: bpy.types.Scene, paths=()) -> dict:
     elevation, azimuth, sun_color, sun_strength, sky_strength, fill_color, fill_power = TIME_OF_DAY[
         env.get("time_of_day", "day")
     ]
-    set_sky(scene, elevation, azimuth, strength=sky_strength, dust=2.0, sun_disc=True)
+    set_sky(scene, elevation, azimuth, strength=sky_strength, dust=2.0, sun_disc=elevation < 10)
     lights.sun("Sun", elevation, azimuth, sun_color, sun_strength, softness_deg=3)
     lights.area("Fill", (-6, -10, 6), (math.radians(60), 0, math.radians(-30)), fill_color, fill_power, size=8)
     return {"ground_height": lambda x, y: flat_radius_height(x, y, seed, flat, amp)}

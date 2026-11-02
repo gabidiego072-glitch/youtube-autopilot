@@ -38,7 +38,7 @@ def run_migrations_online() -> None:
             connection=connection,
             target_metadata=target_metadata,
             compare_type=True,
-            render_as_batch=connection.dialect.name == "sqlite",
+            render_as_batch=True,  # batch ops work on SQLite (tests) and PostgreSQL
         )
         with context.begin_transaction():
             context.run_migrations()

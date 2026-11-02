@@ -41,6 +41,9 @@ def performances(session: Session, channel_id: uuid.UUID | None = None) -> list[
             title=project.working_title,
             format=project.format,
             metrics=derive(snapshot, project.target_duration_seconds),
+            category=project.category.value if project.category else None,
+            ending_type=project.scripts[-1].ending_type if project.scripts else None,
+            comments=snapshot.comments,
         )
         for project, snapshot in latest_snapshots(session, channel_id)
     ]

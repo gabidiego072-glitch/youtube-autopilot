@@ -55,6 +55,28 @@ class Settings(BaseSettings):
     # Hard safety switch. Uploads are refused while this is false.
     youtube_publishing_enabled: bool = False
 
+    # --- Research (free) ----------------------------------------------------
+    research_enabled: bool = True
+    wikipedia_language: str = "es"
+    # Wikimedia asks for a descriptive agent with contact info.
+    wikipedia_user_agent: str = "YouTubeAutopilot/0.2 (set WIKIPEDIA_USER_AGENT with your contact)"
+
+    # --- AI images / video ------------------------------------------------
+    # Option A (free, self-hosted): ComfyUI running open models (e.g. FLUX.1-schnell, Wan 2.x).
+    comfyui_url: str | None = None
+    comfyui_image_workflow: Path | None = None  # API-format workflow JSON with {{placeholders}}
+    comfyui_video_workflow: Path | None = None
+    # Option B (free tier): Hugging Face Inference Providers.
+    hf_token: SecretStr | None = None
+    hf_image_model: str = "black-forest-labs/FLUX.1-schnell"
+    hf_inference_url: str = "https://router.huggingface.co/hf-inference/models"
+    visuals_timeout_seconds: float = 300.0
+
+    # --- Voice (free, local) ----------------------------------------------
+    piper_binary: str = "piper"
+    piper_voice_model: Path | None = None
+    piper_length_scale: float = 0.92  # <1 = faster, livelier narration
+
     # --- Video rendering --------------------------------------------------
     blender_binary: str = "blender"
     blender_timeout_seconds: int = 4 * 3600
@@ -62,6 +84,8 @@ class Settings(BaseSettings):
     ffprobe_binary: str = "ffprobe"
     media_root: Path = Path("./media")
     # YouTube currently accepts vertical Shorts up to 3 minutes.
+    # Final edit resolution as a fraction of 1080p (e.g. 0.5 for fast previews).
+    edit_resolution_scale: float = 1.0
     shorts_max_duration_seconds: int = 180
     long_form_min_duration_seconds: int = 181
 
@@ -81,6 +105,14 @@ class Settings(BaseSettings):
     @property
     def claude_configured(self) -> bool:
         return bool(self.anthropic_api_key and self.anthropic_api_key.get_secret_value())
+
+    @property
+    def image_provider_name(self) -> str | None:
+        if self.comfyui_url and self.comfyui_image_workflow:
+            return "comfyui"
+        if self.hf_token and self.hf_token.get_secret_value():
+            return "huggingface"
+        return None
 
     @property
     def youtube_configured(self) -> bool:

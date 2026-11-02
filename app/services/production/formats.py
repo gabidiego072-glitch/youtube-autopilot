@@ -1,6 +1,6 @@
 """Output specifications for YouTube Shorts and long-form videos."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from app.core.config import Settings
 from app.models.enums import VideoFormat
@@ -43,6 +43,15 @@ def get_format_spec(video_format: VideoFormat, settings: Settings) -> FormatSpec
         max_duration_seconds=None,
         video_bitrate="12M",
         audio_bitrate="192k",
+    )
+
+
+def scaled(spec: FormatSpec, factor: float) -> FormatSpec:
+    """Same format at a lower resolution (even dimensions, as H.264 requires)."""
+    if factor >= 1.0:
+        return spec
+    return replace(
+        spec, width=max(2, int(spec.width * factor) // 2 * 2), height=max(2, int(spec.height * factor) // 2 * 2)
     )
 
 

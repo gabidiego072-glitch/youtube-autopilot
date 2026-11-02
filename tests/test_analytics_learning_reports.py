@@ -83,6 +83,7 @@ def test_analytics_endpoints_reports_and_dashboard(client, channel):
     summary = client.get("/api/v1/dashboard/summary").json()
     assert summary["channels"] == 1
     assert summary["projects_by_format"] == {"short": 3}
+    assert summary["projects_by_category"] == {} and summary["ideas_by_status"] == {}
     assert summary["total_views"] == 1500
     assert summary["integrations"]["publishing_enabled"] is False
 

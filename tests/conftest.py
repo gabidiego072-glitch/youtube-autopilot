@@ -91,33 +91,164 @@ def client(make_client) -> TestClient:
 
 @pytest.fixture
 def channel(client) -> dict:
-    response = client.post("/api/v1/channels", json={"name": "Space Facts", "niche": "astronomy"})
+    response = client.post("/api/v1/channels", json={"name": "Qué Pasaría Si", "niche": "ciencia hipotética"})
     assert response.status_code == 201
     return response.json()
 
 
+def _scene(beat: str, narration: str, visual: str, seconds: float, claims: list[tuple[str, str]]) -> dict:
+    return {
+        "beat": beat,
+        "narration": narration,
+        "visual": visual,
+        "duration_seconds": seconds,
+        "claims": [{"text": t, "type": k, "source": ""} for t, k in claims],
+    }
+
+
 SCRIPT_RESPONSE = {
-    "hook": "This planet rains diamonds.",
+    "title_question": "¿Qué pasaría si la Tierra dejase de girar?",
+    "hook": "La Tierra frena en seco.",
     "scenes": [
-        {
-            "narration": "Neptune is so cold and so pressurised that carbon may crystallise.",
-            "visual": "Neptune",
-            "duration_seconds": 6,
-        },
-        {
-            "narration": "Scientists think diamonds could sink through its atmosphere.",
-            "visual": "Falling gems",
-            "duration_seconds": 5,
-        },
+        _scene("hook", "La Tierra frena en seco.", "The narrator, standing on a beach at dawn", 2, []),
+        _scene(
+            "setup",
+            "Ahora mismo giramos a unos 1.670 km/h en el ecuador.",
+            "Earth from orbit",
+            4,
+            [("El ecuador gira a unos 1.670 km/h", "established")],
+        ),
+        _scene(
+            "escalation",
+            "Todo lo que no esté anclado saldría disparado hacia el este.",
+            "Wind tearing a city",
+            4,
+            [("Los objetos conservarían su velocidad", "established")],
+        ),
+        _scene(
+            "escalation",
+            "Los océanos se moverían hacia los polos.",
+            "Ocean flooding a coastline",
+            4,
+            [("Los océanos migrarían hacia los polos", "estimate")],
+        ),
+        _scene(
+            "escalation",
+            "Un día duraría un año entero.",
+            "The narrator under a frozen sun",
+            3,
+            [("Un día solar duraría un año", "established")],
+        ),
+        _scene(
+            "climax",
+            "Y el campo magnético podría debilitarse.",
+            "Aurora fading over ice",
+            3,
+            [("El campo magnético podría debilitarse", "speculation")],
+        ),
+        _scene("ending", "¿Tú dónde vivirías?", "The narrator looking at the camera", 2, []),
     ],
-    "call_to_action": "Follow for more space facts.",
+    "ending_type": "question",
+    "ending_line": "¿Tú dónde vivirías?",
+    "visual_bible": {
+        "look": "documentary, golden hour",
+        "recurring_subjects": [{"name": "The narrator", "description": "woman in her 30s, red jacket"}],
+        "palette": "warm oranges, deep blues",
+        "camera_language": "handheld, wide lenses",
+    },
+}
+
+LONG_SCRIPT_RESPONSE = {
+    **SCRIPT_RESPONSE,
+    "scenes": SCRIPT_RESPONSE["scenes"][:2]
+    + [
+        _scene(
+            "escalation",
+            f"Consecuencia número {i}.",
+            "The narrator in a storm",
+            20,
+            [(f"Consecuencia {i}", "estimate")],
+        )
+        for i in range(1, 7)
+    ]
+    + SCRIPT_RESPONSE["scenes"][-2:],
 }
 
 METADATA_RESPONSE = {
-    "title": "It Rains Diamonds on Neptune",
-    "description": "Why Neptune may have diamond rain. #Shorts",
-    "tags": ["neptune", "space", "#Space", "diamond rain"],
-    "hashtags": ["Shorts", "#space"],
-    "thumbnail_text": "DIAMOND RAIN",
-    "thumbnail_prompt": "Blue planet with glittering diamonds falling",
+    "title": "¿Qué pasaría si la Tierra dejase de girar?",
+    "description": "Un día duraría un año. #Shorts",
+    "tags": ["rotación terrestre", "ciencia", "#Ciencia", "qué pasaría si"],
+    "hashtags": ["Shorts", "#ciencia"],
+    "thumbnail_text": "LA TIERRA SE PARA",
+    "thumbnail_prompt": "Hyper-realistic photo of a city swept by wind",
+    "pinned_comment": "¿Tú dónde vivirías?",
+}
+
+FACTCHECK_PASS = {
+    "verdicts": [
+        {"claim": c["text"], "verdict": "correct", "note": "", "correction": ""}
+        for scene in SCRIPT_RESPONSE["scenes"]
+        for c in scene["claims"]
+    ],
+    "summary": "OK",
+}
+
+IDEAS_RESPONSE = {
+    "ideas": [
+        {
+            "premise": "¿Qué pasaría si la Luna desapareciera?",
+            "category": "space_and_astronomy",
+            "hook": "Esta noche, la Luna no sale.",
+            "angle": "mareas, eje, noches",
+            "science_basis": "mareas y estabilidad del eje",
+            "curiosity": 9,
+            "visual_potential": 9,
+            "scientific_grounding": 8,
+            "evergreen": 10,
+        },
+        {
+            "premise": "¿Qué pasaría si dejaras de dormir?",
+            "category": "human_body",
+            "hook": "Día 3 sin dormir.",
+            "angle": "cerebro, cuerpo",
+            "science_basis": "privación de sueño",
+            "curiosity": 7,
+            "visual_potential": 6,
+            "scientific_grounding": 9,
+            "evergreen": 9,
+        },
+        {
+            "premise": "¿Qué pasaría si vivieras dentro de un videojuego?",
+            "category": "physics_laws",
+            "hook": "Pulsa start.",
+            "angle": "x",
+            "science_basis": "x",
+            "curiosity": 10,
+            "visual_potential": 10,
+            "scientific_grounding": 1,
+            "evergreen": 5,
+        },
+        {
+            "premise": "¿Qué pasaría si la Tierra dejase de girar?",
+            "category": "earth_and_climate",
+            "hook": "Frenazo.",
+            "angle": "x",
+            "science_basis": "x",
+            "curiosity": 9,
+            "visual_potential": 9,
+            "scientific_grounding": 9,
+            "evergreen": 9,
+        },
+        {
+            "premise": "Sin interrogación al final",
+            "category": "human_body",
+            "hook": "x",
+            "angle": "x",
+            "science_basis": "x",
+            "curiosity": 5,
+            "visual_potential": 5,
+            "scientific_grounding": 5,
+            "evergreen": 5,
+        },
+    ]
 }

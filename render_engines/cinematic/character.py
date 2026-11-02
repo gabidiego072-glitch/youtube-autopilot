@@ -77,10 +77,10 @@ class CinematicCharacter:
             key(self.arms["L"], "rotation_euler", frame, (-swing_arm * phase * fade, 0, math.radians(-4)))
             key(self.arms["R"], "rotation_euler", frame, (swing_arm * phase * fade, 0, math.radians(4)))
             bob = 0.035 * abs(math.cos(i * math.pi / 2)) * fade
-            key(self.hips, "location", frame, (0, 0, HIP_HEIGHT * self.scale + bob))
+            key(self.hips, "location", frame, (0, 0, HIP_HEIGHT + bob))
         for limb in (*self.legs.values(), *self.arms.values()):
             key(limb, "rotation_euler", end + 4, (0, 0, 0))
-        key(self.hips, "location", end + 4, (0, 0, HIP_HEIGHT * self.scale))
+        key(self.hips, "location", end + 4, (0, 0, HIP_HEIGHT))
 
     def raise_arm(self, start: int, end: int, side: str = "R", hold: int = 24) -> None:
         arm = self.arms[side]
@@ -111,7 +111,7 @@ class CinematicCharacter:
 
     def jump(self, start: int, height: float = 0.5, fps: int = 24) -> None:
         air = round(fps * 0.45)
-        base = HIP_HEIGHT * self.scale
+        base = HIP_HEIGHT
         key(self.hips, "location", start, (0, 0, base))
         key(self.hips, "location", start + 4, (0, 0, base - 0.12))
         key(self.hips, "location", start + 4 + air // 2, (0, 0, base + height))
@@ -123,6 +123,15 @@ class CinematicCharacter:
                 self.arms[side], "rotation_euler", start + 4 + air // 2, (math.radians(140), 0, math.radians(20 * sign))
             )
             key(self.arms[side], "rotation_euler", start + 10 + air, (0, 0, 0))
+
+    def grow(self, start: int, end: int, to_scale: float, scale_track=None) -> None:
+        """Smooth growth (time-lapse). Children scale with the root, so the whole rig grows."""
+        key(self.root, "scale", start, (self.scale,) * 3)
+        key(self.root, "scale", end, (to_scale,) * 3)
+        if scale_track is not None:
+            scale_track.add(start, (self.scale, 0, 0))
+            scale_track.add(end, (to_scale, 0, 0))
+        self.scale = to_scale
 
     def idle(self, frame_start: int, frame_end: int, fps: int, seed: int) -> None:
         """Breathing and blinking for the whole shot."""

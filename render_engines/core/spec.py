@@ -11,7 +11,7 @@ import math
 from dataclasses import dataclass
 from pathlib import Path
 
-ENGINES = ("cinematic", "voxel")
+ENGINES = ("cinematic",)
 ASPECTS = {"16:9": (1920, 1080), "9:16": (1080, 1920)}
 
 # scale = fraction of full 1080p resolution.

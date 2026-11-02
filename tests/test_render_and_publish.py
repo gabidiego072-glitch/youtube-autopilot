@@ -2,8 +2,17 @@ import uuid
 
 from app.models import RenderJob
 from app.models.enums import JobStatus
-from tests.conftest import METADATA_RESPONSE, SCRIPT_RESPONSE, StubAIProvider, make_settings
+from tests.conftest import (
+    FACTCHECK_PASS,
+    LONG_SCRIPT_RESPONSE,
+    METADATA_RESPONSE,
+    SCRIPT_RESPONSE,
+    StubAIProvider,
+    make_settings,
+)
 from tests.helpers import create_project
+
+PIPELINE = [SCRIPT_RESPONSE, METADATA_RESPONSE, FACTCHECK_PASS]  # call order
 
 
 def test_render_requires_script(client, channel):
@@ -12,7 +21,7 @@ def test_render_requires_script(client, channel):
 
 
 def test_render_job_is_queued_with_format_dimensions(make_client, channel):
-    client = make_client(ai=StubAIProvider([SCRIPT_RESPONSE, SCRIPT_RESPONSE]))
+    client = make_client(ai=StubAIProvider([SCRIPT_RESPONSE, LONG_SCRIPT_RESPONSE]))
     short = create_project(client, channel["id"])
     long = create_project(client, channel["id"], format="long")
     for project in (short, long):
@@ -29,21 +38,32 @@ def test_render_job_is_queued_with_format_dimensions(make_client, channel):
 
 def _approved_project(client, db_session_factory, channel) -> dict:
     project = create_project(client, channel["id"])
-    client.post(f"/api/v1/projects/{project['id']}/scripts/generate")
+    script = client.post(f"/api/v1/projects/{project['id']}/scripts/generate").json()
     job = client.post(f"/api/v1/projects/{project['id']}/renders", json={}).json()
     client.post(f"/api/v1/projects/{project['id']}/metadata/generate")
-
-    assert client.post(f"/api/v1/projects/{project['id']}/approve").status_code == 409  # render not done
-    # Simulate the future render worker finishing the job.
-    with db_session_factory() as session:
+    with db_session_factory() as session:  # simulate a finished render
         render = session.get(RenderJob, uuid.UUID(job["id"]))
         render.status = JobStatus.SUCCEEDED
         render.output_path = "/tmp/video.mp4"
         session.commit()
+
+    blocked = client.post(f"/api/v1/projects/{project['id']}/approve")
+    assert blocked.status_code == 409 and "fact-check" in blocked.json()["detail"]
+    client.post(f"/api/v1/projects/{project['id']}/scripts/{script['id']}/fact-check")
     approved = client.post(f"/api/v1/projects/{project['id']}/approve")
     assert approved.status_code == 200, approved.text
     assert approved.json()["status"] == "ready_to_publish"
     return project
+
+
+def test_approval_requires_finished_render(make_client, channel):
+    client = make_client(ai=StubAIProvider([SCRIPT_RESPONSE, METADATA_RESPONSE, FACTCHECK_PASS]))
+    project = create_project(client, channel["id"])
+    script = client.post(f"/api/v1/projects/{project['id']}/scripts/generate").json()
+    client.post(f"/api/v1/projects/{project['id']}/metadata/generate")
+    client.post(f"/api/v1/projects/{project['id']}/scripts/{script['id']}/fact-check")
+    response = client.post(f"/api/v1/projects/{project['id']}/approve")
+    assert response.status_code == 409 and "render" in response.json()["detail"]
 
 
 def test_publish_requires_approval(client, channel):
@@ -52,7 +72,7 @@ def test_publish_requires_approval(client, channel):
 
 
 def test_publish_is_disabled_by_default(make_client, db_session_factory, channel):
-    client = make_client(ai=StubAIProvider([SCRIPT_RESPONSE, METADATA_RESPONSE]))
+    client = make_client(ai=StubAIProvider(list(PIPELINE)))
     project = _approved_project(client, db_session_factory, channel)
     response = client.post(f"/api/v1/projects/{project['id']}/publish")
     assert response.status_code == 403
@@ -60,9 +80,7 @@ def test_publish_is_disabled_by_default(make_client, db_session_factory, channel
 
 
 def test_publish_enabled_without_credentials(make_client, db_session_factory, channel):
-    client = make_client(
-        make_settings(youtube_publishing_enabled=True), ai=StubAIProvider([SCRIPT_RESPONSE, METADATA_RESPONSE])
-    )
+    client = make_client(make_settings(youtube_publishing_enabled=True), ai=StubAIProvider(list(PIPELINE)))
     project = _approved_project(client, db_session_factory, channel)
     assert client.post(f"/api/v1/projects/{project['id']}/publish").status_code == 503
 
@@ -71,7 +89,7 @@ def test_publish_never_fakes_success(make_client, db_session_factory, channel):
     settings = make_settings(
         youtube_publishing_enabled=True, youtube_client_id="a", youtube_client_secret="b", youtube_refresh_token="c"
     )
-    client = make_client(settings, ai=StubAIProvider([SCRIPT_RESPONSE, METADATA_RESPONSE]))
+    client = make_client(settings, ai=StubAIProvider(list(PIPELINE)))
     project = _approved_project(client, db_session_factory, channel)
     response = client.post(f"/api/v1/projects/{project['id']}/publish")
     assert response.status_code == 501

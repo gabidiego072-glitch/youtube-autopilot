@@ -19,7 +19,7 @@ def test_short_project_defaults(client, channel):
     assert project["format"] == "short"
     assert project["status"] == "draft"
     assert project["target_duration_seconds"] == 45
-    assert project["language"] == "en"  # inherited from channel
+    assert project["language"] == "es"  # inherited from channel (Spanish by default)
 
 
 def test_long_project_defaults(client, channel):

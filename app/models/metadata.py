@@ -24,6 +24,8 @@ class VideoMetadata(UUIDPrimaryKeyMixin, Base):
     thumbnail_text: Mapped[str | None] = mapped_column(String(100))
     thumbnail_prompt: Mapped[str | None] = mapped_column(Text)
     category_id: Mapped[str | None] = mapped_column(String(8))
+    # Comment the channel pins to start the discussion (usually the ending question).
+    pinned_comment: Mapped[str | None] = mapped_column(Text)
     provider: Mapped[str] = mapped_column(String(32), nullable=False)
     model: Mapped[str] = mapped_column(String(64), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
