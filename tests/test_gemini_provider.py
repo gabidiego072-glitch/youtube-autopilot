@@ -203,7 +203,7 @@ def test_overloaded_model_switches_to_another_free_model():
 
     provider = _provider(handler)
     assert provider.generate_json(system="s", prompt="p", schema=SCHEMA).data == {"ok": True}
-    assert used[-1] == "gemini-9-flash" and used.count("gemini-test") == 5  # 1 try + 4 waits, then switch
+    assert used[-1] == "gemini-9-flash" and used.count("gemini-test") == 3  # 1 try + 2 waits, then switch
     used.clear()
     provider.generate_json(system="s", prompt="p", schema=SCHEMA)
     assert used == ["gemini-9-flash"]  # sticks to the model that works

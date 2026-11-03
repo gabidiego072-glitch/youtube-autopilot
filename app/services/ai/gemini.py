@@ -27,7 +27,7 @@ from app.services.ai.base import GenerationResult
 logger = logging.getLogger(__name__)
 
 API_ROOT = "https://generativelanguage.googleapis.com/v1beta"
-MAX_RATE_WAITS = 4  # per model; then the next free model is tried
+MAX_RATE_WAITS = 2  # per model (retries also use free quota); then the next free model is tried
 MAX_TRANSPORT_RETRIES = 2
 MAX_WAIT_SECONDS = 90
 BLOCKED = {"SAFETY", "BLOCKLIST", "PROHIBITED_CONTENT", "SPII", "RECITATION"}
