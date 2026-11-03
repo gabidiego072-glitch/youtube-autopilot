@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     ai_provider: Literal["gemini", "claude"] = "gemini"
     gemini_api_key: SecretStr | None = None
     gemini_model: str = "gemini-3.8-flash"
+    # Comma-separated models to try when GEMINI_MODEL is overloaded or out of free quota.
+    # Empty = pick other free "flash" models automatically from the models your key can use.
+    gemini_fallback_models: str = ""
     gemini_max_tokens: int = 32000
     gemini_timeout_seconds: float = 300.0
 

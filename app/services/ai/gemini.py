@@ -27,7 +27,7 @@ from app.services.ai.base import GenerationResult
 logger = logging.getLogger(__name__)
 
 API_ROOT = "https://generativelanguage.googleapis.com/v1beta"
-MAX_RATE_WAITS = 6
+MAX_RATE_WAITS = 4  # per model; then the next free model is tried
 MAX_TRANSPORT_RETRIES = 2
 MAX_WAIT_SECONDS = 90
 BLOCKED = {"SAFETY", "BLOCKLIST", "PROHIBITED_CONTENT", "SPII", "RECITATION"}
@@ -51,6 +51,9 @@ class GeminiProvider:
         self._max_tokens = settings.gemini_max_tokens
         self._http = http or httpx.Client(timeout=httpx.Timeout(settings.gemini_timeout_seconds, connect=20.0))
         self._sleep = sleep
+        self._active: str | None = None
+        self._configured_fallbacks = [m.strip() for m in settings.gemini_fallback_models.split(",") if m.strip()]
+        self._fallback_cache: list[str] | None = None
 
     def __repr__(self) -> str:  # never leak the key
         return f"GeminiProvider(model={self.model!r})"
@@ -66,19 +69,60 @@ class GeminiProvider:
                 "maxOutputTokens": self._max_tokens,
             },
         }
+        last: ProviderError | None = None
+        for model in self._candidates():
+            try:
+                data = self._generate(body, schema, prompt, model)
+            except _ModelUnavailable as exc:
+                logger.warning("gemini model %s unavailable (%s); trying another free model", model, exc.message)
+                last = exc
+                continue
+            self._active = model  # stick to the model that answered for the rest of the run
+            return self._result(data)
+        if last is not None and last.daily:
+            raise ProviderError(
+                "Gemini's free daily quota is used up on every available model. Nothing was charged; "
+                "resume the run tomorrow (it continues from this step)."
+            )
+        raise ProviderError(f"Every Gemini model is busy right now; try again later. Last error: {last.message}")
+
+    def _generate(self, body: dict, schema: dict, prompt: str, model: str) -> dict:
         try:
-            data = self._post(body)
+            return self._post(body, model)
         except _SchemaRejected:
             # Very large schemas can exceed the constrained-decoding limits: fall back to plain JSON
             # mode with the schema in the prompt. The pipeline validates every answer anyway.
             logger.warning("gemini rejected the JSON schema; retrying with the schema in the prompt")
-            body["generationConfig"].pop("responseJsonSchema")
-            body["contents"][0]["parts"][0]["text"] = (
+            relaxed = json.loads(json.dumps(body))
+            relaxed["generationConfig"].pop("responseJsonSchema")
+            relaxed["contents"][0]["parts"][0]["text"] = (
                 f"{prompt}\n\nAnswer with ONE JSON object that matches this JSON Schema exactly:\n"
                 + json.dumps(schema, ensure_ascii=False)
             )
-            data = self._post(body)
-        return self._result(data)
+            return self._post(relaxed, model)
+
+    def _candidates(self):
+        """The model that last answered, then GEMINI_MODEL, then free fallbacks (looked up only if needed)."""
+        tried = set()
+        for model in (self._active, self.model):
+            if model and model not in tried:
+                tried.add(model)
+                yield model
+        for model in self._fallbacks():
+            if model not in tried:
+                tried.add(model)
+                yield model
+
+    def _fallbacks(self) -> list[str]:
+        if self._fallback_cache is None:
+            if self._configured_fallbacks:
+                self._fallback_cache = self._configured_fallbacks
+            else:
+                try:
+                    self._fallback_cache = pick_fallbacks(self.list_models(), self.model)
+                except ProviderError:
+                    self._fallback_cache = []
+        return self._fallback_cache
 
     def list_models(self) -> list[str]:
         """Models this key can call with generateContent (used by `autopilot.py ai-check`)."""
@@ -98,10 +142,10 @@ class GeminiProvider:
         except httpx.TransportError as exc:
             raise ProviderError("Could not reach the Gemini API.") from exc
 
-    def _post(self, body: dict) -> dict:
+    def _post(self, body: dict, model: str) -> dict:
         """Streams the answer (server-sent events): long generations keep the connection alive
         instead of waiting minutes in silence, which proxies and load balancers cut."""
-        url = f"{API_ROOT}/models/{self.model}:streamGenerateContent"
+        url = f"{API_ROOT}/models/{model}:streamGenerateContent"
         transport_failures = 0
         for attempt in range(MAX_RATE_WAITS + 1):
             try:
@@ -123,23 +167,22 @@ class GeminiProvider:
                 raise _SchemaRejected(detail)
             if response.status_code == 404:
                 raise IntegrationNotConfiguredError(
-                    f"Gemini model '{self.model}' not found. Run `python scripts/autopilot.py ai-check` to list "
+                    f"Gemini model '{model}' not found. Run `python scripts/autopilot.py ai-check` to list "
                     "the models your key can use and set GEMINI_MODEL."
                 )
             if response.status_code in (401, 403):
                 raise IntegrationNotConfiguredError(f"Gemini rejected the API key: {detail}")
             if response.status_code == 429 and _is_daily(response):
-                raise ProviderError(
-                    "Gemini's free daily quota is used up. Nothing was charged; resume the run tomorrow "
-                    "(it continues from this step)."
-                )
-            if response.status_code in (429, 500, 503) and attempt < MAX_RATE_WAITS:
+                raise _ModelUnavailable(f"daily free quota used up: {detail}", daily=True)
+            if response.status_code in (429, 500, 503):
+                if attempt >= MAX_RATE_WAITS:
+                    raise _ModelUnavailable(detail)
                 wait = _retry_delay(response) or min(MAX_WAIT_SECONDS, 5 * 2**attempt)
-                logger.info("gemini %s, waiting %.0fs", response.status_code, wait)
+                logger.info("gemini %s on %s, waiting %.0fs", response.status_code, model, wait)
                 self._sleep(min(MAX_WAIT_SECONDS, wait))
                 continue
             raise ProviderError(f"Gemini API error: {detail}")
-        raise ProviderError("Gemini kept rate-limiting the request; try again later.")  # pragma: no cover
+        raise _ModelUnavailable("still rate-limited")  # pragma: no cover
 
     def _result(self, data: dict) -> GenerationResult:
         block = data.get("promptFeedback", {}).get("blockReason")
@@ -173,6 +216,27 @@ class GeminiProvider:
 
 class _SchemaRejected(Exception):
     pass
+
+
+class _ModelUnavailable(ProviderError):
+    """Overloaded or out of free quota: worth trying another model."""
+
+    def __init__(self, message: str, daily: bool = False) -> None:
+        super().__init__(message)
+        self.daily = daily
+
+
+SKIP_MODEL_WORDS = ("image", "tts", "audio", "live", "embedding", "vision", "robotics", "computer-use", "native")
+
+
+def pick_fallbacks(models: list[str], primary: str, limit: int = 3) -> list[str]:
+    """Other text 'flash' models (free tier): stable before preview, full before lite, newest first."""
+    usable = [m for m in models if "flash" in m and m != primary and not any(word in m for word in SKIP_MODEL_WORDS)]
+
+    def rank(name: str):
+        return ("preview" in name or "exp" in name, "lite" in name, [-ord(c) for c in name])
+
+    return sorted(usable, key=rank)[:limit]
 
 
 def _error(response: httpx.Response) -> str:
