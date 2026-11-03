@@ -1,0 +1,108 @@
+{
+  "engine": "cinematic",
+  "title": "¿Qué pasaría si la Tierra dejase de girar?",
+  "duration_seconds": 8,
+  "fps": 24,
+  "seed": 5,
+  "motion_blur": false,
+  "environment": {
+    "type": "space",
+    "sun_azimuth": 210,
+    "sun_elevation": 8,
+    "sun": 4.5,
+    "stars": 0.6
+  },
+  "props": [
+    {
+      "id": "earth",
+      "type": "planet",
+      "kind": "earth",
+      "location": [
+        0,
+        0,
+        0
+      ],
+      "radius": 2.0,
+      "spin_rate": 45
+    },
+    {
+      "id": "moon",
+      "type": "planet",
+      "kind": "moon",
+      "location": [
+        -7.5,
+        9.0,
+        1.5
+      ],
+      "radius": 0.55,
+      "spin_rate": 4
+    }
+  ],
+  "actions": [
+    {
+      "type": "spin",
+      "prop": "earth",
+      "start": 2.4,
+      "end": 5.2,
+      "rate_from": 45,
+      "rate_to": 0
+    }
+  ],
+  "camera": {
+    "fstop": 8.0,
+    "portrait_lens_scale": 1.15,
+    "shots": [
+      {
+        "time": 0.0,
+        "location": [
+          0.0,
+          -11.0,
+          1.0
+        ],
+        "target": "earth",
+        "lens": 40
+      },
+      {
+        "time": 4.0,
+        "location": [
+          3.5,
+          -8.5,
+          2.0
+        ],
+        "target": "earth",
+        "lens": 40
+      },
+      {
+        "time": 8.0,
+        "location": [
+          3.4,
+          -7.2,
+          1.0
+        ],
+        "target": [
+          0.3,
+          0,
+          0.2
+        ],
+        "lens": 38
+      }
+    ]
+  },
+  "captions": [
+    {
+      "start": 0.1,
+      "end": 2.3,
+      "text": "¿Y si la Tierra dejase de girar?"
+    },
+    {
+      "start": 2.4,
+      "end": 5.2,
+      "text": "Hoy el ecuador gira a unos 1.670 km/h."
+    },
+    {
+      "start": 5.3,
+      "end": 7.9,
+      "text": "Si frenara de golpe, todo saldría disparado hacia el este."
+    }
+  ]
+}

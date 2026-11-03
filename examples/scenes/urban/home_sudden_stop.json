@@ -1,0 +1,70 @@
+{
+  "engine": "cinematic",
+  "duration_seconds": 3,
+  "fps": 24,
+  "seed": 4,
+  "motion_blur": false,
+  "environment": {
+    "type": "interior",
+    "time_of_day": "day",
+    "physics": true
+  },
+  "characters": [
+    {
+      "id": "marta",
+      "start": [
+        -0.8,
+        -0.4
+      ],
+      "facing": 0
+    }
+  ],
+  "actions": [
+    {
+      "type": "inertia_shock",
+      "start": 0.8,
+      "end": 1.3,
+      "accel": 30,
+      "direction_deg": 0
+    },
+    {
+      "type": "fall",
+      "character": "marta",
+      "start": 0.8,
+      "direction_deg": 0
+    }
+  ],
+  "camera": {
+    "fstop": 4,
+    "shots": [
+      {
+        "time": 0,
+        "location": [
+          0.2,
+          -2.3,
+          1.55
+        ],
+        "target": [
+          0,
+          1.2,
+          0.9
+        ],
+        "lens": 18
+      },
+      {
+        "time": 3,
+        "location": [
+          0.3,
+          -2.25,
+          1.5
+        ],
+        "target": [
+          0.4,
+          1.2,
+          0.85
+        ],
+        "lens": 18
+      }
+    ]
+  }
+}

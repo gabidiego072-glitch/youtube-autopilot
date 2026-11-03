@@ -1,0 +1,38 @@
+{
+  "engine": "cinematic",
+  "title": "¿Qué pasaría si cada paso que das crecieras un centímetro?",
+  "duration_seconds": 8,
+  "fps": 24,
+  "seed": 21,
+  "environment": {
+    "time_of_day": "day",
+    "trees": 40,
+    "rocks": 18,
+    "flowers": 60,
+    "fireflies": 0,
+    "hill_height": 5.0
+  },
+  "characters": [
+    {"id": "walker", "start": [-6.0, 0.0], "facing": -90,
+     "palette": {"body": "#355c7d", "skin": "#e0ac85", "accent": "#e07a3a", "hair": "#2d1e14"}}
+  ],
+  "actions": [
+    {"type": "walk", "character": "walker", "from": [-6.0, 0.0], "to": [5.0, 1.5], "start": 0.0, "end": 7.6, "pace": 1.6},
+    {"type": "grow", "character": "walker", "start": 1.8, "end": 7.2, "to_scale": 6.9}
+  ],
+  "camera": {
+    "fstop": 5.6,
+    "handheld": 0.015,
+    "portrait_lens_scale": 1.1,
+    "shots": [
+      {"time": 0.0, "location": [-3.5, -5.0, 1.3], "target": "walker", "lens": 35},
+      {"time": 3.5, "location": [0.0, -11.0, 3.5], "target": "walker", "lens": 30},
+      {"time": 8.0, "location": [4.0, -24.0, 9.0], "target": "walker", "lens": 26}
+    ]
+  },
+  "captions": [
+    {"start": 0.1, "end": 2.0, "text": "¿Y si cada paso te hiciera un centímetro más alto?"},
+    {"start": 2.2, "end": 4.9, "text": "Tras 1.000 pasos medirías casi 12 metros."},
+    {"start": 5.0, "end": 7.9, "text": "Y tu peso se multiplicaría por más de 300."}
+  ]
+}

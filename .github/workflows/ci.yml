@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    paths-ignore: ["docs/**", "**/*.md"]  # docs-only changes do not spend Actions minutes
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: autopilot
+          POSTGRES_PASSWORD: autopilot
+          POSTGRES_DB: autopilot_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://autopilot:autopilot@localhost:5432/autopilot_test
+      TEST_POSTGRES_URL: postgresql+psycopg://autopilot:autopilot@localhost:5432/autopilot_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Cache Blender
+        uses: actions/cache@v4
+        with:
+          path: /opt/blender
+          key: blender-4.5.15-linux-x64
+      - name: Install Blender
+        run: |
+          if [ ! -x /opt/blender/blender-4.5.15-linux-x64/blender ]; then sudo mkdir -p /opt/blender && sudo chown "$USER" /opt/blender && scripts/install_blender.sh /opt/blender; fi
+          echo "/opt/blender/blender-4.5.15-linux-x64" >> "$GITHUB_PATH"
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: pytest
