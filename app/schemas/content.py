@@ -50,7 +50,7 @@ class FactCheckRead(BaseModel):
 
 
 class SceneRenderRequest(BaseModel):
-    quality: str | None = Field(default=None, pattern=r"^(test|draft|preview|final)$")  # default: settings
+    mode: str | None = Field(default=None, pattern=r"^(preview|draft|final)$")  # default: SCENE_RENDER_QUALITY
     scale: float | None = Field(default=None, gt=0, le=1)  # override resolution (fraction of 1080p)
     samples: int | None = Field(default=None, ge=1, le=512)
 
@@ -67,5 +67,6 @@ class AssetRead(ORMModel):
 
 
 class AssembleRequest(BaseModel):
-    music_path: str | None = None  # optional local file (royalty-free music)
+    mode: str = Field(default="draft", pattern=r"^(preview|draft|final)$")
+    music_path: str | None = None  # optional own music file; default: generated ambient music
     subtitles: bool = True

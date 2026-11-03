@@ -44,6 +44,7 @@ def render_scene_video(
     max_frames: int | None = None,
     threads: int = 0,
     reuse_frames: bool = False,
+    motion_blur: bool = True,
 ) -> Scene3DResult:
     spec = load_spec(spec_path)  # validate before spending render time
     ctx = build_context(spec, aspect, quality, scale=scale, samples=samples, max_frames=max_frames)

@@ -124,6 +124,36 @@ class CinematicCharacter:
             )
             key(self.arms[side], "rotation_euler", start + 10 + air, (0, 0, 0))
 
+    def fling(
+        self,
+        start: int,
+        end: int,
+        fps: int,
+        direction_deg: float = 0.0,
+        speed: float = 9.0,
+        lift: float = 4.0,
+        track=None,
+        gravity: float = 1.6,
+    ) -> None:
+        """Inertia: the body keeps moving when the ground stops. Ballistic flight with tumbling."""
+        heading = math.radians(direction_deg)
+        dx, dy = math.cos(heading), math.sin(heading)
+        x0, y0, z0 = self.position
+        key(self.root, "location", start, (x0, y0, z0))
+        key(self.root, "rotation_euler", start, (0, 0, self.yaw))
+        for limb, angle in ((self.arms["L"], 150), (self.arms["R"], 150), (self.legs["L"], 25), (self.legs["R"], -25)):
+            key(limb, "rotation_euler", start, (0, 0, 0))
+            key(limb, "rotation_euler", start + 5, (math.radians(angle), 0, 0))
+        for f in range(1, end - start + 1):
+            t = f / fps
+            x, y = x0 + dx * speed * t, y0 + dy * speed * t
+            z = max(0.0, z0 + lift * t - gravity * t * t)
+            key(self.root, "location", start + f, (x, y, z))
+            key(self.root, "rotation_euler", start + f, (t * 2.2 * dy, -t * 2.2 * dx, self.yaw + t * 1.5))
+            if track is not None and f % 4 == 0:
+                track.add(start + f, (x, y, z))
+        set_interpolation(self.root, "LINEAR")
+
     def grow(self, start: int, end: int, to_scale: float, scale_track=None) -> None:
         """Smooth growth (time-lapse). Children scale with the root, so the whole rig grows."""
         key(self.root, "scale", start, (self.scale,) * 3)

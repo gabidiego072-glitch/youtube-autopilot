@@ -40,7 +40,29 @@ def build_camera(scene: bpy.types.Scene, ctx: RenderContext, camera_spec: dict, 
 
     if camera_spec.get("handheld", 0) > 0:
         add_noise(cam, "location", strength=camera_spec["handheld"], scale=40)
+    if camera_spec.get("shakes"):
+        _add_shakes(cam, ctx, camera_spec["shakes"])
     return cam
+
+
+def _add_shakes(cam, ctx: RenderContext, shakes: list[dict]) -> None:
+    """Impact shakes: a parent rig jitters (decaying) inside each window, zero elsewhere."""
+    import random
+
+    rig = empty("CameraShake")
+    cam.parent = rig
+    rng = random.Random(ctx.seed + 77)
+    key(rig, "location", ctx.frame_start, (0, 0, 0))
+    for shake in shakes:
+        start, end = ctx.frame(shake["start"]), ctx.frame(shake["end"])
+        strength = shake.get("strength", 0.15)
+        key(rig, "location", max(ctx.frame_start, start - 1), (0, 0, 0))
+        for frame in range(start, end):
+            decay = 1 - (frame - start) / max(1, end - start)
+            amp = strength * decay
+            key(rig, "location", frame, (rng.uniform(-amp, amp), rng.uniform(-amp, amp), rng.uniform(-amp, amp)))
+        key(rig, "location", end, (0, 0, 0))
+    set_interpolation(rig, "LINEAR")
 
 
 def _resolve(target, frame: float, timeline: Timeline):

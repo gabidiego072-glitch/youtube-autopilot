@@ -16,10 +16,10 @@ ASPECTS = {"16:9": (1920, 1080), "9:16": (1080, 1920)}
 
 # scale = fraction of full 1080p resolution.
 QUALITY_PRESETS = {
-    "test": {"scale": 0.1, "samples": 1},
-    "draft": {"scale": 0.5, "samples": 12},
-    "preview": {"scale": 2 / 3, "samples": 24},
-    "final": {"scale": 1.0, "samples": 64},
+    "test": {"scale": 0.1, "samples": 1},  # automated tests
+    "preview": {"scale": 1 / 3, "samples": 6},  # 360x640: check scenes, objects, light, animation
+    "draft": {"scale": 0.5, "samples": 8},  # 540x960: full video, all scenes, voice and subtitles
+    "final": {"scale": 1.0, "samples": 8},  # 1080x1920: publishable (denoised; 8 vs 12 spp is indistinguishable)
 }
 
 MIN_DURATION, MAX_DURATION = 1.0, 60.0
@@ -111,6 +111,9 @@ def validate_spec(spec: dict) -> dict:
             if ref in action and isinstance(action[ref], str) and action[ref] not in known:
                 raise SpecError(f"Action references unknown id '{action[ref]}'.")
         start = action.get("start", action.get("at", 0))
+        end = action.get("end", start)
+        if end < start:
+            raise SpecError(f"Action '{action.get('type')}' ends before it starts.")
         if not 0 <= start <= duration:
             raise SpecError(f"Action '{action.get('type')}' starts outside the video ({start}s).")
     shots = spec.get("camera", {}).get("shots", [])
@@ -154,3 +157,14 @@ def build_context(
         seed=spec.get("seed", 0),
         max_frames=max_frames,
     )
+
+
+def engine_fingerprint() -> str:
+    """Hash of the engine's source code, so cached frames are re-rendered when the engine changes."""
+    import hashlib
+
+    root = Path(__file__).resolve().parent.parent
+    digest = hashlib.sha256()
+    for path in sorted(root.rglob("*.py")):
+        digest.update(path.read_bytes())
+    return digest.hexdigest()

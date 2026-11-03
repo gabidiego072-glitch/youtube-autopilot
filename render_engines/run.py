@@ -30,6 +30,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--max-frames", type=int, help="render only the first N frames")
     parser.add_argument("--save-blend", help="also save the built scene as a .blend file")
     parser.add_argument("--threads", type=int, default=0, help="CPU threads (0 = all)")
+    parser.add_argument("--resume", action="store_true", help="keep frames that already exist (resume a render)")
+    parser.add_argument("--no-motion-blur", action="store_true", help="disable motion blur (faster previews)")
     return parser.parse_args(argv)
 
 
@@ -46,6 +48,11 @@ def main() -> None:
 
     started = time.time()
     engine.build(spec, ctx, scene, str(Path(args.frames_dir).resolve()))
+    if args.resume:
+        scene.render.use_overwrite = False
+        scene.render.use_placeholder = True
+    if args.no_motion_blur:
+        scene.render.use_motion_blur = False
     if args.threads:
         scene.render.threads_mode = "FIXED"
         scene.render.threads = args.threads

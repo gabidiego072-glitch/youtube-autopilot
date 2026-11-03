@@ -53,10 +53,31 @@ uvicorn app.main:app --reload
 API interactiva: <http://localhost:8000/docs>. Qué servicios están conectados: `GET /api/v1/system/integrations`.
 Requiere FFmpeg y Blender (`scripts/install_blender.sh`, ver [docs/3D_ENGINES.md](docs/3D_ENGINES.md)).
 
-Ejemplos que se renderizan con un solo comando:
+## Producir un Short completo
+
+Una producción (`productions/<id>/production.json`) contiene el guion y una escena 3D por cada escena del guion,
+el mismo formato que genera la API. Un solo comando hace voz → render → música, efectos → montaje:
 
 ```bash
-python scripts/render_3d.py examples/scenes/what_if_grow_each_step.json --aspect 9:16 --quality draft --ambient
+python scripts/produce_short.py productions/what_if_earth_stops/production.json --mode preview --scenes 0,1
+python scripts/produce_short.py productions/what_if_earth_stops/production.json --mode draft
+python scripts/produce_short.py productions/what_if_earth_stops/production.json --mode final
+python scripts/validate_video.py out/what_if_earth_stops/what_if_earth_stops_final.mp4
+```
+
+| Modo | Para qué | Contenido | Resolución | Muestras |
+| --- | --- | --- | --- | --- |
+| `preview` | revisar escenas, objetos, luz y animación | fragmento de 5–10 s (escenas elegidas) | 360×640 | 6 |
+| `draft` | revisar el vídeo entero | todas las escenas, voz, música, efectos y subtítulos | 540×960 | 8 |
+| `final` | publicar | todo lo anterior a calidad final, desenfoque de movimiento | 1080×1920, 24 fps | 8 + denoise |
+
+Los renders se pueden interrumpir y reanudar, y las escenas que no cambian no se vuelven a renderizar.
+`validate_video.py` revisa el MP4 (negros, congelados, silencios, subtítulos fuera de su voz, volumen) y crea
+una hoja de capturas.
+
+Pruebas técnicas sueltas del motor 3D:
+
+```bash
 python scripts/render_3d.py examples/scenes/what_if_earth_stops.json --aspect 9:16 --quality draft --ambient
 ```
 

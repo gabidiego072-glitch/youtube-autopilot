@@ -88,12 +88,26 @@ en su MODEL_CARD: algunas están ajustadas a partir de otros conjuntos de datos.
 Coste: cero (CPU). Tiempo orientativo en 4 núcleos y calidad `draft`: 2–8 s por fotograma según la escena,
 es decir, de 20 a 60 minutos para un Short de 45 s. Con más núcleos o GPU baja de forma proporcional.
 
+## 6b. Modos de render
+
+| Modo | Contenido | Resolución | Uso |
+| --- | --- | --- | --- |
+| `preview` | fragmento de 5–10 s con las escenas elegidas | 360×640, 6 muestras | comprobar escenas, objetos, luz y animación |
+| `draft` | vídeo completo con voz, música, efectos y subtítulos | 540×960, 8 muestras | revisar ritmo, sincronía y narrativa |
+| `final` | vídeo completo publicable | 1080×1920, 24 fps, 8 muestras + denoise, desenfoque de movimiento | publicar |
+
+API: `POST /scenes/render {"mode": ...}` y `POST /assemble {"mode": ...}`.
+CLI: `scripts/produce_short.py <producción> --mode preview|draft|final` (ver `app/services/production/short.py`).
+
 ## 7. Montaje
 
 `app/services/editing/assembler.py` · `POST /projects/{id}/assemble`
 
-Solo FFmpeg. Cada escena dura lo que su voz más 0,25 s; el clip 3D de cada escena ya viene renderizado con esa
-duración. Subtítulos grandes por bloques de 4 palabras en Shorts
+Solo FFmpeg. Cada escena dura lo que su voz más 0,3 s. Entre escenas hay corte o fundido de 0,35 s; para que
+la voz no se desplace, cada clip se renderiza más largo, justo lo que dura la transición siguiente. Las voces se
+colocan en su instante exacto, los efectos de sonido (`whoosh`, `impact`, `rumble`, `wind`, `chime`, sintetizados
+por código) en su momento, y la música ambiental generada por código baja sola cuando habla el narrador. El
+volumen final se normaliza a −14 LUFS (el estándar de YouTube). Subtítulos grandes por bloques de 4 palabras en Shorts
 (9 en vídeos largos), sincronizados con la voz. Música opcional que baja sola cuando habla el narrador.
 `EDIT_RESOLUTION_SCALE` permite previsualizar más rápido.
 

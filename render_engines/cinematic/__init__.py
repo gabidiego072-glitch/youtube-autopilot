@@ -19,14 +19,23 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
     from render_engines.core.blender.scene import add_glow, configure_render
 
     configure_render(scene, ctx, frames_dir, motion_blur=spec.get("motion_blur", True))
+    from render_engines.cinematic.environment import sun_path
+    from render_engines.cinematic.explainers import start_wind
     from render_engines.cinematic.space import build_space
 
     env = spec.get("environment", {})
+    env_refs = {}
     if env.get("type", "meadow") == "space":
-        build_space(env, scene)
+        build_space(env, scene, ctx.seed)
     else:
         paths = [(tuple(a["from"]), tuple(a["to"])) for a in spec.get("actions", []) if a["type"] == "walk"]
-        build_environment(env, ctx, scene, paths)
+        starts = {c["id"]: tuple(c.get("start", (0, 0))[:2]) for c in spec.get("characters", [])}
+        for a in spec.get("actions", []):
+            if a["type"] == "fling" and a.get("character") in starts:  # keep the flight path clear
+                x, y = starts[a["character"]]
+                heading = math.radians(a.get("direction_deg", 0.0))
+                paths.append(((x, y), (x + 40 * math.cos(heading), y + 40 * math.sin(heading))))
+        env_refs = build_environment(env, ctx, scene, paths)
     add_glow(scene, threshold=env.get("glow_threshold", 1.0))
 
     timeline = Timeline()
@@ -39,6 +48,8 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
         timeline.register(c["id"], start, focus_height=1.25, scale=char.scale)
     for p in spec.get("props", []):
         params = {k: v for k, v in p.items() if k not in ("id", "type", "location", "facing")}
+        if p["type"] == "wind":
+            params.setdefault("seed", ctx.seed)
         prop = PROP_BUILDERS[p["type"]](p["id"], tuple(p["location"]), p.get("facing", 0), **params)
         props[p["id"]] = prop
         timeline.register(p["id"], tuple(p["location"]), focus_height=getattr(prop, "focus_height", 1.0))
@@ -96,6 +107,29 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
             props[action["prop"]].light_on(start)
         elif kind == "spin":
             props[action["prop"]].change_spin(start, end, float(action["rate_from"]), float(action["rate_to"]))
+        elif kind == "fling":
+            char.fling(
+                start,
+                end,
+                ctx.fps,
+                action.get("direction_deg", 0.0),
+                action.get("speed", 9.0),
+                action.get("lift", 4.0),
+                timeline.tracks[action["character"]],
+                action.get("gravity", 1.6),
+            )
+        elif kind == "wind":
+            start_wind(props[action["prop"]], start, end, ctx.fps, action.get("speed", 22.0))
+        elif kind == "sun_path":
+            if not env_refs:
+                raise ValueError("sun_path needs the meadow environment.")
+            sun_path(env_refs, start, end, float(action["elevation_from"]), float(action["elevation_to"]))
+        elif kind == "migrate_oceans":
+            props[action["prop"]].migrate_oceans(start, end, float(action.get("amount", 1.0)))
+        elif kind == "appear":
+            props[action["target"]].appear(start, end)
+        elif kind == "fade":
+            props[action["target"]].fade(start, end, float(action.get("to", 0.0)))
         elif kind == "scale":
             target = action["target"]
             current = timeline.scales[target].at(start)[0]
@@ -107,4 +141,10 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
         if hasattr(prop, "bake_spin"):
             prop.bake_spin(ctx.frame_start, ctx.frame_end, ctx.fps)
 
-    build_camera(scene, ctx, spec["camera"], timeline)
+    camera = build_camera(scene, ctx, spec["camera"], timeline)
+    for prop in props.values():
+        if getattr(prop, "billboard", False):  # labels always face the camera
+            constraint = prop.root.constraints.new("TRACK_TO")
+            constraint.target = camera
+            constraint.track_axis = "TRACK_Z"
+            constraint.up_axis = "UP_Y"

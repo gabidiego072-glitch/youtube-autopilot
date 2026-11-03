@@ -30,14 +30,15 @@ from app.models.enums import AssetKind, JobStatus, ProjectStatus, VideoFormat
 from app.schemas.content import AssembleRequest, AssetRead, SceneRenderRequest
 from app.schemas.project import ScriptRead
 from app.schemas.render import RenderJobRead
-from app.services.editing.assembler import SceneMedia, assemble_video
-from app.services.production.formats import get_format_spec, scaled
+from app.services.audio.synth import generate_music
+from app.services.editing.assembler import EditScene, assemble_video, plan_timeline
+from app.services.production.modes import get_mode
 from app.services.production.pipeline import transition
+from app.services.production.short import output_format, scene_effects, timed_spec
 from app.services.rendering.blender import Blender
 from app.services.rendering.ffmpeg import FFmpeg
 from app.services.rendering.scene3d import render_scene_video
 from app.services.scenes.planner import plan_scenes
-from render_engines.core.retime import retime
 from render_engines.core.spec import build_context
 
 logger = logging.getLogger(__name__)
@@ -118,18 +119,29 @@ def plan(project_id: uuid.UUID, db: DbSession, ffmpeg: FFmpegDep, ai: AIProvider
     return script
 
 
+def _timeline(project, script, ffmpeg: FFmpeg):
+    """Voice files, their lengths and the scene slots (the same timeline the CLI uses)."""
+    voices = _latest_assets(project, script, AssetKind.VOICEOVER)
+    missing = [i for i in range(len(script.scenes)) if i not in voices]
+    if missing:
+        raise HTTPException(status_code=409, detail=f"Generate the voice first (missing scenes {missing}).")
+    speech = [ffmpeg.probe(Path(voices[i].uri)).duration_seconds for i in range(len(script.scenes))]
+    specs = script.scene_specs or [{} for _ in speech]
+    return voices, speech, plan_timeline(speech, [spec.get("transition", "fade") for spec in specs], fps=24)
+
+
 def _render_scenes_job(
     job_id: uuid.UUID,
     session_factory,
     blender: Blender,
     ffmpeg: FFmpeg,
     out_dir: Path,
-    quality: str,
+    mode_name: str,
     scale: float | None,
     samples: int | None,
     threads: int,
 ) -> None:
-    """Background job: Blender renders every scene spec to a silent clip."""
+    """Background job: Blender renders every scene, retimed to its voice slot, to a silent clip."""
     with session_factory() as db:
         job = db.get(RenderJob, job_id)
         project = db.get(VideoProject, job.project_id)
@@ -137,12 +149,11 @@ def _render_scenes_job(
         job.status, job.started_at = JobStatus.RUNNING, utcnow()
         db.commit()
         try:
-            voices = _latest_assets(project, script, AssetKind.VOICEOVER)
+            _, _, slots = _timeline(project, script, ffmpeg)
+            mode = get_mode(mode_name)
             created = []
-            for index, spec in enumerate(script.scene_specs):
-                if index in voices:  # the voice may have been regenerated since planning
-                    duration = ffmpeg.probe(Path(voices[index].uri)).duration_seconds + 0.25
-                    spec = retime(spec, max(1.0, duration))
+            for index, planned in enumerate(script.scene_specs):
+                spec = timed_spec(planned, slots[index], planned.get("seed", 0), mode_name)
                 spec_path = out_dir / f"scene_{index:03d}.json"
                 spec_path.parent.mkdir(parents=True, exist_ok=True)
                 spec_path.write_text(json.dumps(spec, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -152,20 +163,21 @@ def _render_scenes_job(
                     blender=blender,
                     ffmpeg=ffmpeg,
                     aspect=_aspect(project),
-                    quality=quality,
+                    quality=mode.quality,
                     scale=scale,
                     samples=samples,
                     threads=threads,
                     subtitles=False,
                     work_dir=out_dir / f"scene_{index:03d}",
+                    motion_blur=spec["motion_blur"],
                 )
                 created.append(
                     _asset(project, script, AssetKind.VIDEO_CLIP, result.video_path, index, "blender", "video/mp4")
                 )
             db.add_all(created)
             job.status, job.output_path = JobStatus.SUCCEEDED, str(out_dir)
-        except AutopilotError as exc:
-            job.status, job.error = JobStatus.FAILED, exc.message
+        except (AutopilotError, HTTPException) as exc:
+            job.status, job.error = JobStatus.FAILED, getattr(exc, "message", None) or str(exc.detail)
         except Exception as exc:  # noqa: BLE001 - a background job must always record its outcome
             logger.exception("scene render job %s failed", job_id)
             job.status, job.error = JobStatus.FAILED, f"Unexpected error: {exc}"
@@ -191,8 +203,9 @@ def render_scenes(
         raise HTTPException(status_code=409, detail="Plan the scenes first (POST /scenes/plan).")
     if not blender.is_available():
         raise HTTPException(status_code=503, detail="Blender not found (scripts/install_blender.sh or BLENDER_BINARY).")
-    quality = payload.quality or settings.scene_render_quality
-    ctx = build_context(script.scene_specs[0], _aspect(project), quality, scale=payload.scale)
+    mode_name = payload.mode or settings.scene_render_quality
+    _timeline(project, script, ffmpeg)  # voice must exist before rendering
+    ctx = build_context(script.scene_specs[0], _aspect(project), get_mode(mode_name).quality, scale=payload.scale)
     job = RenderJob(project_id=project.id, script_id=script.id, width=ctx.width, height=ctx.height, fps=ctx.fps)
     db.add(job)
     db.commit()
@@ -204,7 +217,7 @@ def render_scenes(
         blender,
         ffmpeg,
         out_dir,
-        quality,
+        mode_name,
         payload.scale,
         payload.samples,
         settings.scene_render_threads,
@@ -218,18 +231,6 @@ def list_assets(project_id: uuid.UUID, db: DbSession) -> list[MediaAsset]:
     return get_project_or_404(db, project_id).assets
 
 
-def _scene_media(project, script) -> tuple[list[SceneMedia], list[int]]:
-    clips = _latest_assets(project, script, AssetKind.VIDEO_CLIP)
-    voices = _latest_assets(project, script, AssetKind.VOICEOVER)
-    scenes, missing = [], []
-    for index, scene in enumerate(script.scenes):
-        if index not in clips or index not in voices:
-            missing.append(index)
-            continue
-        scenes.append(SceneMedia(Path(clips[index].uri), Path(voices[index].uri), scene["narration"], is_video=True))
-    return scenes, missing
-
-
 @router.post("/assemble", response_model=RenderJobRead, status_code=status.HTTP_201_CREATED)
 def assemble(
     project_id: uuid.UUID, payload: AssembleRequest, db: DbSession, settings: SettingsDep, ffmpeg: FFmpegDep
@@ -237,14 +238,30 @@ def assemble(
     """Edit the final MP4 from the rendered 3D scenes and the voice-over (FFmpeg)."""
     project = get_project_or_404(db, project_id)
     script = _latest_script(project)
-    scenes, missing = _scene_media(project, script)
+    if not script.scene_specs:
+        raise HTTPException(status_code=409, detail="Plan and render the scenes first.")
+    voices, speech, slots = _timeline(project, script, ffmpeg)
+    clips = _latest_assets(project, script, AssetKind.VIDEO_CLIP)
+    missing = [i for i in range(len(script.scenes)) if i not in clips]
     if missing:
-        raise HTTPException(status_code=409, detail=f"Missing rendered scenes or voice for scenes {missing}.")
+        raise HTTPException(status_code=409, detail=f"Missing rendered scenes {missing}.")
     music = Path(payload.music_path) if payload.music_path else None
     if music is not None and not music.is_file():
         raise HTTPException(status_code=422, detail="music_path does not exist.")
-
-    spec = scaled(get_format_spec(project.format, settings), settings.edit_resolution_scale)
+    mode = get_mode(payload.mode)
+    base = _project_dir(settings, project.id) / f"script_{script.version}"
+    scenes = [
+        EditScene(
+            Path(clips[i].uri),
+            Path(voices[i].uri),
+            scene.get("subtitle") or scene["narration"],
+            speech[i],
+            slots[i],
+            scene_effects(ffmpeg, script.scene_specs[i], slots[i], base / "sfx") if mode.sfx else [],
+        )
+        for i, scene in enumerate(script.scenes)
+    ]
+    spec = output_format(project.format.value, mode.quality)
     previous = project.status
     transition(project, ProjectStatus.RENDERING)
     job = RenderJob(
@@ -259,11 +276,22 @@ def assemble(
     db.add(job)
     db.commit()
 
-    work = _project_dir(settings, project.id) / f"script_{script.version}" / f"edit_{job.id.hex[:8]}"
-    output = work.parent / f"final_{job.id.hex[:8]}.mp4"
+    work = base / f"edit_{job.id.hex[:8]}"
+    output = base / f"{mode.name}_{job.id.hex[:8]}.mp4"
     try:
+        if music is None and mode.music:
+            total = slots[-1].start + slots[-1].duration
+            music = generate_music(ffmpeg, total + 1.0, work / "music.wav")
         assemble_video(
-            scenes, output, spec=spec, ffmpeg=ffmpeg, work_dir=work, music_path=music, subtitles=payload.subtitles
+            scenes,
+            output,
+            spec=spec,
+            ffmpeg=ffmpeg,
+            work_dir=work,
+            music_path=music,
+            subtitles=payload.subtitles,
+            crf=mode.crf,
+            preset=mode.preset,
         )
     except AutopilotError as exc:
         job.status, job.error, job.finished_at = JobStatus.FAILED, exc.message, utcnow()
