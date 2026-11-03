@@ -9,6 +9,8 @@
 #
 # Variables (Settings -> Secrets and variables -> Actions -> Variables):
 #   AUTOPILOT_ENABLED  true to run the daily schedule
+#   AUTO_PUBLISH       true to publish without human approval (also needs YOUTUBE_PUBLISHING_ENABLED=true;
+#                      public videos also need YOUTUBE_ALLOW_PUBLIC=true and YOUTUBE_DEFAULT_PRIVACY=public)
 #   RENDER_MODE        draft | hd | final            (default hd)
 #   RENDER_SHARDS      parallel render jobs, 1-8      (default 4)
 #   RUNS_ON            runner labels as JSON          (default "ubuntu-latest";
@@ -95,10 +97,12 @@ jobs:
           MODE="${{ github.event.inputs.mode }}"; MODE="$(echo "${MODE:-${{ vars.RENDER_MODE || 'hd' }}}" | tr -d '[:space:]')"
           SHARDS="${{ vars.RENDER_SHARDS || '4' }}"
           echo "shards=$(python -c "print(list(range(max(1, min(8, int('$SHARDS'))))))")" >> "$GITHUB_OUTPUT"
+          # AUTO_PUBLISH=true: the run publishes by itself after the automatic checks (no human approval).
+          AUTO=""; if [ "${{ vars.AUTO_PUBLISH }}" = "true" ]; then AUTO="--auto-publish"; fi
           if [ "$CMD" = "run" ]; then
             python scripts/autopilot.py preflight
             python scripts/autopilot.py run --channel "$CHANNEL_NAME" \
-              --format "${{ github.event.inputs.format || 'short' }}" --mode "$MODE" --until storyboard | tee run.json
+              --format "${{ github.event.inputs.format || 'short' }}" --mode "$MODE" --until storyboard $AUTO | tee run.json
             RUN_ID=$(python -c "import json;print(json.load(open('run.json'))['run_id'])")
             STATUS=$(python -c "import json;print(json.load(open('run.json'))['status'])")
             echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
