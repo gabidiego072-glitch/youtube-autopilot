@@ -1,0 +1,835 @@
+{
+  "id": "what_if_earth_stops_v2",
+  "title_question": "¿Qué pasaría si la Tierra frenara en seco?",
+  "format": "short",
+  "language": "es",
+  "seed": 7,
+  "notes": "Written by hand (Gemini free quota was used up) following the human-impact rule: streets, homes, coast and people, no planet shots.",
+  "script": {
+    "title_question": "¿Qué pasaría si la Tierra frenara en seco?",
+    "hook": "¿Y si la Tierra frenara en seco?",
+    "ending_type": "question",
+    "ending_line": "¿Tú en qué lado vivirías?",
+    "visual_bible": {
+      "look": "procedural 3D, stylised European street, home and seafront",
+      "recurring_subjects": [
+        {
+          "name": "Lucía",
+          "description": "stylised person, blue clothes, orange scarf"
+        }
+      ],
+      "palette": "warm daylight, yellow for speeds, blue night",
+      "camera_language": "eye-level street shots, shakes on impacts"
+    },
+    "scenes": [
+      {
+        "beat": "hook",
+        "narration": "¿Y si la Tierra frenara en seco?",
+        "visual": "A busy street; everything lurches east as the ground stops",
+        "scale": "street",
+        "duration_seconds": 3.0,
+        "claims": []
+      },
+      {
+        "beat": "setup",
+        "narration": "Ahora mismo, en España, tu calle gira con la Tierra a unos mil trescientos kilómetros por hora. Y no lo notas.",
+        "subtitle": "Ahora mismo, en España, tu calle gira con la Tierra a unos 1.300 km/h. Y no lo notas.",
+        "visual": "A calm street with people walking; a glowing arrow points east labelled 1.300 km/h",
+        "scale": "street",
+        "duration_seconds": 6.5,
+        "claims": [
+          {
+            "text": "A la latitud de España (unos 40°) la superficie gira a unos 1.670 × cos 40° ≈ 1.280 km/h",
+            "type": "established",
+            "source": "https://es.wikipedia.org/wiki/Rotaci%C3%B3n_de_la_Tierra"
+          }
+        ]
+      },
+      {
+        "beat": "escalation",
+        "narration": "Si frenara de golpe, tú no te pararías: coches, bancos, cristales y personas saldrían despedidos hacia el este.",
+        "visual": "Street: the ground stops, cars, benches and bins slide east, the hero building's windows shatter, a pedestrian is thrown",
+        "scale": "street",
+        "human_subject": "peatones y conductores",
+        "consequence": "lanzados hacia el este junto con todo lo que no está anclado",
+        "duration_seconds": 6.5,
+        "claims": [
+          {
+            "text": "Por inercia, lo que no esté anclado al suelo seguiría moviéndose hacia el este a la velocidad de rotación",
+            "type": "established",
+            "source": "https://es.wikipedia.org/wiki/Inercia"
+          }
+        ]
+      },
+      {
+        "beat": "escalation",
+        "narration": "En casa, igual: muebles, libros y todo lo que no esté atornillado chocaría contra la pared del este.",
+        "visual": "Living room: sofa, chairs and books slide into the east wall; the person falls",
+        "scale": "interior",
+        "human_subject": "una persona en su salón",
+        "consequence": "muebles y objetos lanzados contra la pared",
+        "duration_seconds": 5.5,
+        "claims": [
+          {
+            "text": "Los objetos sueltos dentro de un edificio conservarían su velocidad mientras el edificio se detiene con el suelo",
+            "type": "established",
+            "source": "https://es.wikipedia.org/wiki/Inercia"
+          }
+        ]
+      },
+      {
+        "beat": "escalation",
+        "narration": "Y el aire tampoco frenaría: vientos de más de mil kilómetros por hora barrerían calles y edificios.",
+        "subtitle": "Y el aire tampoco frenaría: vientos de más de 1.000 km/h barrerían calles y edificios.",
+        "visual": "Street: violent wind streaks and debris race east between the buildings",
+        "scale": "building",
+        "human_subject": "edificios y calles",
+        "consequence": "vientos más rápidos que cualquier huracán",
+        "duration_seconds": 6.0,
+        "claims": [
+          {
+            "text": "La atmósfera seguiría moviéndose a la velocidad de rotación, cerca de la velocidad del sonido (unos 1.235 km/h) en latitudes medias",
+            "type": "established",
+            "source": "https://es.wikipedia.org/wiki/Velocidad_del_sonido"
+          }
+        ]
+      },
+      {
+        "beat": "climax",
+        "narration": "Los océanos seguirían avanzando: el mar se lanzaría sobre las ciudades de la costa.",
+        "visual": "Seafront: the sea rises over the promenade and floods the street while a person runs inland",
+        "scale": "street",
+        "human_subject": "vecinos de una ciudad costera",
+        "consequence": "el mar inunda las calles",
+        "duration_seconds": 5.5,
+        "claims": [
+          {
+            "text": "El agua de los océanos también conservaría su movimiento hacia el este y anegaría las costas",
+            "type": "estimate",
+            "source": ""
+          }
+        ]
+      },
+      {
+        "beat": "setup",
+        "narration": "Si frenara muy poco a poco, durante miles de años, nadie saldría volando. Pero un día duraría un año entero.",
+        "visual": "The same street in time-lapse: the sun crosses the sky slowly and sets",
+        "scale": "street",
+        "duration_seconds": 6.5,
+        "claims": [
+          {
+            "text": "Sin rotación propia, el Sol solo daría una vuelta aparente al cielo por cada órbita: un día de un año",
+            "type": "established",
+            "source": "https://es.wikipedia.org/wiki/Rotaci%C3%B3n_de_la_Tierra"
+          }
+        ]
+      },
+      {
+        "beat": "ending",
+        "narration": "Seis meses de sol y seis meses de noche. ¿Tú en qué lado vivirías?",
+        "visual": "Night street: lamps and windows switch on, people stand looking up",
+        "scale": "street",
+        "duration_seconds": 5.0,
+        "claims": []
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "transition": "cut",
+      "sfx": [
+        {
+          "type": "impact",
+          "at": 1.2
+        }
+      ],
+      "environment": {
+        "type": "city",
+        "time_of_day": "day",
+        "pedestrians": 5,
+        "parked_cars": 8,
+        "physics": true
+      },
+      "characters": [
+        {
+          "id": "lucia",
+          "start": [
+            -3.0,
+            -5.6
+          ],
+          "facing": -90,
+          "palette": {
+            "body": "#355c7d",
+            "skin": "#e0ac85",
+            "accent": "#e07a3a",
+            "hair": "#2d1e14"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "type": "walk",
+          "character": "lucia",
+          "from": [
+            -3.0,
+            -5.6
+          ],
+          "to": [
+            -1.0,
+            -5.6
+          ],
+          "start": 0.0,
+          "end": 1.1
+        },
+        {
+          "type": "inertia_shock",
+          "start": 1.2,
+          "end": 1.7,
+          "accel": 40,
+          "direction_deg": 0
+        },
+        {
+          "type": "fling",
+          "character": "lucia",
+          "start": 1.2,
+          "end": 3.0,
+          "direction_deg": 0,
+          "speed": 5,
+          "lift": 2.5,
+          "gravity": 2.0
+        }
+      ],
+      "camera": {
+        "fstop": 5.6,
+        "shakes": [
+          {
+            "start": 1.2,
+            "end": 1.9,
+            "strength": 0.12
+          }
+        ],
+        "shots": [
+          {
+            "time": 0,
+            "location": [
+              -12,
+              -5.2,
+              1.6
+            ],
+            "target": [
+              -4,
+              6,
+              3.2
+            ],
+            "lens": 22
+          },
+          {
+            "time": 3,
+            "location": [
+              -11,
+              -5.0,
+              1.7
+            ],
+            "target": [
+              -2,
+              6,
+              3.6
+            ],
+            "lens": 22
+          }
+        ]
+      },
+      "duration_seconds": 3.0
+    },
+    {
+      "transition": "fade",
+      "sfx": [
+        {
+          "type": "chime",
+          "at": 1.0
+        }
+      ],
+      "environment": {
+        "type": "city",
+        "time_of_day": "day",
+        "pedestrians": 6,
+        "parked_cars": 8
+      },
+      "characters": [
+        {
+          "id": "lucia",
+          "start": [
+            -6.0,
+            -5.6
+          ],
+          "facing": -90,
+          "palette": {
+            "body": "#355c7d",
+            "skin": "#e0ac85",
+            "accent": "#e07a3a",
+            "hair": "#2d1e14"
+          }
+        }
+      ],
+      "props": [
+        {
+          "id": "speed",
+          "type": "arrow",
+          "location": [
+            -5.0,
+            -3.0,
+            2.6
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "length": 6.0,
+          "thickness": 0.12,
+          "color": "#ffd23f"
+        },
+        {
+          "id": "speed_label",
+          "type": "label",
+          "location": [
+            -2.0,
+            -3.0,
+            3.4
+          ],
+          "text": "1.300 km/h",
+          "size": 0.8,
+          "color": "#ffffff"
+        }
+      ],
+      "actions": [
+        {
+          "type": "walk",
+          "character": "lucia",
+          "from": [
+            -6.0,
+            -5.6
+          ],
+          "to": [
+            -1.0,
+            -5.6
+          ],
+          "start": 0.0,
+          "end": 6.5
+        },
+        {
+          "type": "appear",
+          "target": "speed",
+          "start": 1.0,
+          "end": 2.0
+        },
+        {
+          "type": "appear",
+          "target": "speed_label",
+          "start": 1.8,
+          "end": 2.4
+        }
+      ],
+      "camera": {
+        "fstop": 5.6,
+        "shots": [
+          {
+            "time": 0,
+            "location": [
+              -13,
+              -6.5,
+              1.7
+            ],
+            "target": [
+              -3,
+              -3.5,
+              2.4
+            ],
+            "lens": 24
+          },
+          {
+            "time": 6.5,
+            "location": [
+              -11,
+              -6.8,
+              1.8
+            ],
+            "target": [
+              -1,
+              -3.5,
+              2.6
+            ],
+            "lens": 26
+          }
+        ]
+      },
+      "duration_seconds": 6.5
+    },
+    {
+      "transition": "cut",
+      "motion_blur": true,
+      "sfx": [
+        {
+          "type": "impact",
+          "at": 1.0
+        },
+        {
+          "type": "rumble",
+          "at": 1.0
+        }
+      ],
+      "environment": {
+        "type": "city",
+        "time_of_day": "day",
+        "pedestrians": 5,
+        "parked_cars": 10,
+        "physics": true
+      },
+      "characters": [
+        {
+          "id": "lucia",
+          "start": [
+            -3.0,
+            -5.6
+          ],
+          "facing": -90,
+          "palette": {
+            "body": "#355c7d",
+            "skin": "#e0ac85",
+            "accent": "#e07a3a",
+            "hair": "#2d1e14"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "type": "inertia_shock",
+          "start": 1.0,
+          "end": 1.6,
+          "accel": 45,
+          "direction_deg": 0
+        },
+        {
+          "type": "fling",
+          "character": "lucia",
+          "start": 1.0,
+          "end": 6.0,
+          "direction_deg": 0,
+          "speed": 5,
+          "lift": 2.5,
+          "gravity": 2.0
+        },
+        {
+          "type": "shatter_windows",
+          "start": 1.2
+        }
+      ],
+      "camera": {
+        "fstop": 5.6,
+        "shakes": [
+          {
+            "start": 1.0,
+            "end": 1.8,
+            "strength": 0.14
+          }
+        ],
+        "shots": [
+          {
+            "time": 0,
+            "location": [
+              -12,
+              -5.2,
+              1.6
+            ],
+            "target": [
+              -4,
+              6,
+              3.2
+            ],
+            "lens": 22
+          },
+          {
+            "time": 6,
+            "location": [
+              -11,
+              -5.0,
+              1.7
+            ],
+            "target": [
+              -2,
+              6,
+              3.6
+            ],
+            "lens": 22
+          }
+        ]
+      },
+      "duration_seconds": 6.5
+    },
+    {
+      "transition": "fade",
+      "sfx": [
+        {
+          "type": "impact",
+          "at": 0.8
+        }
+      ],
+      "environment": {
+        "type": "interior",
+        "time_of_day": "day",
+        "physics": true
+      },
+      "characters": [
+        {
+          "id": "marta",
+          "start": [
+            -0.8,
+            -0.4
+          ],
+          "facing": 0
+        }
+      ],
+      "actions": [
+        {
+          "type": "inertia_shock",
+          "start": 0.8,
+          "end": 1.4,
+          "accel": 30,
+          "direction_deg": 0
+        },
+        {
+          "type": "fall",
+          "character": "marta",
+          "start": 0.8,
+          "direction_deg": 0
+        }
+      ],
+      "camera": {
+        "fstop": 4,
+        "shakes": [
+          {
+            "start": 0.8,
+            "end": 1.4,
+            "strength": 0.08
+          }
+        ],
+        "shots": [
+          {
+            "time": 0,
+            "location": [
+              0.2,
+              -2.3,
+              1.55
+            ],
+            "target": [
+              0,
+              1.2,
+              0.9
+            ],
+            "lens": 18
+          },
+          {
+            "time": 5.5,
+            "location": [
+              0.3,
+              -2.25,
+              1.5
+            ],
+            "target": [
+              0.6,
+              1.2,
+              0.85
+            ],
+            "lens": 18
+          }
+        ]
+      },
+      "duration_seconds": 5.5
+    },
+    {
+      "transition": "fade",
+      "sfx": [
+        {
+          "type": "wind",
+          "at": 0.3
+        }
+      ],
+      "environment": {
+        "type": "city",
+        "time_of_day": "dusk",
+        "pedestrians": 0,
+        "parked_cars": 6
+      },
+      "props": [
+        {
+          "id": "gale",
+          "type": "wind",
+          "location": [
+            0,
+            0,
+            2
+          ],
+          "direction_deg": 0,
+          "count": 160,
+          "debris": 40,
+          "area": 26
+        }
+      ],
+      "actions": [
+        {
+          "type": "wind",
+          "prop": "gale",
+          "start": 0.3,
+          "end": 6.0,
+          "speed": 30
+        }
+      ],
+      "camera": {
+        "fstop": 5.6,
+        "handheld": 0.03,
+        "shots": [
+          {
+            "time": 0,
+            "location": [
+              -14,
+              -4.5,
+              2.2
+            ],
+            "target": [
+              0,
+              4,
+              3.5
+            ],
+            "lens": 22
+          },
+          {
+            "time": 6,
+            "location": [
+              -12,
+              -4.8,
+              2.4
+            ],
+            "target": [
+              2,
+              4,
+              4.0
+            ],
+            "lens": 22
+          }
+        ]
+      },
+      "duration_seconds": 6.0
+    },
+    {
+      "transition": "cut",
+      "sfx": [
+        {
+          "type": "rumble",
+          "at": 0.4
+        }
+      ],
+      "environment": {
+        "type": "coast",
+        "time_of_day": "day",
+        "pedestrians": 3,
+        "parked_cars": 5
+      },
+      "characters": [
+        {
+          "id": "pablo",
+          "start": [
+            0,
+            -6
+          ],
+          "facing": 90
+        }
+      ],
+      "actions": [
+        {
+          "type": "surge",
+          "start": 0.4,
+          "end": 5.5,
+          "height": 4.0,
+          "inland": 30
+        },
+        {
+          "type": "walk",
+          "character": "pablo",
+          "from": [
+            0,
+            -6
+          ],
+          "to": [
+            0,
+            6
+          ],
+          "start": 0.5,
+          "end": 4.5,
+          "pace": 3.0
+        }
+      ],
+      "camera": {
+        "fstop": 5.6,
+        "shots": [
+          {
+            "time": 0,
+            "location": [
+              -14,
+              1.5,
+              1.8
+            ],
+            "target": [
+              0,
+              -12,
+              0.5
+            ],
+            "lens": 20
+          },
+          {
+            "time": 5.5,
+            "location": [
+              -13,
+              2.5,
+              2.2
+            ],
+            "target": [
+              0,
+              -8,
+              0.8
+            ],
+            "lens": 20
+          }
+        ]
+      },
+      "duration_seconds": 5.5
+    },
+    {
+      "transition": "fade",
+      "sfx": [
+        {
+          "type": "chime",
+          "at": 0.5
+        }
+      ],
+      "environment": {
+        "type": "city",
+        "time_of_day": "day",
+        "pedestrians": 4,
+        "parked_cars": 8
+      },
+      "actions": [
+        {
+          "type": "sun_path",
+          "start": 0.3,
+          "end": 6.5,
+          "elevation_from": 55,
+          "elevation_to": -8
+        }
+      ],
+      "camera": {
+        "fstop": 6.3,
+        "shots": [
+          {
+            "time": 0,
+            "location": [
+              -14,
+              -6.0,
+              1.7
+            ],
+            "target": [
+              0,
+              6,
+              6
+            ],
+            "lens": 20
+          },
+          {
+            "time": 6.5,
+            "location": [
+              -12,
+              -6.2,
+              1.8
+            ],
+            "target": [
+              2,
+              6,
+              7
+            ],
+            "lens": 20
+          }
+        ]
+      },
+      "duration_seconds": 6.5
+    },
+    {
+      "transition": "fade",
+      "sfx": [
+        {
+          "type": "chime",
+          "at": 3.5
+        }
+      ],
+      "environment": {
+        "type": "city",
+        "time_of_day": "night",
+        "pedestrians": 6,
+        "parked_cars": 8
+      },
+      "characters": [
+        {
+          "id": "lucia",
+          "start": [
+            -2.0,
+            -5.0
+          ],
+          "facing": 90,
+          "palette": {
+            "body": "#355c7d",
+            "skin": "#e0ac85",
+            "accent": "#e07a3a",
+            "hair": "#2d1e14"
+          }
+        }
+      ],
+      "actions": [
+        {
+          "type": "lights_on",
+          "start": 0.3,
+          "end": 2.5
+        },
+        {
+          "type": "look_at",
+          "character": "lucia",
+          "target": "camera",
+          "start": 3.0
+        }
+      ],
+      "camera": {
+        "fstop": 4.5,
+        "shots": [
+          {
+            "time": 0,
+            "location": [
+              -9,
+              -8.5,
+              1.6
+            ],
+            "target": "lucia",
+            "lens": 30
+          },
+          {
+            "time": 5,
+            "location": [
+              -6,
+              -9.5,
+              1.7
+            ],
+            "target": "lucia",
+            "lens": 38
+          }
+        ]
+      },
+      "duration_seconds": 5.0
+    }
+  ]
+}
