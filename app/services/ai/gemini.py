@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 API_ROOT = "https://generativelanguage.googleapis.com/v1beta"
 MAX_RATE_WAITS = 6
+MAX_TRANSPORT_RETRIES = 2
 MAX_WAIT_SECONDS = 90
 BLOCKED = {"SAFETY", "BLOCKLIST", "PROHIBITED_CONTENT", "SPII", "RECITATION"}
 
@@ -98,11 +99,25 @@ class GeminiProvider:
             raise ProviderError("Could not reach the Gemini API.") from exc
 
     def _post(self, body: dict) -> dict:
-        url = f"{API_ROOT}/models/{self.model}:generateContent"
+        """Streams the answer (server-sent events): long generations keep the connection alive
+        instead of waiting minutes in silence, which proxies and load balancers cut."""
+        url = f"{API_ROOT}/models/{self.model}:streamGenerateContent"
+        transport_failures = 0
         for attempt in range(MAX_RATE_WAITS + 1):
-            response = self._request("POST", url, json=body)
-            if response.status_code == 200:
-                return response.json()
+            try:
+                with self._http.stream(
+                    "POST", url, params={"alt": "sse"}, json=body, headers={"x-goog-api-key": self._key}
+                ) as response:
+                    if response.status_code == 200:
+                        return _merge_stream(response.iter_lines())
+                    response.read()
+            except httpx.TransportError as exc:
+                transport_failures += 1
+                if transport_failures > MAX_TRANSPORT_RETRIES:
+                    raise ProviderError(f"Could not reach the Gemini API ({type(exc).__name__}).") from exc
+                logger.info("gemini connection problem (%s), retrying", type(exc).__name__)
+                self._sleep(10 * transport_failures)
+                continue
             detail = _error(response)
             if response.status_code == 400 and "schema" in detail.lower():
                 raise _SchemaRejected(detail)
@@ -192,6 +207,32 @@ def _retry_delay(response: httpx.Response) -> float | None:
             except ValueError:
                 return None
     return None
+
+
+def _merge_stream(lines) -> dict:
+    """Join streamed chunks into one generateContent-shaped answer."""
+    texts, merged = [], {}
+    for line in lines:
+        if not line.startswith("data:"):
+            continue
+        chunk = json.loads(line[5:].strip())
+        if "error" in chunk:
+            raise ProviderError(f"Gemini API error: {chunk['error'].get('message', chunk['error'])}")
+        for key in ("promptFeedback", "usageMetadata", "modelVersion"):
+            if key in chunk:
+                merged[key] = chunk[key]
+        for candidate in chunk.get("candidates", [])[:1]:
+            for part in candidate.get("content", {}).get("parts", []):
+                if part.get("text") and not part.get("thought"):
+                    texts.append(part["text"])
+            if candidate.get("finishReason"):
+                merged["finishReason"] = candidate["finishReason"]
+    if not texts and "finishReason" not in merged:
+        return {key: value for key, value in merged.items() if key != "finishReason"}
+    merged["candidates"] = [
+        {"content": {"parts": [{"text": "".join(texts)}]}, "finishReason": merged.pop("finishReason", None)}
+    ]
+    return merged
 
 
 def _strip_fences(text: str) -> str:
