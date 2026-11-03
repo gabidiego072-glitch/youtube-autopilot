@@ -1,6 +1,7 @@
 """Procedural scene planning, Piper voice and the FFmpeg editor (no AI imagery anywhere)."""
 
 import copy
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -10,7 +11,7 @@ import pytest
 from app.api.deps import provide_blender, provide_tts
 from app.core.errors import IntegrationNotConfiguredError, ProviderError
 from app.models.enums import VideoFormat
-from app.services.editing.assembler import SceneMedia, assemble_video, subtitle_cues
+from app.services.editing.assembler import EditScene, assemble_video, plan_timeline, subtitle_cues
 from app.services.production.formats import FormatSpec
 from app.services.rendering.ffmpeg import FFmpeg
 from app.services.scenes.planner import SYSTEM_PROMPT, finalize, plan_scenes
@@ -110,10 +111,30 @@ def test_piper_real_spanish_voice(tmp_path):
     assert ffmpeg.probe(out).duration_seconds > 1.0
 
 
+def test_timeline_follows_voice_and_absorbs_transitions():
+    slots = plan_timeline([1.7, 5.2, 4.0], ["cut", "fade", "cut"], fps=24)
+    assert slots[0].start == 0 and slots[0].transition_in == "cut"
+    assert abs(slots[1].start - slots[0].duration) < 1e-3  # scenes are back to back
+    assert slots[0].clip_length > slots[0].duration  # rendered longer to cover the dissolve into scene 1
+    assert abs(slots[1].clip_length - slots[1].duration - 1 / 24) < 1e-3  # a cut is a one-frame dissolve
+    assert slots[-1].clip_length == slots[-1].duration
+    for slot in slots:
+        assert abs(slot.duration * 24 - round(slot.duration * 24)) < 1e-2  # whole frames
+
+
+def _slot(start, duration):
+    return plan_timeline([duration - 0.36], ["cut"], fps=24)[0].__class__(start, duration, duration, "cut", 0.0)
+
+
 def test_subtitle_cues_follow_speech():
-    cues = subtitle_cues(["uno dos tres cuatro cinco", "seis"], [2.0, 1.0], [0.0, 2.5], 4)
+    scenes = [
+        EditScene(Path("a"), Path("a"), "uno dos tres cuatro cinco", 2.0, _slot(0.0, 2.5)),
+        EditScene(Path("b"), Path("b"), "seis", 1.0, _slot(2.5, 1.5)),
+    ]
+    cues = subtitle_cues(scenes, 4)
     assert [c["text"] for c in cues] == ["uno dos tres cuatro", "cinco", "seis"]
-    assert cues[1]["start"] == 1.6 and cues[2]["start"] == 2.5
+    assert cues[0]["start"] == 0.06 and cues[-1]["start"] == 2.56
+    assert cues[1]["end"] <= 2.06 + 1e-6  # never runs past the voice
 
 
 def _tone(path: Path, seconds: float) -> Path:
@@ -125,6 +146,7 @@ def _tone(path: Path, seconds: float) -> Path:
 
 
 def _clip(path: Path, seconds: float) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run(
         ["ffmpeg", "-loglevel", "error", "-y", "-f", "lavfi", "-i", f"testsrc=s=320x240:d={seconds}", str(path)],
         check=True,
@@ -133,21 +155,43 @@ def _clip(path: Path, seconds: float) -> Path:
 
 
 @requires_ffmpeg
+def test_synthesised_sound_effects_and_music(tmp_path):
+    from app.services.audio.synth import SFX, generate_music, generate_sfx
+
+    for kind in SFX:
+        assert ffmpeg.probe(generate_sfx(ffmpeg, kind, tmp_path / f"{kind}.wav")).duration_seconds > 0.5
+    assert 9.5 <= ffmpeg.probe(generate_music(ffmpeg, 10, tmp_path / "m.wav")).duration_seconds <= 10.5
+    with pytest.raises(ValueError):
+        generate_sfx(ffmpeg, "laser", tmp_path / "x.wav")
+
+
+@requires_ffmpeg
 def test_assemble_real_video(tmp_path):
+    from app.services.audio.synth import generate_sfx
+
+    speech = [1.0, 1.5]
+    slots = plan_timeline(speech, ["cut", "fade"], fps=24)
+    boom = generate_sfx(ffmpeg, "impact", tmp_path / "impact.wav")
     scenes = [
-        SceneMedia(
-            _clip(tmp_path / "a.mp4", 1.5), _tone(tmp_path / "a.wav", 1.0), "¿Y si la Tierra se parase?", is_video=True
+        EditScene(
+            _clip(tmp_path / "a.mp4", slots[0].clip_length),
+            _tone(tmp_path / "a.wav", 1.0),
+            "¿Y si la Tierra se parase?",
+            1.0,
+            slots[0],
+            [(boom, "impact", 0.5)],
         ),
-        SceneMedia(
-            _clip(tmp_path / "b.mp4", 0.5), _tone(tmp_path / "b.wav", 1.5), "Todo saldría volando.", is_video=True
-        ),  # shorter clip than its voice: it loops
+        EditScene(
+            _clip(tmp_path / "b.mp4", 0.5), _tone(tmp_path / "b.wav", 1.5), "Todo saldría volando.", 1.5, slots[1]
+        ),  # clip shorter than its slot: the last frame is held
     ]
-    music = _tone(tmp_path / "m.wav", 0.7)
+    music = _tone(tmp_path / "m.wav", 4.0)
     result = assemble_video(
         scenes, tmp_path / "out.mp4", spec=TINY, ffmpeg=ffmpeg, work_dir=tmp_path / "w", music_path=music
     )
+    total = slots[-1].start + slots[-1].duration
     assert (result.width, result.height) == (180, 320) and result.has_audio
-    assert 2.8 <= result.duration_seconds <= 3.3  # 1.0 + 1.5 + 2 x 0.25 pause
+    assert abs(result.duration_seconds - total) < 0.1
     assert "¿Y si la" in (tmp_path / "w" / "subtitles.srt").read_text()
 
 
@@ -208,7 +252,7 @@ class _StubBlender:
 @requires_ffmpeg
 def test_full_production_api(make_client, channel, tmp_path):
     """script -> fact-check -> voice -> storyboard -> 3D render job -> edit -> metadata -> approve."""
-    settings = make_settings(media_root=tmp_path / "media", edit_resolution_scale=0.12)
+    settings = make_settings(media_root=tmp_path / "media")
     client = make_client(
         settings, ai=StubAIProvider([SCRIPT_RESPONSE, FACTCHECK_PASS, STORYBOARD_RESPONSE, METADATA_RESPONSE])
     )
@@ -228,16 +272,16 @@ def test_full_production_api(make_client, channel, tmp_path):
     assert planned.status_code == 200, planned.text
     specs = planned.json()["scene_specs"]
     assert len(specs) == len(script["scenes"])
-    assert specs[0]["duration_seconds"] == 1.0  # 0.4 s voice + pause, never shorter than 1 s
+    assert specs[0]["duration_seconds"] == 1.0  # planned length: 0.4 s voice + pause, at least 1 s
 
-    job = client.post(f"/api/v1/projects/{pid}/scenes/render", json={"quality": "test"})
+    job = client.post(f"/api/v1/projects/{pid}/scenes/render", json={"mode": "preview"})
     assert job.status_code == 202, job.text
     finished = client.get(f"/api/v1/renders/{job.json()['id']}").json()  # background task already ran
     assert finished["status"] == "succeeded", finished["error"]
     assert len(blender.specs) == len(script["scenes"])
     assert all(s["engine"] == "cinematic" for s in blender.specs)
 
-    final = client.post(f"/api/v1/projects/{pid}/assemble", json={})
+    final = client.post(f"/api/v1/projects/{pid}/assemble", json={"mode": "draft"})
     assert final.status_code == 201, final.text
     assert final.json()["status"] == "succeeded" and Path(final.json()["output_path"]).is_file()
     assert client.get(f"/api/v1/projects/{pid}").json()["status"] == "rendered"
@@ -259,3 +303,113 @@ def test_scene_render_reports_missing_blender(make_client, channel):
     pid = create_project(client, channel["id"])["id"]
     client.post(f"/api/v1/projects/{pid}/scripts/generate")
     assert client.post(f"/api/v1/projects/{pid}/scenes/render", json={}).status_code == 409  # not planned yet
+
+
+PRODUCTION = REPO / "productions" / "what_if_earth_stops" / "production.json"
+
+
+def test_first_short_production_is_valid_and_rigorous():
+    from app.services.production.short import load_production
+
+    production = load_production(PRODUCTION)
+    scenes = production["script"]["scenes"]
+    assert len(scenes) == len(production["scenes"]) == 9
+    assert len(production["script"]["hook"].split()) <= 8
+    assert production["script"]["ending_line"].endswith("?")
+    assert {c["type"] for s in scenes for c in s["claims"]} == {"established", "estimate", "speculation"}
+    text = " ".join(s["narration"] for s in scenes)
+    assert "de golpe" in text and "poco a poco" in text  # instant stop and gradual stop are both explained
+    env_types = {spec["environment"]["type"] for spec in production["scenes"]}
+    assert env_types == {"space", "meadow"}
+
+
+def _second_production(tmp_path) -> Path:
+    """A different script, to prove the producer is not tied to the first Short."""
+    scene = storyboard_scene(0)
+    script_scenes = [
+        {
+            "beat": "hook",
+            "narration": "¿Y si midieras doce metros?",
+            "visual": "x",
+            "duration_seconds": 2,
+            "claims": [],
+        },
+        {
+            "beat": "setup",
+            "narration": "Tu corazón tendría que bombear mucho más.",
+            "visual": "x",
+            "duration_seconds": 3,
+            "claims": [{"text": "El volumen crece con el cubo", "type": "established", "source": ""}],
+        },
+        *[
+            {
+                "beat": "escalation",
+                "narration": f"Consecuencia {i}.",
+                "visual": "x",
+                "duration_seconds": 2,
+                "claims": [{"text": f"c{i}", "type": "estimate", "source": ""}],
+            }
+            for i in range(3)
+        ],
+        {"beat": "ending", "narration": "¿Te atreverías?", "visual": "x", "duration_seconds": 2, "claims": []},
+    ]
+    production = {
+        "id": "second",
+        "format": "short",
+        "seed": 9,
+        "script": {
+            "title_question": "¿Qué pasaría si midieras doce metros?",
+            "hook": "¿Y si midieras doce metros?",
+            "ending_type": "question",
+            "ending_line": "¿Te atreverías?",
+            "scenes": script_scenes,
+            "visual_bible": {"look": "procedural", "recurring_subjects": []},
+        },
+        "scenes": [{**scene, "duration_seconds": 2.0, "sfx": [{"type": "whoosh", "at": 0.0}]} for _ in script_scenes],
+    }
+    path = tmp_path / "second.json"
+    path.write_text(json.dumps(production, ensure_ascii=False))
+    return path
+
+
+@requires_ffmpeg
+def test_produce_short_from_another_script(tmp_path):
+    from app.services.production.short import produce_short
+
+    blender = _StubBlender()
+    report = produce_short(
+        _second_production(tmp_path),
+        "draft",
+        tmp_path / "out",
+        blender=blender,
+        ffmpeg=ffmpeg,
+        tts=_StubVoice(),
+        log=lambda *_: None,
+    )
+    assert report["resolution"] == "540x960" and report["has_audio"]
+    assert len(report["scenes"]) == 6 and len(blender.specs) == 6
+    expected = report["timeline"][-1]["start"] + report["timeline"][-1]["duration"]
+    assert abs(report["duration_seconds"] - expected) < 0.1
+    # Preview: a fragment of chosen scenes only.
+    preview = produce_short(
+        _second_production(tmp_path),
+        "preview",
+        tmp_path / "out",
+        blender=_StubBlender(),
+        ffmpeg=ffmpeg,
+        tts=_StubVoice(),
+        scenes=[0, 1],
+        log=lambda *_: None,
+    )
+    assert preview["resolution"] == "360x640" and len(preview["scenes"]) == 2
+
+
+def test_production_rejects_broken_files(tmp_path):
+    from app.services.production.short import ProductionError, load_production
+
+    path = _second_production(tmp_path)
+    data = json.loads(path.read_text())
+    data["scenes"] = data["scenes"][:-1]
+    path.write_text(json.dumps(data))
+    with pytest.raises(ProductionError, match="one 3D scene per script scene"):
+        load_production(path)

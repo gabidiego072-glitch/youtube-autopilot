@@ -71,10 +71,15 @@ def _planet(name, location, facing_deg=0.0, **params):
         kind=params.get("kind", "earth"),
         spin_rate=params.get("spin_rate", 0.0),
         tilt=params.get("tilt", 23.4),
+        oceans_moved=params.get("oceans_moved", 0.0),
+        atmosphere=params.get("atmosphere", True),
     )
 
 
+from render_engines.cinematic.explainers import EXPLAINER_BUILDERS  # noqa: E402
+
 PROP_BUILDERS = {
+    **EXPLAINER_BUILDERS,
     "lantern_post": lambda name, location, facing_deg=0.0, **_: lantern_post(name, location, facing_deg),
     "planet": _planet,
 }

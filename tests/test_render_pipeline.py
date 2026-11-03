@@ -113,3 +113,31 @@ def test_real_blender_render_to_mp4(tmp_path, spec, aspect):
     assert result.frame_count == 4 and len(list(result.frames_dir.glob("frame_*.png"))) == 4
     assert result.probe.has_audio
     assert result.video_path.stat().st_size > 1000
+
+
+@requires_blender
+@pytest.mark.parametrize("index", [2, 3, 5, 7])  # fling + wind, arrows + labels, sun path, magnetic field
+def test_first_short_scenes_render(tmp_path, index):
+    """The new explanatory elements of the first Short build and render in real Blender."""
+    import json as _json
+
+    production = _json.loads(
+        (EXAMPLES.parent.parent / "productions" / "what_if_earth_stops" / "production.json").read_text()
+    )
+    spec = {"engine": "cinematic", "fps": 24, "seed": 5, **production["scenes"][index]}
+    path = tmp_path / "scene.json"
+    path.write_text(_json.dumps(spec))
+    result = render_scene_video(
+        path,
+        tmp_path / "out.mp4",
+        blender=blender,
+        ffmpeg=ffmpeg,
+        aspect="9:16",
+        quality="test",
+        scale=0.08,
+        samples=1,
+        max_frames=3,
+        threads=2,
+        subtitles=False,
+    )
+    assert result.frame_count == 3 and result.video_path.stat().st_size > 500

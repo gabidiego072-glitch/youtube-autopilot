@@ -1,0 +1,1099 @@
+{
+  "id": "what_if_earth_stops",
+  "title_question": "¿Qué pasaría si la Tierra dejase de girar?",
+  "format": "short",
+  "language": "es",
+  "seed": 5,
+  "notes": "Script and storyboard written in the same JSON the automatic pipeline produces (scripts/generate + scenes/plan). Science reviewed: see claims.",
+  "script": {
+    "title_question": "¿Qué pasaría si la Tierra dejase de girar?",
+    "hook": "¿Y si la Tierra frenara en seco?",
+    "ending_type": "question",
+    "ending_line": "¿Tú en qué lado vivirías: en el del día, o en el de la noche?",
+    "visual_bible": {
+      "look": "procedural 3D, clean stylised Earth from space and a sunny meadow",
+      "recurring_subjects": [
+        {
+          "name": "Earth",
+          "description": "radius 2, no axial tilt, same continents (seed 5)"
+        },
+        {
+          "name": "Tú",
+          "description": "stylised person, blue clothes, orange hat and scarf"
+        }
+      ],
+      "palette": "deep space blue, warm sunlight, yellow-orange-red for speeds, cyan for the magnetic field",
+      "camera_language": "slow push-ins, gentle orbits, impact shakes on the sudden stop"
+    },
+    "scenes": [
+      {
+        "beat": "hook",
+        "narration": "¿Y si la Tierra frenara en seco?",
+        "visual": "Earth spinning fast stops dead; the camera shakes",
+        "duration_seconds": 2.2,
+        "claims": []
+      },
+      {
+        "beat": "setup",
+        "narration": "Ahora mismo, en el ecuador, el suelo gira contigo a unos mil seiscientos setenta kilómetros por hora.",
+        "subtitle": "Ahora mismo, en el ecuador, el suelo gira contigo a unos 1.670 km/h.",
+        "visual": "Earth turning; an arrow along the equator labelled 1.670 km/h",
+        "duration_seconds": 6.0,
+        "claims": [
+          {
+            "text": "La superficie en el ecuador se mueve a unos 1.670 km/h por la rotación terrestre",
+            "type": "established",
+            "source": "https://es.wikipedia.org/wiki/Rotaci%C3%B3n_de_la_Tierra"
+          }
+        ]
+      },
+      {
+        "beat": "escalation",
+        "narration": "Si frenara de golpe, tú no te pararías: saldrías despedido hacia el este a esa misma velocidad.",
+        "visual": "Tú stands in a meadow; a gale starts and Tú is thrown east with leaves and stones",
+        "duration_seconds": 6.0,
+        "claims": [
+          {
+            "text": "Por inercia, todo lo que no esté anclado seguiría moviéndose hacia el este a la velocidad de rotación",
+            "type": "established",
+            "source": ""
+          }
+        ]
+      },
+      {
+        "beat": "escalation",
+        "narration": "Y el aire también. Vientos más rápidos que el sonido arrasarían el ecuador; cerca de los polos, algo menos.",
+        "visual": "Earth with arrows on several latitudes: longest at the equator (1.670 km/h), half as long at 60 degrees (835 km/h)",
+        "duration_seconds": 6.5,
+        "claims": [
+          {
+            "text": "La atmósfera seguiría moviéndose a la velocidad de rotación: unos 1.670 km/h en el ecuador, más que la velocidad del sonido (unos 1.235 km/h)",
+            "type": "established",
+            "source": "https://es.wikipedia.org/wiki/Velocidad_del_sonido"
+          },
+          {
+            "text": "La velocidad de rotación disminuye con la latitud: a 60 grados es la mitad que en el ecuador",
+            "type": "established",
+            "source": ""
+          }
+        ]
+      },
+      {
+        "beat": "setup",
+        "narration": "Pero si frenara muy poco a poco, durante miles de años, nadie saldría volando.",
+        "visual": "Earth slowing down gently next to the Moon",
+        "duration_seconds": 5.0,
+        "claims": [
+          {
+            "text": "Un frenado muy gradual no produciría el impulso violento de una parada instantánea",
+            "type": "established",
+            "source": ""
+          }
+        ]
+      },
+      {
+        "beat": "escalation",
+        "narration": "Eso sí: un día duraría un año entero. Seis meses de luz... y seis meses de noche.",
+        "subtitle": "Eso sí: un día duraría un año entero. Seis meses de luz… y seis meses de noche.",
+        "visual": "Tú watches the sun sink from midday to night over the meadow; label 1 día = 1 año",
+        "duration_seconds": 5.5,
+        "claims": [
+          {
+            "text": "Sin rotación, el Sol tardaría una órbita completa, un año, en volver al mismo punto del cielo",
+            "type": "established",
+            "source": ""
+          }
+        ]
+      },
+      {
+        "beat": "escalation",
+        "narration": "Sin el efecto de la rotación, los océanos se irían hacia los polos, y en el ecuador emergería un enorme continente.",
+        "visual": "On the globe, oceans drain towards the poles and a continent rises along the equator",
+        "duration_seconds": 6.5,
+        "claims": [
+          {
+            "text": "Sin el abultamiento ecuatorial que mantiene la rotación, el agua se redistribuiría hacia los polos",
+            "type": "estimate",
+            "source": ""
+          }
+        ]
+      },
+      {
+        "beat": "climax",
+        "narration": "Y el campo magnético, nuestro escudo contra el viento solar, podría debilitarse. Nadie lo sabe con certeza.",
+        "visual": "Glowing magnetic field lines around Earth flicker and fade",
+        "duration_seconds": 6.5,
+        "claims": [
+          {
+            "text": "El campo magnético nos protege del viento solar",
+            "type": "established",
+            "source": "https://es.wikipedia.org/wiki/Campo_magn%C3%A9tico_terrestre"
+          },
+          {
+            "text": "Sin rotación, el campo magnético podría debilitarse",
+            "type": "speculation",
+            "source": ""
+          }
+        ]
+      },
+      {
+        "beat": "ending",
+        "narration": "Curiosamente, en el ecuador pesarías alrededor de un cero coma tres por ciento más. ¿Tú en qué lado vivirías: en el del día, o en el de la noche?",
+        "subtitle": "Curiosamente, en el ecuador pesarías alrededor de un 0,3 % más. ¿Tú en qué lado vivirías: en el del día, o en el de la noche?",
+        "visual": "Label +0,3 % de peso by the equator; the camera pulls back from the half-lit, transformed Earth",
+        "duration_seconds": 8.5,
+        "claims": [
+          {
+            "text": "Sin la aceleración centrífuga (unos 0,034 m/s² en el ecuador), el peso aparente allí aumentaría alrededor de un 0,3 %",
+            "type": "established",
+            "source": ""
+          }
+        ]
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "duration_seconds": 2.2,
+      "transition": "cut",
+      "sfx": [
+        {
+          "type": "rumble",
+          "at": 0.0
+        },
+        {
+          "type": "impact",
+          "at": 1.45
+        }
+      ],
+      "environment": {
+        "type": "space",
+        "sun_azimuth": 200,
+        "sun_elevation": 8,
+        "sun": 4.5,
+        "stars": 0.6
+      },
+      "props": [
+        {
+          "id": "earth",
+          "type": "planet",
+          "kind": "earth",
+          "location": [
+            0,
+            0,
+            0
+          ],
+          "radius": 2.0,
+          "spin_rate": 170,
+          "tilt": 0
+        }
+      ],
+      "actions": [
+        {
+          "type": "spin",
+          "prop": "earth",
+          "start": 1.45,
+          "end": 1.52,
+          "rate_from": 170,
+          "rate_to": 0
+        }
+      ],
+      "camera": {
+        "fstop": 8.0,
+        "portrait_lens_scale": 1.15,
+        "shakes": [
+          {
+            "start": 1.45,
+            "end": 2.2,
+            "strength": 0.2
+          }
+        ],
+        "shots": [
+          {
+            "time": 0.0,
+            "location": [
+              0,
+              -10.5,
+              1.2
+            ],
+            "target": "earth",
+            "lens": 36
+          },
+          {
+            "time": 2.2,
+            "location": [
+              0,
+              -7.8,
+              0.7
+            ],
+            "target": "earth",
+            "lens": 38
+          }
+        ]
+      }
+    },
+    {
+      "duration_seconds": 6.0,
+      "transition": "fade",
+      "sfx": [
+        {
+          "type": "whoosh",
+          "at": 0.0
+        }
+      ],
+      "environment": {
+        "type": "space",
+        "sun_azimuth": 200,
+        "sun_elevation": 8,
+        "sun": 4.5,
+        "stars": 0.6
+      },
+      "props": [
+        {
+          "id": "earth",
+          "type": "planet",
+          "kind": "earth",
+          "location": [
+            0,
+            0,
+            0
+          ],
+          "radius": 2.0,
+          "spin_rate": 22,
+          "tilt": 0
+        },
+        {
+          "id": "speed",
+          "type": "arrow",
+          "location": [
+            -0.85,
+            -2.2,
+            0.0
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "length": 1.7,
+          "thickness": 0.045,
+          "color": "#ffd23f"
+        },
+        {
+          "id": "speed_label",
+          "type": "label",
+          "location": [
+            0.0,
+            -2.35,
+            0.55
+          ],
+          "text": "1.670 km/h",
+          "size": 0.3,
+          "color": "#ffffff"
+        }
+      ],
+      "actions": [
+        {
+          "type": "appear",
+          "target": "speed",
+          "start": 0.6,
+          "end": 1.4
+        },
+        {
+          "type": "appear",
+          "target": "speed_label",
+          "start": 1.3,
+          "end": 1.8
+        }
+      ],
+      "camera": {
+        "fstop": 8.0,
+        "portrait_lens_scale": 1.15,
+        "shots": [
+          {
+            "time": 0.0,
+            "location": [
+              2.2,
+              -7.0,
+              1.4
+            ],
+            "target": [
+              0,
+              -1.6,
+              0.1
+            ],
+            "lens": 40
+          },
+          {
+            "time": 6.0,
+            "location": [
+              -0.4,
+              -6.4,
+              0.8
+            ],
+            "target": [
+              0,
+              -1.9,
+              0.25
+            ],
+            "lens": 38
+          }
+        ]
+      }
+    },
+    {
+      "duration_seconds": 6.0,
+      "transition": "fade",
+      "motion_blur": true,
+      "sfx": [
+        {
+          "type": "impact",
+          "at": 1.0
+        },
+        {
+          "type": "wind",
+          "at": 1.0
+        }
+      ],
+      "environment": {
+        "type": "meadow",
+        "time_of_day": "day",
+        "trees": 36,
+        "rocks": 18,
+        "flowers": 60,
+        "hill_height": 5.0,
+        "flat_radius": 28
+      },
+      "characters": [
+        {
+          "id": "tu",
+          "start": [
+            0.0,
+            0.0
+          ],
+          "facing": 180,
+          "palette": {
+            "body": "#355c7d",
+            "skin": "#e0ac85",
+            "accent": "#e07a3a",
+            "hair": "#2d1e14"
+          }
+        }
+      ],
+      "props": [
+        {
+          "id": "gale",
+          "type": "wind",
+          "location": [
+            8,
+            0,
+            0
+          ],
+          "direction_deg": 0,
+          "count": 120,
+          "debris": 30,
+          "area": 20
+        }
+      ],
+      "actions": [
+        {
+          "type": "wind",
+          "prop": "gale",
+          "start": 1.0,
+          "end": 6.0,
+          "speed": 26
+        },
+        {
+          "type": "fling",
+          "character": "tu",
+          "start": 1.05,
+          "end": 6.0,
+          "direction_deg": 0,
+          "speed": 3.2,
+          "lift": 3.6,
+          "gravity": 0.75
+        }
+      ],
+      "camera": {
+        "fstop": 5.6,
+        "portrait_lens_scale": 1.1,
+        "shakes": [
+          {
+            "start": 1.0,
+            "end": 1.8,
+            "strength": 0.12
+          }
+        ],
+        "shots": [
+          {
+            "time": 0.0,
+            "location": [
+              -1.2,
+              -7.5,
+              1.5
+            ],
+            "target": "tu",
+            "lens": 32
+          },
+          {
+            "time": 1.0,
+            "location": [
+              -0.8,
+              -7.0,
+              1.5
+            ],
+            "target": "tu",
+            "lens": 34
+          },
+          {
+            "time": 6.0,
+            "location": [
+              13.5,
+              -6.5,
+              2.4
+            ],
+            "target": "tu",
+            "lens": 40
+          }
+        ]
+      }
+    },
+    {
+      "duration_seconds": 6.5,
+      "transition": "fade",
+      "sfx": [
+        {
+          "type": "wind",
+          "at": 0.3
+        }
+      ],
+      "environment": {
+        "type": "space",
+        "sun_azimuth": 200,
+        "sun_elevation": 8,
+        "sun": 4.5,
+        "stars": 0.6
+      },
+      "props": [
+        {
+          "id": "earth",
+          "type": "planet",
+          "kind": "earth",
+          "location": [
+            0,
+            0,
+            0
+          ],
+          "radius": 2.0,
+          "spin_rate": 0,
+          "tilt": 0
+        },
+        {
+          "id": "w_eq",
+          "type": "arrow",
+          "location": [
+            -0.85,
+            -2.2,
+            0.0
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "length": 1.7,
+          "thickness": 0.045,
+          "color": "#ff5a3c"
+        },
+        {
+          "id": "w_30n",
+          "type": "arrow",
+          "location": [
+            -0.74,
+            -1.9,
+            1.0
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "length": 1.47,
+          "thickness": 0.04,
+          "color": "#ff9a3c"
+        },
+        {
+          "id": "w_30s",
+          "type": "arrow",
+          "location": [
+            -0.74,
+            -1.9,
+            -1.0
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "length": 1.47,
+          "thickness": 0.04,
+          "color": "#ff9a3c"
+        },
+        {
+          "id": "w_60n",
+          "type": "arrow",
+          "location": [
+            -0.42,
+            -1.17,
+            1.732
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "length": 0.85,
+          "thickness": 0.035,
+          "color": "#ffd23f"
+        },
+        {
+          "id": "w_60s",
+          "type": "arrow",
+          "location": [
+            -0.42,
+            -1.17,
+            -1.732
+          ],
+          "direction": [
+            1,
+            0,
+            0
+          ],
+          "length": 0.85,
+          "thickness": 0.035,
+          "color": "#ffd23f"
+        },
+        {
+          "id": "l_eq",
+          "type": "label",
+          "location": [
+            0.0,
+            -2.45,
+            -0.42
+          ],
+          "text": "1.670 km/h",
+          "size": 0.26,
+          "color": "#ffffff"
+        },
+        {
+          "id": "l_60",
+          "type": "label",
+          "location": [
+            0.95,
+            -1.35,
+            1.95
+          ],
+          "text": "835 km/h",
+          "size": 0.22,
+          "color": "#ffffff"
+        }
+      ],
+      "actions": [
+        {
+          "type": "appear",
+          "target": "w_eq",
+          "start": 0.4,
+          "end": 1.0
+        },
+        {
+          "type": "appear",
+          "target": "l_eq",
+          "start": 0.9,
+          "end": 1.3
+        },
+        {
+          "type": "appear",
+          "target": "w_30n",
+          "start": 1.6,
+          "end": 2.2
+        },
+        {
+          "type": "appear",
+          "target": "w_30s",
+          "start": 1.6,
+          "end": 2.2
+        },
+        {
+          "type": "appear",
+          "target": "w_60n",
+          "start": 2.6,
+          "end": 3.2
+        },
+        {
+          "type": "appear",
+          "target": "w_60s",
+          "start": 2.6,
+          "end": 3.2
+        },
+        {
+          "type": "appear",
+          "target": "l_60",
+          "start": 3.1,
+          "end": 3.5
+        }
+      ],
+      "camera": {
+        "fstop": 8.0,
+        "portrait_lens_scale": 1.15,
+        "shots": [
+          {
+            "time": 0.0,
+            "location": [
+              0,
+              -9.8,
+              0.6
+            ],
+            "target": [
+              0,
+              -1.0,
+              -0.5
+            ],
+            "lens": 34
+          },
+          {
+            "time": 6.5,
+            "location": [
+              1.2,
+              -8.9,
+              1.0
+            ],
+            "target": [
+              0,
+              -1.0,
+              -0.45
+            ],
+            "lens": 35
+          }
+        ]
+      }
+    },
+    {
+      "duration_seconds": 5.0,
+      "transition": "fade",
+      "sfx": [
+        {
+          "type": "whoosh",
+          "at": 0.0
+        }
+      ],
+      "environment": {
+        "type": "space",
+        "sun_azimuth": 200,
+        "sun_elevation": 8,
+        "sun": 4.5,
+        "stars": 0.6
+      },
+      "props": [
+        {
+          "id": "earth",
+          "type": "planet",
+          "kind": "earth",
+          "location": [
+            0,
+            0,
+            0
+          ],
+          "radius": 2.0,
+          "spin_rate": 40,
+          "tilt": 0
+        },
+        {
+          "id": "moon",
+          "type": "planet",
+          "kind": "moon",
+          "location": [
+            -7.0,
+            9.0,
+            1.5
+          ],
+          "radius": 0.55,
+          "spin_rate": 2
+        }
+      ],
+      "actions": [
+        {
+          "type": "spin",
+          "prop": "earth",
+          "start": 0.3,
+          "end": 4.8,
+          "rate_from": 40,
+          "rate_to": 0
+        }
+      ],
+      "camera": {
+        "fstop": 8.0,
+        "portrait_lens_scale": 1.15,
+        "shots": [
+          {
+            "time": 0.0,
+            "location": [
+              3.0,
+              -9.0,
+              2.0
+            ],
+            "target": "earth",
+            "lens": 34
+          },
+          {
+            "time": 5.0,
+            "location": [
+              -2.0,
+              -10.0,
+              1.2
+            ],
+            "target": "earth",
+            "lens": 32
+          }
+        ]
+      }
+    },
+    {
+      "duration_seconds": 5.5,
+      "transition": "fade",
+      "sfx": [
+        {
+          "type": "whoosh",
+          "at": 0.0
+        },
+        {
+          "type": "chime",
+          "at": 0.7
+        }
+      ],
+      "environment": {
+        "type": "meadow",
+        "time_of_day": "day",
+        "trees": 36,
+        "rocks": 18,
+        "flowers": 60,
+        "hill_height": 5.0
+      },
+      "characters": [
+        {
+          "id": "tu",
+          "start": [
+            0.0,
+            0.0
+          ],
+          "facing": 0,
+          "palette": {
+            "body": "#355c7d",
+            "skin": "#e0ac85",
+            "accent": "#e07a3a",
+            "hair": "#2d1e14"
+          }
+        }
+      ],
+      "props": [
+        {
+          "id": "day_label",
+          "type": "label",
+          "location": [
+            0.0,
+            6.0,
+            3.6
+          ],
+          "text": "1 día = 1 año",
+          "size": 0.6,
+          "color": "#ffffff"
+        }
+      ],
+      "actions": [
+        {
+          "type": "appear",
+          "target": "day_label",
+          "start": 0.5,
+          "end": 1.1
+        },
+        {
+          "type": "sun_path",
+          "start": 0.0,
+          "end": 5.5,
+          "elevation_from": 35,
+          "elevation_to": -3
+        }
+      ],
+      "camera": {
+        "fstop": 5.6,
+        "portrait_lens_scale": 1.1,
+        "shots": [
+          {
+            "time": 0.0,
+            "location": [
+              1.5,
+              -5.0,
+              1.6
+            ],
+            "target": [
+              0,
+              4,
+              2.2
+            ],
+            "lens": 28
+          },
+          {
+            "time": 5.5,
+            "location": [
+              0.5,
+              -4.2,
+              1.4
+            ],
+            "target": [
+              0,
+              4,
+              2.4
+            ],
+            "lens": 28
+          }
+        ]
+      }
+    },
+    {
+      "duration_seconds": 6.5,
+      "transition": "fade",
+      "sfx": [
+        {
+          "type": "rumble",
+          "at": 0.5
+        }
+      ],
+      "environment": {
+        "type": "space",
+        "sun_azimuth": 200,
+        "sun_elevation": 8,
+        "sun": 4.5,
+        "stars": 0.6
+      },
+      "props": [
+        {
+          "id": "earth",
+          "type": "planet",
+          "kind": "earth",
+          "location": [
+            0,
+            0,
+            0
+          ],
+          "radius": 2.0,
+          "spin_rate": 0,
+          "tilt": 0
+        }
+      ],
+      "actions": [
+        {
+          "type": "migrate_oceans",
+          "prop": "earth",
+          "start": 0.5,
+          "end": 6.0,
+          "amount": 1.0
+        }
+      ],
+      "camera": {
+        "fstop": 8.0,
+        "portrait_lens_scale": 1.15,
+        "shots": [
+          {
+            "time": 0.0,
+            "location": [
+              0,
+              -8.5,
+              2.2
+            ],
+            "target": "earth",
+            "lens": 36
+          },
+          {
+            "time": 6.5,
+            "location": [
+              1.0,
+              -7.6,
+              3.0
+            ],
+            "target": "earth",
+            "lens": 38
+          }
+        ]
+      }
+    },
+    {
+      "duration_seconds": 6.5,
+      "transition": "fade",
+      "sfx": [
+        {
+          "type": "rumble",
+          "at": 1.5
+        }
+      ],
+      "environment": {
+        "type": "space",
+        "sun_azimuth": 200,
+        "sun_elevation": 8,
+        "sun": 4.5,
+        "stars": 0.6
+      },
+      "props": [
+        {
+          "id": "earth",
+          "type": "planet",
+          "kind": "earth",
+          "location": [
+            0,
+            0,
+            0
+          ],
+          "radius": 2.0,
+          "spin_rate": 0,
+          "tilt": 0,
+          "oceans_moved": 1.0
+        },
+        {
+          "id": "field",
+          "type": "magnetic_field",
+          "location": [
+            0,
+            0,
+            0
+          ],
+          "radius": 2.0,
+          "color": "#41d9ff"
+        }
+      ],
+      "actions": [
+        {
+          "type": "fade",
+          "target": "field",
+          "start": 1.6,
+          "end": 6.0,
+          "to": 0.04
+        }
+      ],
+      "camera": {
+        "fstop": 8.0,
+        "portrait_lens_scale": 1.15,
+        "shots": [
+          {
+            "time": 0.0,
+            "location": [
+              0,
+              -16.0,
+              2.5
+            ],
+            "target": "earth",
+            "lens": 32
+          },
+          {
+            "time": 6.5,
+            "location": [
+              4.0,
+              -14.0,
+              3.5
+            ],
+            "target": "earth",
+            "lens": 32
+          }
+        ]
+      }
+    },
+    {
+      "duration_seconds": 8.5,
+      "transition": "fade",
+      "sfx": [
+        {
+          "type": "whoosh",
+          "at": 0.0
+        },
+        {
+          "type": "chime",
+          "at": 6.8
+        }
+      ],
+      "environment": {
+        "type": "space",
+        "sun_azimuth": 200,
+        "sun_elevation": 8,
+        "sun": 4.5,
+        "stars": 0.6
+      },
+      "props": [
+        {
+          "id": "earth",
+          "type": "planet",
+          "kind": "earth",
+          "location": [
+            0,
+            0,
+            0
+          ],
+          "radius": 2.0,
+          "spin_rate": 0,
+          "tilt": 0,
+          "oceans_moved": 1.0
+        },
+        {
+          "id": "weight",
+          "type": "label",
+          "location": [
+            0.0,
+            -2.45,
+            0.5
+          ],
+          "text": "+0,3 % de peso",
+          "size": 0.26,
+          "color": "#ffd23f"
+        }
+      ],
+      "actions": [
+        {
+          "type": "appear",
+          "target": "weight",
+          "start": 1.0,
+          "end": 1.6
+        }
+      ],
+      "camera": {
+        "fstop": 8.0,
+        "portrait_lens_scale": 1.15,
+        "shots": [
+          {
+            "time": 0.0,
+            "location": [
+              1.4,
+              -7.2,
+              0.8
+            ],
+            "target": [
+              0,
+              -1.2,
+              -0.8
+            ],
+            "lens": 38
+          },
+          {
+            "time": 8.5,
+            "location": [
+              3.0,
+              -12.0,
+              2.0
+            ],
+            "target": [
+              0,
+              0,
+              -1.2
+            ],
+            "lens": 34
+          }
+        ]
+      }
+    }
+  ]
+}

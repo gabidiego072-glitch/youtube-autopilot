@@ -179,7 +179,43 @@ def build_environment(env: dict, ctx, scene: bpy.types.Scene, paths=()) -> dict:
     elevation, azimuth, sun_color, sun_strength, sky_strength, fill_color, fill_power = TIME_OF_DAY[
         env.get("time_of_day", "day")
     ]
-    set_sky(scene, elevation, azimuth, strength=sky_strength, dust=2.0, sun_disc=elevation < 10)
-    lights.sun("Sun", elevation, azimuth, sun_color, sun_strength, softness_deg=3)
-    lights.area("Fill", (-6, -10, 6), (math.radians(60), 0, math.radians(-30)), fill_color, fill_power, size=8)
-    return {"ground_height": lambda x, y: flat_radius_height(x, y, seed, flat, amp)}
+    sky, background = set_sky(scene, elevation, azimuth, strength=sky_strength, dust=2.0, sun_disc=elevation < 10)
+    sun = lights.sun("Sun", elevation, azimuth, sun_color, sun_strength, softness_deg=3)
+    fill = lights.area("Fill", (-6, -10, 6), (math.radians(60), 0, math.radians(-30)), fill_color, fill_power, size=8)
+    return {
+        "ground_height": lambda x, y: flat_radius_height(x, y, seed, flat, amp),
+        "sky": sky,
+        "sky_background": background,
+        "sun": sun,
+        "sun_strength": sun_strength,
+        "sky_strength": sky_strength,
+        "fill": fill,
+        "azimuth": azimuth,
+    }
+
+
+def sun_path(refs: dict, start: int, end: int, elevation_from: float, elevation_to: float, step: int = 3) -> None:
+    """Move the sun across the sky (day -> dusk -> night or back), keeping sky, sun lamp and
+    fill light consistent. Below the horizon the sun lamp fades out."""
+    from render_engines.core.blender.animation import key, set_interpolation
+
+    sky, background, sun, fill = refs["sky"], refs["sky_background"], refs["sun"], refs["fill"]
+    fill_base = refs.setdefault("_fill_base", fill.data.energy)
+    # Moonlight takes over at night so the scene never goes black.
+    moon = refs.get("moon") or lights.sun("Moonlight", 35, refs["azimuth"] + 150, "#9fb4ff", 0.0, softness_deg=4)
+    refs["moon"] = moon
+    for frame in range(start, end + step, step):
+        t = min(1.0, (frame - start) / max(1, end - start))
+        t = t * t * (3 - 2 * t)
+        elevation = elevation_from + (elevation_to - elevation_from) * t
+        daylight = max(0.0, min(1.0, (elevation + 4) / 14))  # 0 at -4 deg, 1 above 10 deg
+        sky.sun_elevation = math.radians(elevation)
+        sky.keyframe_insert("sun_elevation", frame=frame)
+        background.inputs["Strength"].default_value = refs["sky_strength"] * (0.6 + 0.4 * daylight)
+        background.inputs["Strength"].keyframe_insert("default_value", frame=frame)
+        key(sun, "rotation_euler", frame, (math.radians(90 - elevation), 0, math.radians(refs["azimuth"] + 90)))
+        key(sun.data, "energy", frame, refs["sun_strength"] * daylight)
+        key(fill.data, "energy", frame, fill_base * (0.7 + 0.3 * daylight))
+        key(moon.data, "energy", frame, 0.9 * (1 - daylight))
+    for target in (sun, sun.data, fill.data, moon.data):
+        set_interpolation(target, "LINEAR")

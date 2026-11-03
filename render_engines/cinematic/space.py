@@ -12,33 +12,41 @@ from render_engines.core.blender.animation import key, set_interpolation
 from render_engines.core.colors import hex_to_linear
 
 
-def build_space(env: dict, scene: bpy.types.Scene) -> None:
-    """Black sky with procedural stars and a single hard sun light."""
+def _star_image(seed: int, width: int = 4096, height: int = 2048, density: float = 0.6):
+    """Equirectangular star field generated once with numpy (cheap to sample, unlike a 3D noise sky)."""
+    import numpy as np
+
+    rng = np.random.default_rng(seed)
+    pixels = np.zeros((height, width, 4), dtype=np.float32)
+    pixels[..., :3] = (0.006, 0.008, 0.016)  # deep blue-black
+    pixels[..., 3] = 1.0
+    count = int(9000 * max(0.05, density))
+    ys = rng.integers(0, height, count)
+    xs = rng.integers(0, width, count)
+    brightness = rng.power(4.0, count) * 1.6 + 0.15
+    tint = rng.uniform(0.85, 1.0, (count, 3))
+    tint[:, 2] = 1.0
+    pixels[ys, xs, :3] = tint * brightness[:, None]
+    image = bpy.data.images.new("Stars", width, height, float_buffer=True)
+    image.pixels.foreach_set(pixels.ravel())
+    return image
+
+
+def build_space(env: dict, scene: bpy.types.Scene, seed: int = 0) -> None:
+    """Black sky with a procedural star field and a single hard sun light."""
     world = bpy.data.worlds.new("Space")
     scene.world = world
     world.use_nodes = True
+    world.cycles.sampling_method = "NONE"  # the sky does not light the scene; the sun lamp does
     nodes, links = world.node_tree.nodes, world.node_tree.links
     nodes.clear()
-    coord = nodes.new("ShaderNodeTexCoord")
-    stars = nodes.new("ShaderNodeTexVoronoi")
-    stars.inputs["Scale"].default_value = 260.0
-    ramp = nodes.new("ShaderNodeValToRGB")
-    density = max(0.0, min(1.0, env.get("stars", 0.6)))
-    ramp.color_ramp.elements[0].position = 0.0
-    ramp.color_ramp.elements[0].color = (1, 1, 1, 1)
-    ramp.color_ramp.elements[1].position = 0.02 + 0.05 * density
-    ramp.color_ramp.elements[1].color = (0, 0, 0, 1)
-    tint = nodes.new("ShaderNodeMix")
-    tint.data_type = "RGBA"
-    tint.inputs["A"].default_value = hex_to_linear("#03040a")
-    tint.inputs["B"].default_value = (1, 1, 1, 1)
+    stars = nodes.new("ShaderNodeTexEnvironment")
+    stars.image = _star_image(seed, density=env.get("stars", 0.6))
+    stars.interpolation = "Closest"
     background = nodes.new("ShaderNodeBackground")
     background.inputs["Strength"].default_value = 1.0
     out = nodes.new("ShaderNodeOutputWorld")
-    links.new(coord.outputs["Generated"], stars.inputs["Vector"])
-    links.new(stars.outputs["Distance"], ramp.inputs["Fac"])
-    links.new(ramp.outputs["Color"], tint.inputs["Factor"])
-    links.new(tint.outputs["Result"], background.inputs["Color"])
+    links.new(stars.outputs["Color"], background.inputs["Color"])
     links.new(background.outputs["Background"], out.inputs["Surface"])
     lights.sun(
         "Sun",
@@ -99,7 +107,38 @@ def _surface_material(name: str, kind: str, radius: float):
         "moon": [(0.0, "#4b4b4f"), (0.5, "#8d8c88"), (0.8, "#bdbbb5")],
     }
     ramp = _ramp(nodes, palettes.get(kind, palettes["moon"]))
-    links.new(noise.outputs["Fac"], ramp.inputs["Fac"])
+    fac = noise.outputs["Fac"]
+    shift_socket = None
+    if kind == "earth":
+        # Ocean migration: shift > 0 pushes water towards the poles and raises land at the equator.
+        sep0 = nodes.new("ShaderNodeSeparateXYZ")
+        links.new(coords, sep0.inputs["Vector"])
+        lat = nodes.new("ShaderNodeMath")
+        lat.operation = "ABSOLUTE"
+        links.new(sep0.outputs["Z"], lat.inputs[0])
+        band = nodes.new("ShaderNodeMath")
+        band.operation = "SUBTRACT"
+        band.inputs[0].default_value = 0.42
+        links.new(lat.outputs["Value"], band.inputs[1])
+        shift = nodes.new("ShaderNodeValue")
+        shift.name = "OceanShift"
+        shift.outputs[0].default_value = 0.0
+        weighted = nodes.new("ShaderNodeMath")
+        weighted.operation = "MULTIPLY"
+        links.new(band.outputs["Value"], weighted.inputs[0])
+        links.new(shift.outputs[0], weighted.inputs[1])
+        scaled_shift = nodes.new("ShaderNodeMath")
+        scaled_shift.operation = "MULTIPLY"
+        scaled_shift.inputs[1].default_value = 1.15
+        links.new(weighted.outputs["Value"], scaled_shift.inputs[0])
+        total = nodes.new("ShaderNodeMath")
+        total.operation = "ADD"
+        total.use_clamp = True
+        links.new(fac, total.inputs[0])
+        links.new(scaled_shift.outputs["Value"], total.inputs[1])
+        fac = total.outputs["Value"]
+        shift_socket = shift.outputs[0]
+    links.new(fac, ramp.inputs["Fac"])
     color_out = ramp.outputs["Color"]
     if kind == "earth":
         # Polar ice caps: whiten where |z| is high.
@@ -118,7 +157,33 @@ def _surface_material(name: str, kind: str, radius: float):
         links.new(cap.outputs["Result"], mix.inputs["Factor"])
         links.new(color_out, mix.inputs["A"])
         color_out = mix.outputs["Result"]
+        # Clouds painted on the surface (a transparent cloud shell doubled the render time).
+        cloud_noise = nodes.new("ShaderNodeTexNoise")
+        cloud_noise.inputs["Scale"].default_value = 2.5
+        cloud_noise.inputs["Detail"].default_value = 6.0
+        links.new(coords, cloud_noise.inputs["Vector"])
+        cloud_ramp = _ramp(nodes, [(0.56, "#000000"), (0.7, "#ffffff")])
+        links.new(cloud_noise.outputs["Fac"], cloud_ramp.inputs["Fac"])
+        clouds_mix = nodes.new("ShaderNodeMix")
+        clouds_mix.data_type = "RGBA"
+        clouds_mix.inputs["B"].default_value = hex_to_linear("#f4f7fb")
+        links.new(cloud_ramp.outputs["Color"], clouds_mix.inputs["Factor"])
+        links.new(color_out, clouds_mix.inputs["A"])
+        color_out = clouds_mix.outputs["Result"]
         bsdf.inputs["Roughness"].default_value = 0.45
+        # Atmosphere: blue glow towards the limb, painted on the surface (a transparent shell was 2x slower).
+        rim = nodes.new("ShaderNodeLayerWeight")
+        rim.inputs["Blend"].default_value = 0.4
+        rim_power = nodes.new("ShaderNodeMath")
+        rim_power.operation = "POWER"
+        rim_power.inputs[1].default_value = 3.0
+        links.new(rim.outputs["Facing"], rim_power.inputs[0])
+        bsdf.inputs["Emission Color"].default_value = hex_to_linear("#4f9bff")
+        rim_strength = nodes.new("ShaderNodeMath")
+        rim_strength.operation = "MULTIPLY"
+        rim_strength.inputs[1].default_value = 1.4
+        links.new(rim_power.outputs["Value"], rim_strength.inputs[0])
+        links.new(rim_strength.outputs["Value"], bsdf.inputs["Emission Strength"])
     else:
         craters = nodes.new("ShaderNodeTexVoronoi")
         craters.inputs["Scale"].default_value = 9.0
@@ -129,49 +194,8 @@ def _surface_material(name: str, kind: str, radius: float):
         links.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
         bsdf.inputs["Roughness"].default_value = 0.95
     links.new(color_out, bsdf.inputs["Base Color"])
-    return mat
-
-
-def _clouds_material(name: str, radius: float):
-    mat, nodes, links = _node_material(name)
-    nodes.remove(nodes["Principled BSDF"])
-    out = nodes["Material Output"]
-    noise = nodes.new("ShaderNodeTexNoise")
-    noise.inputs["Scale"].default_value = 2.5
-    noise.inputs["Detail"].default_value = 8.0
-    links.new(_unit_coords(nodes, links, radius), noise.inputs["Vector"])
-    ramp = _ramp(nodes, [(0.56, "#000000"), (0.7, "#ffffff")])
-    links.new(noise.outputs["Fac"], ramp.inputs["Fac"])
-    white = nodes.new("ShaderNodeBsdfDiffuse")
-    clear = nodes.new("ShaderNodeBsdfTransparent")
-    mix = nodes.new("ShaderNodeMixShader")
-    links.new(ramp.outputs["Color"], mix.inputs["Fac"])
-    links.new(clear.outputs["BSDF"], mix.inputs[1])
-    links.new(white.outputs["BSDF"], mix.inputs[2])
-    links.new(mix.outputs["Shader"], out.inputs["Surface"])
-    return mat
-
-
-def _atmosphere_material(name: str, color: str = "#4f9bff"):
-    mat, nodes, links = _node_material(name)
-    nodes.remove(nodes["Principled BSDF"])
-    out = nodes["Material Output"]
-    weight = nodes.new("ShaderNodeLayerWeight")
-    weight.inputs["Blend"].default_value = 0.35
-    power = nodes.new("ShaderNodeMath")
-    power.operation = "POWER"
-    power.inputs[1].default_value = 4.0
-    links.new(weight.outputs["Facing"], power.inputs[0])
-    glow = nodes.new("ShaderNodeEmission")
-    glow.inputs["Color"].default_value = hex_to_linear(color)
-    glow.inputs["Strength"].default_value = 0.9
-    clear = nodes.new("ShaderNodeBsdfTransparent")
-    mix = nodes.new("ShaderNodeMixShader")
-    links.new(power.outputs["Value"], mix.inputs["Fac"])
-    links.new(clear.outputs["BSDF"], mix.inputs[1])
-    links.new(glow.outputs["Emission"], mix.inputs[2])
-    links.new(mix.outputs["Shader"], out.inputs["Surface"])
-    return mat
+    mat["ocean_shift"] = shift_socket is not None
+    return mat, shift_socket
 
 
 def _sun_material(name: str):
@@ -197,6 +221,8 @@ class Planet:
     spinner: object
     clouds: object | None
     spin_rate: float  # deg/s at the start
+    ocean_shift: object | None = None
+    radius: float = 1.0
     focus_height: float = 0.0
     changes: list = field(default_factory=list)  # (start_frame, end_frame, rate_from, rate_to)
 
@@ -229,9 +255,29 @@ class Planet:
         key(self.root, "scale", start, (current,) * 3)
         key(self.root, "scale", end, (factor,) * 3)
 
+    def migrate_oceans(self, start: int, end: int, amount: float = 1.0) -> None:
+        if self.ocean_shift is None:
+            raise ValueError(f"'{self.name}' has no oceans to move (only kind=earth).")
+        self.ocean_shift.default_value = 0.0
+        self.ocean_shift.keyframe_insert("default_value", frame=start)
+        self.ocean_shift.default_value = amount
+        self.ocean_shift.keyframe_insert("default_value", frame=end)
+
+    def set_oceans(self, amount: float) -> None:
+        """Start the scene with oceans already moved (continuity with a previous scene)."""
+        if self.ocean_shift is not None:
+            self.ocean_shift.default_value = amount
+
 
 def planet(
-    name: str, location, radius: float = 1.0, kind: str = "earth", spin_rate: float = 0.0, tilt: float = 23.4
+    name: str,
+    location,
+    radius: float = 1.0,
+    kind: str = "earth",
+    spin_rate: float = 0.0,
+    tilt: float = 23.4,
+    oceans_moved: float = 0.0,
+    atmosphere: bool = True,
 ) -> Planet:
     col = objects.collection(name)
     root = objects.empty(f"{name}_root", location=location, col=col)
@@ -242,32 +288,9 @@ def planet(
             f"{name}_body", objects.sphere(radius, 64, 32), _sun_material(f"{name}_sun"), True, parent=spinner, col=col
         )
         lights.point(f"{name}_glow", (0, 0, 0), "#ffd9a0", 2000 * radius * radius, radius=radius, parent=root)
-        return Planet(name, tuple(location), root, spinner, None, spin_rate)
-    objects.mesh_object(
-        f"{name}_body",
-        objects.sphere(radius, 96, 48),
-        _surface_material(f"{name}_surface", kind, radius),
-        True,
-        parent=spinner,
-        col=col,
-    )
-    clouds = None
-    if kind == "earth":
-        clouds = objects.empty(f"{name}_clouds_spin", parent=spinner, col=col)
-        objects.mesh_object(
-            f"{name}_clouds",
-            objects.sphere(radius * 1.012, 96, 48),
-            _clouds_material(f"{name}_c", radius),
-            True,
-            parent=clouds,
-            col=col,
-        )
-        objects.mesh_object(
-            f"{name}_atmosphere",
-            objects.sphere(radius * 1.035, 96, 48),
-            _atmosphere_material(f"{name}_a"),
-            True,
-            parent=root,
-            col=col,
-        )
-    return Planet(name, tuple(location), root, spinner, clouds, spin_rate)
+        return Planet(name, tuple(location), root, spinner, None, spin_rate, None, radius)
+    material, shift_socket = _surface_material(f"{name}_surface", kind, radius)
+    objects.mesh_object(f"{name}_body", objects.sphere(radius, 96, 48), material, True, parent=spinner, col=col)
+    result = Planet(name, tuple(location), root, spinner, None, spin_rate, shift_socket, radius)
+    result.set_oceans(oceans_moved)
+    return result

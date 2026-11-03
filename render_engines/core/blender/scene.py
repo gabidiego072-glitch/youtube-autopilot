@@ -1,3 +1,5 @@
+import contextlib
+
 import bpy
 
 from render_engines.core.spec import RenderContext
@@ -36,6 +38,9 @@ def configure_render(scene: bpy.types.Scene, ctx: RenderContext, frames_dir: str
     cycles.adaptive_threshold = 0.05
     cycles.use_denoising = True
     cycles.denoiser = "OPENIMAGEDENOISE"
+    cycles.denoising_prefilter = "FAST"
+    with contextlib.suppress(AttributeError, TypeError):  # older Blender has no quality setting
+        cycles.denoising_quality = "BALANCED"
     cycles.max_bounces = 6
     cycles.diffuse_bounces = 3
     cycles.glossy_bounces = 2
@@ -85,6 +90,7 @@ def set_sky(
     output = nodes.new("ShaderNodeOutputWorld")
     links.new(sky.outputs["Color"], background.inputs["Color"])
     links.new(background.outputs["Background"], output.inputs["Surface"])
+    return sky, background
 
 
 def _set(node, name: str, value) -> None:
