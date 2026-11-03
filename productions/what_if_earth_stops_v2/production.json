@@ -723,7 +723,7 @@
           "start": 0.3,
           "end": 6.5,
           "elevation_from": 55,
-          "elevation_to": 1
+          "elevation_to": 7
         }
       ],
       "camera": {
@@ -746,16 +746,16 @@
           {
             "time": 6.5,
             "location": [
-              -12,
-              -6.2,
+              -14.5,
+              -5.8,
               1.8
             ],
             "target": [
-              2,
+              -1,
               6,
-              7
+              6.5
             ],
-            "lens": 20
+            "lens": 22
           }
         ]
       },
@@ -779,7 +779,7 @@
         {
           "id": "lucia",
           "start": [
-            -2.0,
+            -0.5,
             -5.0
           ],
           "facing": 90,
