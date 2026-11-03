@@ -6,6 +6,7 @@ in seconds; engines convert them to frames with `RenderContext.frame`.
 
 from __future__ import annotations
 
+import functools
 import json
 import math
 from dataclasses import dataclass
@@ -19,6 +20,9 @@ QUALITY_PRESETS = {
     "test": {"scale": 0.1, "samples": 1},  # automated tests
     "preview": {"scale": 1 / 3, "samples": 6},  # 360x640: check scenes, objects, light, animation
     "draft": {"scale": 0.5, "samples": 8},  # 540x960: full video, all scenes, voice and subtitles
+    # 720x1280, upscaled to 1080x1920 in the edit. 4 samples + OIDN look like 8 (no extra flicker
+    # measured); ~4x cheaper than final.
+    "hd": {"scale": 2 / 3, "samples": 4},
     "final": {"scale": 1.0, "samples": 8},  # 1080x1920: publishable (denoised; 8 vs 12 spp is indistinguishable)
 }
 
@@ -159,6 +163,7 @@ def build_context(
     )
 
 
+@functools.cache
 def engine_fingerprint() -> str:
     """Hash of the engine's source code, so cached frames are re-rendered when the engine changes."""
     import hashlib

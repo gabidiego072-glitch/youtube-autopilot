@@ -19,11 +19,17 @@ class UploadRequest:
     publish_at: datetime | None = None
     thumbnail_path: Path | None = None
     made_for_kids: bool = False
+    comment: str | None = None  # posted after the upload when YOUTUBE_POST_COMMENT=true
 
 
 @dataclass(frozen=True)
 class UploadResult:
     youtube_video_id: str
+    privacy: str = "private"
+    upload_status: str | None = None
+    thumbnail_set: bool = False
+    comment_id: str | None = None
+    warnings: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

@@ -46,13 +46,13 @@ def integrations_status(settings: Settings, ffmpeg: FFmpeg) -> IntegrationsStatu
         ),
         youtube_data_api=IntegrationState(
             configured=settings.youtube_configured,
-            implemented=False,
-            detail=f"{youtube_note}; upload planned for roadmap Phase 5",
+            implemented=True,
+            detail=f"{youtube_note}; resumable upload, private unless YOUTUBE_ALLOW_PUBLIC=true",
         ),
         youtube_analytics_api=IntegrationState(
             configured=settings.youtube_configured,
-            implemented=False,
-            detail=f"{youtube_note}; collection planned for roadmap Phase 6",
+            implemented=True,
+            detail=f"{youtube_note}; views, watch time, retention (impressions/CTR only via Studio)",
         ),
         publishing_enabled=settings.youtube_publishing_enabled,
     )

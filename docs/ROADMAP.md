@@ -66,16 +66,20 @@ Cada fase termina con código probado; nada se marca como hecho si no funciona c
 
 - [ ] Cola de trabajos y worker para investigación, imágenes, voz y montaje (fuera de la petición HTTP)
 - [ ] Almacenamiento de medios en Supabase Storage o S3
-- [ ] Workers de CPU para Blender/FFmpeg que reparten las escenas en paralelo (y GPU opcional para Cycles)
+- [x] Render repartido en trabajos paralelos de GitHub Actions (o un ejecutor propio), con reutilización de clips
+- [ ] GPU opcional para Cycles (ejecutor propio con NVIDIA)
 
 ## Fase 5 — Publicación en YouTube
 
-- [ ] OAuth por canal (tokens cifrados), subida reanudable, miniatura, programación, comentario fijado
-- [ ] Control de cuota; subidas en `private` por defecto; aprobación humana obligatoria
+- [x] OAuth (script de autorización con PKCE), subida reanudable con reintentos, miniatura, programación (`publishAt`), comentario (fijarlo es manual)
+- [x] Subidas en `private` por defecto; públicas solo con `YOUTUBE_ALLOW_PUBLIC`; aprobación humana obligatoria
+- [ ] Prueba real con las credenciales del canal y auditoría de la API de YouTube
+- [ ] Tokens por canal cifrados en la base de datos (hoy: un canal, token como secreto)
 
 ## Fase 6 — Estadísticas automáticas
 
-- [ ] Recolector programado de la YouTube Analytics API (vistas, CTR, retención, comentarios)
+- [x] Recolector diario de la YouTube Analytics API (vistas, tiempo visto, retención, interacción)
+- [ ] Impresiones y CTR desde la YouTube Reporting API (informes masivos)
 - [ ] Curvas de retención por escena (¿en qué consecuencia se va la gente?)
 
 ## Fase 7 — Aprendizaje avanzado

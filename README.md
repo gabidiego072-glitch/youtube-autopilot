@@ -36,11 +36,12 @@ ideas ─► selección ─► investigación ─► guion ─► verificación 
 | Verificación | Revisión científica de cada afirmación; la aprobación exige que pase | Claude | — | ✅ |
 | Voz | Narración por escena en español, offline; marca la duración de cada escena | Piper (open source) | Gratis | ✅ |
 | Escenas 3D | Cada escena del guion se convierte en una escena del motor (entorno, personajes, planetas, acciones, cámara), validada por el propio motor | Claude + catálogo del motor | — | ✅ |
-| Render | Cada escena se renderiza con la duración exacta de su voz, como trabajo en segundo plano | Blender (Cycles, CPU) | Gratis | ✅ |
+| Render | Cada escena con la duración exacta de su voz; en la nube, repartidas en trabajos paralelos; modo `hd` (720p, 4 muestras, reescalado a 1080p) | Blender (Cycles, CPU) | Gratis | ✅ |
 | Montaje | Clips al ritmo de la voz, subtítulos sincronizados, música con *ducking* | FFmpeg | Gratis | ✅ |
 | Metadatos | Título-pregunta, descripción con «ciencia vs. hipótesis» y fuentes, etiquetas, comentario fijado | Claude | — | ✅ |
-| Publicación | Subida a YouTube | YouTube Data API | Gratis (cuota) | ⏳ Fase 5 (bloqueada por seguridad) |
-| Estadísticas | Entrada manual hoy; recolector automático después | YouTube Analytics API | Gratis | ✅ manual / ⏳ automático |
+| Publicación | Subida reanudable, miniatura, comentario opcional; privada por defecto, pública solo con `YOUTUBE_ALLOW_PUBLIC` | YouTube Data API | Gratis (cuota) | ✅ probada con Google simulado; falta la prueba real con tus credenciales |
+| Estadísticas | Sincronización diaria (vistas, tiempo visto, retención, interacción) + entrada manual para impresiones/CTR | YouTube Analytics API | Gratis | ✅ (falta probar con tu canal) |
+| Tendencias | Artículos más leídos de Wikipedia y vídeos populares del nicho | Wikimedia Pageviews + YouTube Data API (clave opcional) | Gratis | ✅ |
 | Aprendizaje | Compara categorías, formatos y tipos de final; reajusta el ranking de ideas | — | — | ✅ |
 
 Detalle de cada etapa, prompts y opciones gratuitas: [docs/PIPELINE.md](docs/PIPELINE.md).

@@ -2,7 +2,9 @@ name: CI
 
 on:
   push:
+    paths-ignore: ["docs/**", "**/*.md"]  # docs-only changes do not spend Actions minutes
   pull_request:
+  workflow_dispatch:
 
 jobs:
   test:

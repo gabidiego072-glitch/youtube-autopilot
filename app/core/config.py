@@ -54,12 +54,25 @@ class Settings(BaseSettings):
     youtube_refresh_token: SecretStr | None = None
     # Hard safety switch. Uploads are refused while this is false.
     youtube_publishing_enabled: bool = False
+    # Second switch, only for PUBLIC (or scheduled) videos. While false every upload is private,
+    # which is what you want for test uploads and while the API project is not audited.
+    youtube_allow_public: bool = False
+    youtube_default_privacy: Literal["private", "unlisted", "public"] = "private"
+    # Post the metadata's "pinned comment" after uploading (needs the youtube.force-ssl scope;
+    # pinning itself is only possible by hand in YouTube Studio).
+    youtube_post_comment: bool = False
+    # Optional API key (no OAuth) for public data: trends and competitor research.
+    youtube_api_key: SecretStr | None = None
+    youtube_region_code: str = "ES"
+    youtube_upload_chunk_mb: int = 8
 
     # --- Research (free) ----------------------------------------------------
     research_enabled: bool = True
+    # Trend signals for new ideas: Wikipedia pageviews (free) + YouTube search if YOUTUBE_API_KEY is set.
+    trends_enabled: bool = True
     wikipedia_language: str = "es"
     # Wikimedia asks for a descriptive agent with contact info.
-    wikipedia_user_agent: str = "YouTubeAutopilot/0.2 (set WIKIPEDIA_USER_AGENT with your contact)"
+    wikipedia_user_agent: str = "YouTubeAutopilot/0.3 (+https://github.com/gabidiego072-glitch/youtube-autopilot)"
 
     # --- Procedural 3D scenes (Blender) ----------------------------------
     scene_render_quality: str = "draft"  # test | draft | preview | final
@@ -98,6 +111,10 @@ class Settings(BaseSettings):
     @property
     def claude_configured(self) -> bool:
         return bool(self.anthropic_api_key and self.anthropic_api_key.get_secret_value())
+
+    @property
+    def youtube_api_key_configured(self) -> bool:
+        return bool(self.youtube_api_key and self.youtube_api_key.get_secret_value())
 
     @property
     def youtube_configured(self) -> bool:

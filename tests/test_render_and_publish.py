@@ -85,12 +85,35 @@ def test_publish_enabled_without_credentials(make_client, db_session_factory, ch
     assert client.post(f"/api/v1/projects/{project['id']}/publish").status_code == 503
 
 
-def test_publish_never_fakes_success(make_client, db_session_factory, channel):
+def test_public_upload_needs_its_own_authorisation(make_client, db_session_factory, channel):
+    settings = make_settings(
+        youtube_publishing_enabled=True, youtube_client_id="a", youtube_client_secret="b", youtube_refresh_token="c"
+    )
+    client = make_client(settings, ai=StubAIProvider(list(PIPELINE)))
+    project = _approved_project(client, db_session_factory, channel)
+    response = client.post(f"/api/v1/projects/{project['id']}/publish", params={"privacy": "public"})
+    assert response.status_code == 403 and "YOUTUBE_ALLOW_PUBLIC" in response.json()["detail"]
+    assert client.get(f"/api/v1/projects/{project['id']}").json()["status"] == "ready_to_publish"
+
+
+def test_private_upload_records_the_video(make_client, db_session_factory, channel, monkeypatch):
+    from app.services.youtube.base import UploadResult
+    from app.services.youtube.data_api import YouTubeDataAPIPublisher
+
+    sent = []
+
+    def fake_upload(self, request):  # the HTTP protocol itself is covered in tests/test_youtube.py
+        sent.append(request)
+        return UploadResult("vid99", privacy=request.privacy.value)
+
+    monkeypatch.setattr(YouTubeDataAPIPublisher, "upload", fake_upload)
     settings = make_settings(
         youtube_publishing_enabled=True, youtube_client_id="a", youtube_client_secret="b", youtube_refresh_token="c"
     )
     client = make_client(settings, ai=StubAIProvider(list(PIPELINE)))
     project = _approved_project(client, db_session_factory, channel)
     response = client.post(f"/api/v1/projects/{project['id']}/publish")
-    assert response.status_code == 501
-    assert client.get(f"/api/v1/projects/{project['id']}").json()["status"] == "ready_to_publish"
+    assert response.status_code == 200 and response.json()["privacy"] == "private"
+    assert sent[0].privacy.value == "private"
+    body = client.get(f"/api/v1/projects/{project['id']}").json()
+    assert body["status"] == "published" and body["youtube_video_id"] == "vid99"

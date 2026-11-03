@@ -121,3 +121,78 @@ def test_autopilot_api_reports_missing_credentials(client):
     response = client.post("/api/v1/autopilot/runs", json={"channel_id": channel["id"]})
     assert response.status_code == 503
     assert any("ANTHROPIC_API_KEY" in p for p in response.json()["detail"]["problems"])
+
+
+# --- parallel rendering ---------------------------------------------------------------------------
+def test_scenes_rendered_in_parallel_shards_are_reused_by_the_edit(db, tmp_path):
+    from app.services.production.short import render_scene_shard, shard_scenes
+
+    assert shard_scenes(7, 0, 3) == [0, 3, 6] and shard_scenes(7, 2, 3) == [2, 5]
+    services = _services(tmp_path, FULL_RUN[:-1])
+    run = run_pipeline(db, create_run(db, _channel(db), VideoFormat.SHORT, "draft"), services, until="storyboard")
+    work = tmp_path / "media" / "autopilot" / str(run.id)
+    shard_blender = _StubBlender()
+    for shard in range(2):  # in CI each shard is a separate job on its own machine
+        render_scene_shard(
+            work / "production.json",
+            "draft",
+            work,
+            blender=shard_blender,
+            ffmpeg=ffmpeg,
+            tts=_StubVoice(),
+            shard=shard,
+            shards=2,
+            log=lambda *_: None,
+        )
+    scenes = len(SCRIPT_RESPONSE["scenes"])
+    assert len(shard_blender.specs) == scenes
+
+    final = _services(tmp_path, [METADATA_RESPONSE])  # the job that edits: nothing left to render
+    run = run_pipeline(db, run, final)
+    assert run.status == RunStatus.WAITING_APPROVAL, run.error
+    assert final.blender.specs == []
+
+
+# --- publishing -----------------------------------------------------------------------------------
+CREDS = {"youtube_client_id": "a", "youtube_client_secret": "b", "youtube_refresh_token": "c"}
+
+
+def _recording_publisher(settings):
+    from app.services.youtube.base import UploadResult
+    from app.services.youtube.data_api import YouTubeDataAPIPublisher
+
+    class Recording(YouTubeDataAPIPublisher):
+        requests = []
+
+        def upload(self, request):
+            self.check_ready()
+            self.check_privacy(request)
+            self.requests.append(request)
+            return UploadResult("vid42", privacy=request.privacy.value, thumbnail_set=True)
+
+    return Recording(settings)
+
+
+def test_authorised_run_uploads_as_private(db, tmp_path):
+    from app.models import PublishJob, VideoProject
+    from app.models.enums import PrivacyStatus, PublishStatus
+
+    services = _services(tmp_path, FULL_RUN, youtube_publishing_enabled=True, **CREDS)
+    services.publisher = _recording_publisher(services.settings)
+    run = run_pipeline(db, create_run(db, _channel(db), VideoFormat.SHORT, "draft", auto_publish=True), services)
+    assert run.status == RunStatus.PUBLISHED, run.error
+    (request,) = services.publisher.requests
+    assert request.privacy == PrivacyStatus.PRIVATE and request.thumbnail_path.is_file()
+    assert request.video_path.is_file() and request.title == METADATA_RESPONSE["title"]
+    project = db.get(VideoProject, run.project_id)
+    assert project.youtube_video_id == "vid42"
+    job = db.query(PublishJob).one()
+    assert job.status == PublishStatus.PUBLISHED and job.privacy == PrivacyStatus.PRIVATE
+
+
+def test_public_default_without_authorisation_never_uploads(db, tmp_path):
+    services = _services(tmp_path, FULL_RUN, youtube_publishing_enabled=True, youtube_default_privacy="public", **CREDS)
+    services.publisher = _recording_publisher(services.settings)
+    run = run_pipeline(db, create_run(db, _channel(db), VideoFormat.SHORT, "draft", auto_publish=True), services)
+    assert run.status == RunStatus.FAILED and "YOUTUBE_ALLOW_PUBLIC" in run.error
+    assert services.publisher.requests == []

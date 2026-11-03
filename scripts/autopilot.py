@@ -6,6 +6,12 @@
     python scripts/autopilot.py resume <run_id>
     python scripts/autopilot.py approve <run_id>     # after reviewing the video: approve and continue
     python scripts/autopilot.py status [<run_id>]
+    python scripts/autopilot.py render-shard <run_id> --shard 0 --shards 4   # parallel cloud rendering
+    python scripts/autopilot.py claude-check         # one tiny Claude call (fractions of a cent)
+    python scripts/autopilot.py youtube-check        # verify the OAuth credentials (no upload)
+    python scripts/autopilot.py upload-test video.mp4  # PRIVATE test upload (needs YOUTUBE_PUBLISHING_ENABLED)
+    python scripts/autopilot.py sync-analytics       # YouTube Analytics -> learning loop
+    python scripts/autopilot.py trends               # what the idea generator will see
 
 A run stops at 'approval' unless it was started with --auto-publish AND YOUTUBE_PUBLISHING_ENABLED=true.
 """
@@ -21,11 +27,25 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from sqlalchemy import select  # noqa: E402
 
 from app.core.config import get_settings  # noqa: E402
+from app.core.errors import AutopilotError  # noqa: E402
 from app.db.session import get_session_factory  # noqa: E402
 from app.models import Channel, PipelineRun  # noqa: E402
-from app.models.enums import VideoFormat  # noqa: E402
-from app.services.autopilot.factory import preflight, real_services  # noqa: E402
+from app.models.enums import (
+    PrivacyStatus,  # noqa: E402
+    VideoFormat,  # noqa: E402
+)
+from app.services.ai.factory import get_ai_provider  # noqa: E402
+from app.services.analytics.sync import sync_youtube_metrics  # noqa: E402
+from app.services.autopilot.factory import piper_binary, preflight, real_services  # noqa: E402
 from app.services.autopilot.runner import approve_run, create_run, run_pipeline  # noqa: E402
+from app.services.production.short import render_scene_shard  # noqa: E402
+from app.services.rendering.blender import Blender  # noqa: E402
+from app.services.rendering.ffmpeg import FFmpeg  # noqa: E402
+from app.services.trends.signals import collect_signals  # noqa: E402
+from app.services.voice.piper import PiperTTS  # noqa: E402
+from app.services.youtube.analytics_api import YouTubeAnalyticsCollector  # noqa: E402
+from app.services.youtube.base import UploadRequest  # noqa: E402
+from app.services.youtube.data_api import YouTubeDataAPIPublisher  # noqa: E402
 
 
 def summary(run: PipelineRun) -> dict:
@@ -48,7 +68,7 @@ def main() -> int:
     run_p.add_argument("--channel", required=True, help="channel name (created if missing) or id")
     run_p.add_argument("--niche", default="curiosidades, ciencia y situaciones hipotéticas")
     run_p.add_argument("--format", choices=[f.value for f in VideoFormat], default="short")
-    run_p.add_argument("--mode", choices=["preview", "draft", "final"], default="draft")
+    run_p.add_argument("--mode", choices=["preview", "draft", "hd", "final"], default="draft")
     run_p.add_argument("--auto-publish", action="store_true")
     run_p.add_argument("--until", help="stop after this step (e.g. storyboard)")
     resume_p = sub.add_parser("resume")
@@ -57,8 +77,36 @@ def main() -> int:
     approve_p.add_argument("run_id")
     status_p = sub.add_parser("status")
     status_p.add_argument("run_id", nargs="?")
+    shard_p = sub.add_parser("render-shard", help="render a subset of a run's scenes (after --until storyboard)")
+    shard_p.add_argument("run_id")
+    shard_p.add_argument("--shard", type=int, required=True)
+    shard_p.add_argument("--shards", type=int, required=True)
+    sub.add_parser("youtube-check")
+    sub.add_parser("claude-check")
+    upload_p = sub.add_parser("upload-test")
+    upload_p.add_argument("video", type=Path)
+    upload_p.add_argument("--title", default="Prueba privada YouTube-Autopilot")
+    upload_p.add_argument("--thumbnail", type=Path)
+    sub.add_parser("sync-analytics")
+    sub.add_parser("trends")
     args = parser.parse_args()
     settings = get_settings()
+
+    if args.command in ("youtube-check", "upload-test", "trends"):
+        return youtube_command(args, settings)
+    if args.command == "claude-check":
+        result = get_ai_provider(settings).generate_json(
+            system="Answer briefly.",
+            prompt="Reply with ok=true.",
+            schema={
+                "type": "object",
+                "properties": {"ok": {"type": "boolean"}},
+                "required": ["ok"],
+                "additionalProperties": False,
+            },
+        )
+        print(json.dumps({"ok": result.data.get("ok"), "model": result.model, "usage": result.usage}, indent=2))
+        return 0
 
     if args.command == "preflight":
         problems = preflight(settings)
@@ -74,6 +122,11 @@ def main() -> int:
             )
             print(json.dumps([summary(r) for r in runs if r], ensure_ascii=False, indent=2, default=str))
             return 0
+        if args.command == "sync-analytics":
+            print(json.dumps(sync_youtube_metrics(db, YouTubeAnalyticsCollector(settings)), indent=2))
+            return 0
+        if args.command == "render-shard":
+            return render_shard(db, args, settings)
         problems = preflight(settings)
         if problems:
             print(json.dumps({"ready": False, "problems": problems}, ensure_ascii=False, indent=2))
@@ -100,5 +153,68 @@ def main() -> int:
         return 0 if run.status.value in ("published", "waiting_approval") or args.command == "run" and args.until else 1
 
 
+def render_shard(db, args, settings) -> int:
+    """Render this shard's scenes into the run's work dir; the 'render' step later reuses the clips."""
+    run = db.get(PipelineRun, uuid.UUID(args.run_id))
+    work = Path(settings.media_root) / "autopilot" / str(run.id)
+    production = work / "production.json"
+    if not production.is_file():
+        print(f"{production} not found: run the pipeline with --until storyboard first.", file=sys.stderr)
+        return 2
+    report = render_scene_shard(
+        production,
+        run.render_mode,
+        work,
+        blender=Blender(settings.blender_binary, settings.blender_timeout_seconds),
+        ffmpeg=FFmpeg(settings.ffmpeg_binary, settings.ffprobe_binary),
+        tts=PiperTTS(piper_binary(settings), settings.piper_voice_model, settings.piper_length_scale),
+        shard=args.shard,
+        shards=args.shards,
+        threads=settings.scene_render_threads,
+    )
+    print(json.dumps(report, indent=2))
+    return 0
+
+
+def youtube_command(args, settings) -> int:
+    if args.command == "trends":
+        signals = collect_signals(settings)
+        print(json.dumps(signals.__dict__, ensure_ascii=False, indent=2))
+        return 0
+    publisher = YouTubeDataAPIPublisher(settings)
+    if args.command == "youtube-check":
+        channel = publisher.channel()  # refreshes the access token, then reads the channel
+        print(
+            json.dumps(
+                {
+                    "ok": True,
+                    "channel": channel,
+                    "publishing_enabled": settings.youtube_publishing_enabled,
+                    "public_allowed": settings.youtube_allow_public,
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return 0
+    # upload-test: always private, whatever the settings say.
+    result = publisher.upload(
+        UploadRequest(
+            video_path=args.video,
+            title=args.title,
+            description="Subida de prueba automática (privada). YouTube-Autopilot.",
+            privacy=PrivacyStatus.PRIVATE,
+            thumbnail_path=args.thumbnail,
+        )
+    )
+    print(json.dumps(result.__dict__, ensure_ascii=False, indent=2))
+    print(f"Revisa el vídeo (privado) en https://studio.youtube.com/video/{result.youtube_video_id}/edit")
+    return 0
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except AutopilotError as exc:  # clear message, no traceback (and never a secret)
+        print(f"error ({exc.code}): {exc.message}", file=sys.stderr)
+        sys.exit(3)

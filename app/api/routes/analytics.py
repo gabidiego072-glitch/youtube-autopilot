@@ -1,5 +1,4 @@
 import uuid
-from datetime import date
 
 from fastapi import APIRouter, status
 
@@ -9,6 +8,7 @@ from app.models import AnalyticsSnapshot
 from app.models.enums import AnalyticsSource
 from app.schemas.analytics import AnalyticsSnapshotCreate, AnalyticsSnapshotRead, DerivedMetricsRead
 from app.services.analytics.metrics import derive
+from app.services.analytics.sync import sync_youtube_metrics
 from app.services.youtube.analytics_api import YouTubeAnalyticsCollector
 
 router = APIRouter(tags=["analytics"])
@@ -48,7 +48,8 @@ def list_snapshots(project_id: uuid.UUID, db: DbSession) -> list[AnalyticsSnapsh
 
 
 @router.post("/analytics/sync")
-def sync_from_youtube(settings: SettingsDep, start: date, end: date) -> dict:
-    """Pull metrics from the YouTube Analytics API (raises until Phase 6)."""
-    YouTubeAnalyticsCollector(settings).fetch_video_metrics([], start, end)
-    return {"synced": 0}  # pragma: no cover - unreachable until implemented
+def sync_from_youtube(db: DbSession, settings: SettingsDep) -> dict:
+    """Pull lifetime metrics of every published video from the YouTube Analytics API."""
+    collector = YouTubeAnalyticsCollector(settings)
+    collector.api  # noqa: B018 - fail fast (503) when the OAuth credentials are missing
+    return sync_youtube_metrics(db, collector)

@@ -48,8 +48,9 @@ def test_api_key_required_when_configured(make_client):
 def test_integrations_status_is_honest(client):
     body = client.get("/api/v1/system/integrations").json()
     assert body["claude"]["configured"] is False
-    assert body["youtube_data_api"]["implemented"] is False
-    assert body["youtube_analytics_api"]["implemented"] is False
+    # Implemented, but not configured: no credentials means nothing can be uploaded or read.
+    assert body["youtube_data_api"] == {**body["youtube_data_api"], "implemented": True, "configured": False}
+    assert body["youtube_analytics_api"]["configured"] is False
     assert body["publishing_enabled"] is False
     assert "ai_images" not in body and "ai_video" not in body  # everything is rendered by code
     assert body["voice"]["configured"] is False

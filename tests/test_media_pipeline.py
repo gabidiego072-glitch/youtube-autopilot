@@ -404,6 +404,14 @@ def test_produce_short_from_another_script(tmp_path):
         log=lambda *_: None,
     )
     assert preview["resolution"] == "360x640" and len(preview["scenes"]) == 2
+    # hd: scenes rendered at 720p (4 samples) and upscaled, so the upload is 1080x1920; a second run reuses clips.
+    hd_blender = _StubBlender()
+    kwargs = dict(ffmpeg=ffmpeg, tts=_StubVoice(), log=lambda *_: None)
+    hd = produce_short(_second_production(tmp_path), "hd", tmp_path / "out", blender=hd_blender, **kwargs)
+    assert hd["resolution"] == "1080x1920" and len(hd_blender.specs) == 6
+    again = _StubBlender()
+    produce_short(_second_production(tmp_path), "hd", tmp_path / "out", blender=again, **kwargs)
+    assert again.specs == []
 
 
 def test_production_rejects_broken_files(tmp_path):

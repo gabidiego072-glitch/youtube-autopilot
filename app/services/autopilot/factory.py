@@ -9,6 +9,7 @@ from app.services.autopilot.runner import Services
 from app.services.rendering.blender import Blender
 from app.services.rendering.ffmpeg import FFmpeg
 from app.services.research.wikipedia import WikipediaClient
+from app.services.trends.signals import collect_signals
 from app.services.voice.piper import PiperTTS
 
 
@@ -28,6 +29,7 @@ def real_services(settings: Settings, log=print) -> Services:
         ffmpeg=FFmpeg(settings.ffmpeg_binary, settings.ffprobe_binary),
         settings=settings,
         log=log,
+        trends=(lambda: collect_signals(settings)) if settings.trends_enabled else None,
     )
 
 
