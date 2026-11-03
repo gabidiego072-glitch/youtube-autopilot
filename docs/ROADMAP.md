@@ -39,6 +39,13 @@ Cada fase termina con código probado; nada se marca como hecho si no funciona c
       atmósfera; Luna; Marte; Sol), acciones `spin` y `scale`
 - [x] Ejemplo «¿Qué pasaría si la Tierra dejase de girar?»
 
+## Fase 1.7 — Impacto humano y automatización ✅ (v0.4, esta versión)
+
+- [x] Regla de impacto humano en ideas, guiones, storyboard y validadores (≥70 % a escala humana, ≤1 vista global)
+- [x] Entornos procedurales de ciudad, costa e interior con física (inercia, cristales, mar)
+- [x] Orquestador autónomo reanudable con aprobación humana, QA de vídeo, miniaturas y registro de tokens
+- [x] Flujo diario de GitHub Actions preparado (desactivado hasta tener secretos). Ver `docs/AUTOMATION.md`
+
 ## Fase 2 — Calidad de contenido
 
 - [ ] Regeneración automática de un guion cuando la verificación falla, usando las correcciones

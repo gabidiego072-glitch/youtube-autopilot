@@ -89,3 +89,12 @@ class FactCheckStatus(enum.StrEnum):
     NOT_CHECKED = "not_checked"
     PASSED = "passed"
     NEEDS_REVISION = "needs_revision"
+
+
+class RunStatus(enum.StrEnum):
+    QUEUED = "queued"
+    RUNNING = "running"
+    WAITING_APPROVAL = "waiting_approval"
+    PUBLISHED = "published"
+    FAILED = "failed"
+    CANCELLED = "cancelled"

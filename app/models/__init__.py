@@ -7,6 +7,7 @@ from app.models.channel import Channel
 from app.models.idea import Idea
 from app.models.insight import Insight
 from app.models.metadata import VideoMetadata
+from app.models.pipeline_run import PipelineRun
 from app.models.publish_job import PublishJob
 from app.models.render_job import RenderJob
 from app.models.report import Report
@@ -21,6 +22,7 @@ __all__ = [
     "Idea",
     "Insight",
     "MediaAsset",
+    "PipelineRun",
     "PublishJob",
     "RenderJob",
     "Report",
