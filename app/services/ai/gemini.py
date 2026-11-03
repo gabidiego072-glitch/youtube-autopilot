@@ -1,0 +1,199 @@
+"""Gemini (Google AI Studio) implementation of `AIProvider`: the free option.
+
+Uses the REST `generateContent` endpoint with JSON output constrained by the step's JSON Schema.
+The free tier has per-minute and per-day request limits (see your quota in AI Studio). Per-minute
+limits are waited out here; when the daily quota is used up the step fails with a clear message and
+the run can be resumed the next day (`autopilot.py resume <run_id>`). Nothing is ever charged.
+
+Note: on the free tier Google may use prompts and answers to improve its products. This project only
+sends public-knowledge material (ideas, scripts, fact checks), never credentials or personal data.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+import re
+import time
+from collections.abc import Callable
+from typing import Any
+
+import httpx
+
+from app.core.config import Settings
+from app.core.errors import IntegrationNotConfiguredError, ProviderError
+from app.services.ai.base import GenerationResult
+
+logger = logging.getLogger(__name__)
+
+API_ROOT = "https://generativelanguage.googleapis.com/v1beta"
+MAX_RATE_WAITS = 6
+MAX_WAIT_SECONDS = 90
+BLOCKED = {"SAFETY", "BLOCKLIST", "PROHIBITED_CONTENT", "SPII", "RECITATION"}
+
+
+class GeminiProvider:
+    name = "gemini"
+
+    def __init__(
+        self,
+        settings: Settings,
+        http: httpx.Client | None = None,
+        sleep: Callable[[float], None] = time.sleep,
+    ) -> None:
+        if not settings.gemini_configured:
+            raise IntegrationNotConfiguredError(
+                "Gemini is not configured. Create a free key at aistudio.google.com and set GEMINI_API_KEY."
+            )
+        self._key = settings.gemini_api_key.get_secret_value()
+        self.model = settings.gemini_model
+        self._max_tokens = settings.gemini_max_tokens
+        self._http = http or httpx.Client(timeout=httpx.Timeout(settings.gemini_timeout_seconds, connect=20.0))
+        self._sleep = sleep
+
+    def __repr__(self) -> str:  # never leak the key
+        return f"GeminiProvider(model={self.model!r})"
+
+    # --- public -------------------------------------------------------------------------
+    def generate_json(self, *, system: str, prompt: str, schema: dict[str, Any]) -> GenerationResult:
+        body = {
+            "systemInstruction": {"parts": [{"text": system}]},
+            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+            "generationConfig": {
+                "responseMimeType": "application/json",
+                "responseJsonSchema": schema,
+                "maxOutputTokens": self._max_tokens,
+            },
+        }
+        try:
+            data = self._post(body)
+        except _SchemaRejected:
+            # Very large schemas can exceed the constrained-decoding limits: fall back to plain JSON
+            # mode with the schema in the prompt. The pipeline validates every answer anyway.
+            logger.warning("gemini rejected the JSON schema; retrying with the schema in the prompt")
+            body["generationConfig"].pop("responseJsonSchema")
+            body["contents"][0]["parts"][0]["text"] = (
+                f"{prompt}\n\nAnswer with ONE JSON object that matches this JSON Schema exactly:\n"
+                + json.dumps(schema, ensure_ascii=False)
+            )
+            data = self._post(body)
+        return self._result(data)
+
+    def list_models(self) -> list[str]:
+        """Models this key can call with generateContent (used by `autopilot.py ai-check`)."""
+        response = self._request("GET", f"{API_ROOT}/models", params={"pageSize": 200})
+        if response.status_code != 200:
+            raise ProviderError(f"Gemini API error: {_error(response)}")
+        return sorted(
+            m["name"].removeprefix("models/")
+            for m in response.json().get("models", [])
+            if "generateContent" in m.get("supportedGenerationMethods", [])
+        )
+
+    # --- internals ----------------------------------------------------------------------
+    def _request(self, method: str, url: str, **kwargs) -> httpx.Response:
+        try:
+            return self._http.request(method, url, headers={"x-goog-api-key": self._key}, **kwargs)
+        except httpx.TransportError as exc:
+            raise ProviderError("Could not reach the Gemini API.") from exc
+
+    def _post(self, body: dict) -> dict:
+        url = f"{API_ROOT}/models/{self.model}:generateContent"
+        for attempt in range(MAX_RATE_WAITS + 1):
+            response = self._request("POST", url, json=body)
+            if response.status_code == 200:
+                return response.json()
+            detail = _error(response)
+            if response.status_code == 400 and "schema" in detail.lower():
+                raise _SchemaRejected(detail)
+            if response.status_code == 404:
+                raise IntegrationNotConfiguredError(
+                    f"Gemini model '{self.model}' not found. Run `python scripts/autopilot.py ai-check` to list "
+                    "the models your key can use and set GEMINI_MODEL."
+                )
+            if response.status_code in (401, 403):
+                raise IntegrationNotConfiguredError(f"Gemini rejected the API key: {detail}")
+            if response.status_code == 429 and _is_daily(response):
+                raise ProviderError(
+                    "Gemini's free daily quota is used up. Nothing was charged; resume the run tomorrow "
+                    "(it continues from this step)."
+                )
+            if response.status_code in (429, 500, 503) and attempt < MAX_RATE_WAITS:
+                wait = _retry_delay(response) or min(MAX_WAIT_SECONDS, 5 * 2**attempt)
+                logger.info("gemini %s, waiting %.0fs", response.status_code, wait)
+                self._sleep(min(MAX_WAIT_SECONDS, wait))
+                continue
+            raise ProviderError(f"Gemini API error: {detail}")
+        raise ProviderError("Gemini kept rate-limiting the request; try again later.")  # pragma: no cover
+
+    def _result(self, data: dict) -> GenerationResult:
+        block = data.get("promptFeedback", {}).get("blockReason")
+        if block:
+            raise ProviderError(f"Gemini blocked the prompt ({block}).")
+        candidates = data.get("candidates") or []
+        if not candidates:
+            raise ProviderError("Gemini returned no answer.")
+        candidate = candidates[0]
+        reason = candidate.get("finishReason")
+        if reason == "MAX_TOKENS":
+            raise ProviderError("Gemini output was truncated (raise GEMINI_MAX_TOKENS).")
+        if reason in BLOCKED:
+            raise ProviderError(f"Gemini stopped the answer ({reason}).")
+        text = "".join(p.get("text", "") for p in candidate.get("content", {}).get("parts", []) if not p.get("thought"))
+        try:
+            parsed = json.loads(_strip_fences(text))
+        except json.JSONDecodeError as exc:
+            raise ProviderError("Gemini returned invalid JSON.") from exc
+        if not isinstance(parsed, dict):
+            raise ProviderError("Gemini returned JSON that is not an object.")
+        meta = data.get("usageMetadata", {})
+        usage = {
+            "input_tokens": int(meta.get("promptTokenCount", 0)),
+            "output_tokens": int(meta.get("candidatesTokenCount", 0)) + int(meta.get("thoughtsTokenCount", 0)),
+        }
+        model = data.get("modelVersion") or self.model
+        logger.info("gemini generation model=%s usage=%s", model, usage)
+        return GenerationResult(data=parsed, provider=self.name, model=model, usage=usage)
+
+
+class _SchemaRejected(Exception):
+    pass
+
+
+def _error(response: httpx.Response) -> str:
+    try:
+        error = response.json().get("error", {})
+    except ValueError:
+        return f"HTTP {response.status_code}"
+    return f"HTTP {response.status_code} {error.get('status', '')} {error.get('message', '')}".strip()
+
+
+def _details(response: httpx.Response) -> list[dict]:
+    try:
+        return response.json().get("error", {}).get("details", []) or []
+    except ValueError:
+        return []
+
+
+def _is_daily(response: httpx.Response) -> bool:
+    for detail in _details(response):
+        for violation in detail.get("violations", []) or []:
+            if "PerDay" in (violation.get("quotaId", "") + violation.get("quotaMetric", "")):
+                return True
+    return "per day" in _error(response).lower()
+
+
+def _retry_delay(response: httpx.Response) -> float | None:
+    for detail in _details(response):
+        delay = detail.get("retryDelay")
+        if isinstance(delay, str) and delay.endswith("s"):
+            try:
+                return float(delay[:-1]) + 1
+            except ValueError:
+                return None
+    return None
+
+
+def _strip_fences(text: str) -> str:
+    match = re.search(r"```(?:json)?\s*(.*?)```", text, re.S)
+    return (match.group(1) if match else text).strip()

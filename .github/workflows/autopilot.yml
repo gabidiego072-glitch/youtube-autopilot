@@ -1,0 +1,195 @@
+# Daily autonomous production, rendered in parallel:
+#
+#   prepare (idea -> research -> script -> fact-check -> voice -> storyboard)
+#     -> render x N shards (each renders some scenes in Blender, in parallel)
+#       -> finish (edit, QA, metadata, thumbnail; stops for approval, or publishes if authorised)
+#
+# Disabled until you set the repository variable AUTOPILOT_ENABLED=true and the secrets in
+# docs/AUTOMATION.md. Manual runs: Actions -> Autopilot -> Run workflow.
+#
+# Variables (Settings -> Secrets and variables -> Actions -> Variables):
+#   AUTOPILOT_ENABLED  true to run the daily schedule
+#   RENDER_MODE        draft | hd | final            (default hd)
+#   RENDER_SHARDS      parallel render jobs, 1-8      (default 4)
+#   RUNS_ON            runner labels as JSON          (default "ubuntu-latest";
+#                      your own PC: ["self-hosted","linux","x64"])
+name: Autopilot
+
+on:
+  schedule:
+    - cron: "17 5 * * *"  # 05:17 UTC every day
+  workflow_dispatch:
+    inputs:
+      command:
+        description: "run | approve | resume | status | sync-analytics"
+        default: run
+      run_id:
+        description: "run id (approve/resume/status)"
+        default: ""
+      mode:
+        description: "preview | draft | hd | final (empty = RENDER_MODE)"
+        default: ""
+      format:
+        description: "short | long"
+        default: short
+
+concurrency:
+  group: autopilot
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read  # download the work files of an earlier run (approve/resume)
+
+env:
+  ENVIRONMENT: staging
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  AI_PROVIDER: ${{ vars.AI_PROVIDER || 'gemini' }}
+  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-3.8-flash' }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL || 'claude-opus-5-5' }}
+  WIKIPEDIA_USER_AGENT: ${{ vars.WIKIPEDIA_USER_AGENT }}
+  YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+  YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+  YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+  YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+  YOUTUBE_PUBLISHING_ENABLED: ${{ vars.YOUTUBE_PUBLISHING_ENABLED || 'false' }}
+  YOUTUBE_ALLOW_PUBLIC: ${{ vars.YOUTUBE_ALLOW_PUBLIC || 'false' }}
+  YOUTUBE_DEFAULT_PRIVACY: ${{ vars.YOUTUBE_DEFAULT_PRIVACY || 'private' }}
+  MEDIA_ROOT: ${{ github.workspace }}/media
+  CHANNEL_NAME: ${{ vars.CHANNEL_NAME || 'Qué Pasaría Si' }}
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  prepare:
+    if: github.event_name == 'workflow_dispatch' || vars.AUTOPILOT_ENABLED == 'true'
+    runs-on: ${{ fromJSON(vars.RUNS_ON || '"ubuntu-latest"') }}
+    timeout-minutes: 60
+    outputs:
+      run_id: ${{ steps.plan.outputs.run_id }}
+      shards: ${{ steps.plan.outputs.shards }}
+      render: ${{ steps.plan.outputs.render }}
+      ready: ${{ steps.plan.outputs.ready }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: alembic upgrade head
+      - name: Learn from published videos (best effort)
+        if: env.YOUTUBE_REFRESH_TOKEN != ''
+        continue-on-error: true
+        run: python scripts/autopilot.py sync-analytics
+      - name: Plan
+        id: plan
+        run: |
+          CMD="${{ github.event.inputs.command || 'run' }}"
+          MODE="${{ github.event.inputs.mode }}"; MODE="${MODE:-${{ vars.RENDER_MODE || 'hd' }}}"
+          SHARDS="${{ vars.RENDER_SHARDS || '4' }}"
+          echo "shards=$(python -c "print(list(range(max(1, min(8, int('$SHARDS'))))))")" >> "$GITHUB_OUTPUT"
+          if [ "$CMD" = "run" ]; then
+            python scripts/autopilot.py preflight
+            python scripts/autopilot.py run --channel "$CHANNEL_NAME" \
+              --format "${{ github.event.inputs.format || 'short' }}" --mode "$MODE" --until storyboard | tee run.json
+            RUN_ID=$(python -c "import json;print(json.load(open('run.json'))['run_id'])")
+            STATUS=$(python -c "import json;print(json.load(open('run.json'))['status'])")
+            echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+            # A failed step (e.g. a script that needs human review) stops here: no render, no extra AI calls.
+            if [ "$STATUS" != "failed" ]; then
+              echo "ready=true" >> "$GITHUB_OUTPUT"
+              # Preview fragments are rendered by 'finish'; whole videos in parallel shards.
+              if [ "$MODE" != "preview" ]; then echo "render=true" >> "$GITHUB_OUTPUT"; fi
+            fi
+          elif [ "$CMD" = "sync-analytics" ] || [ "$CMD" = "status" ]; then
+            python scripts/autopilot.py "$CMD" ${{ github.event.inputs.run_id }}
+          else
+            echo "run_id=${{ github.event.inputs.run_id }}" >> "$GITHUB_OUTPUT"
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Keep the run's work files for the next jobs
+        if: steps.plan.outputs.run_id != '' && github.event.inputs.command != 'approve' && github.event.inputs.command != 'resume'
+        uses: actions/upload-artifact@v4
+        with:
+          name: work-${{ steps.plan.outputs.run_id }}
+          path: |
+            media/autopilot/${{ steps.plan.outputs.run_id }}/production.json
+            media/autopilot/${{ steps.plan.outputs.run_id }}/voice/
+          retention-days: 2
+          if-no-files-found: ignore
+
+  render:
+    needs: prepare
+    if: needs.prepare.outputs.render == 'true'
+    runs-on: ${{ fromJSON(vars.RUNS_ON || '"ubuntu-latest"') }}
+    timeout-minutes: 350  # GitHub-hosted jobs stop at 6 h
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.prepare.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - uses: actions/download-artifact@v4
+        with:
+          name: work-${{ needs.prepare.outputs.run_id }}
+          path: media/autopilot/${{ needs.prepare.outputs.run_id }}
+      - name: Render this shard's scenes
+        run: |
+          python scripts/autopilot.py render-shard "${{ needs.prepare.outputs.run_id }}" \
+            --shard ${{ matrix.shard }} --shards ${{ strategy.job-total }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clips-${{ needs.prepare.outputs.run_id }}-${{ matrix.shard }}
+          path: media/autopilot/${{ needs.prepare.outputs.run_id }}/*/clips/
+          retention-days: 2
+
+  finish:
+    needs: [prepare, render]
+    if: always() && needs.prepare.result == 'success' && needs.prepare.outputs.ready == 'true' && needs.render.result != 'failure' && needs.render.result != 'cancelled'
+    runs-on: ${{ fromJSON(vars.RUNS_ON || '"ubuntu-latest"') }}
+    timeout-minutes: 350
+    env:
+      RUN_ID: ${{ needs.prepare.outputs.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: alembic upgrade head
+      - name: Get the work files of this run
+        run: |
+          mkdir -p "media/autopilot/$RUN_ID"
+          # The newest artifact named work-<id> (this workflow run, or an earlier one for approve/resume).
+          for NAME in "work-$RUN_ID" "review-$RUN_ID"; do
+            ID=$(gh api "repos/${{ github.repository }}/actions/artifacts?name=$NAME&per_page=1" --jq '.artifacts[0].id // empty')
+            if [ -n "$ID" ]; then
+              gh api "repos/${{ github.repository }}/actions/artifacts/$ID/zip" > "$NAME.zip"
+              unzip -oq "$NAME.zip" -d "media/autopilot/$RUN_ID" && rm "$NAME.zip"
+            fi
+          done
+      - uses: actions/download-artifact@v4
+        if: needs.render.result == 'success'
+        with:
+          pattern: clips-${{ needs.prepare.outputs.run_id }}-*
+          path: media/autopilot/${{ needs.prepare.outputs.run_id }}
+          merge-multiple: true
+      - name: Edit, QA, metadata, thumbnail (and publish if approved)
+        run: |
+          CMD="${{ github.event.inputs.command || 'run' }}"
+          if [ "$CMD" = "approve" ]; then
+            python scripts/autopilot.py approve "$RUN_ID"
+          else
+            python scripts/autopilot.py resume "$RUN_ID"
+          fi
+      - name: Keep the video, thumbnails and QA sheet for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: review-${{ env.RUN_ID }}
+          path: |
+            media/autopilot/${{ env.RUN_ID }}/production.json
+            media/autopilot/${{ env.RUN_ID }}/voice/
+            media/autopilot/${{ env.RUN_ID }}/*.mp4
+            media/autopilot/${{ env.RUN_ID }}/*.report.json
+            media/autopilot/${{ env.RUN_ID }}/*_frames.png
+            media/autopilot/${{ env.RUN_ID }}/thumbnails/
+            media/autopilot/${{ env.RUN_ID }}/*/clips/
+          retention-days: 5
+          if-no-files-found: ignore

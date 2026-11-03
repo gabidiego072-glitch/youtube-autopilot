@@ -218,3 +218,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# YouTube-Autopilot
+media/
+*.db
+out/
+models/

@@ -1,0 +1,80 @@
+{
+  "engine": "cinematic",
+  "duration_seconds": 4,
+  "fps": 24,
+  "seed": 6,
+  "motion_blur": false,
+  "environment": {
+    "type": "coast",
+    "time_of_day": "day",
+    "pedestrians": 3,
+    "parked_cars": 5
+  },
+  "characters": [
+    {
+      "id": "pablo",
+      "start": [
+        0,
+        -6
+      ],
+      "facing": 0
+    }
+  ],
+  "actions": [
+    {
+      "type": "surge",
+      "start": 0.5,
+      "end": 4.0,
+      "height": 4.0,
+      "inland": 30
+    },
+    {
+      "type": "walk",
+      "character": "pablo",
+      "from": [
+        0,
+        -6
+      ],
+      "to": [
+        0,
+        6
+      ],
+      "start": 0.6,
+      "end": 3.5,
+      "pace": 3.0
+    }
+  ],
+  "camera": {
+    "fstop": 5.6,
+    "shots": [
+      {
+        "time": 0,
+        "location": [
+          -14,
+          1.5,
+          1.8
+        ],
+        "target": [
+          0,
+          -12,
+          0.5
+        ],
+        "lens": 22
+      },
+      {
+        "time": 4,
+        "location": [
+          -14,
+          2.5,
+          2.6
+        ],
+        "target": [
+          0,
+          -8,
+          1.0
+        ],
+        "lens": 22
+      }
+    ]
+  }
+}
