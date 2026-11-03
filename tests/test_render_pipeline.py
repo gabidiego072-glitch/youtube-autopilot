@@ -122,7 +122,9 @@ def test_first_short_scenes_render(tmp_path, index):
     import json as _json
 
     production = _json.loads(
-        (EXAMPLES.parent.parent / "productions" / "what_if_earth_stops" / "production.json").read_text()
+        (
+            EXAMPLES.parent.parent / "productions" / "archive" / "what_if_earth_stops_v1_planet" / "production.json"
+        ).read_text()
     )
     spec = {"engine": "cinematic", "fps": 24, "seed": 5, **production["scenes"][index]}
     path = tmp_path / "scene.json"
@@ -140,4 +142,14 @@ def test_first_short_scenes_render(tmp_path, index):
         threads=2,
         subtitles=False,
     )
+    assert result.frame_count == 3 and result.video_path.stat().st_size > 500
+
+
+@requires_blender
+@pytest.mark.parametrize("name", ["street_sudden_stop", "home_sudden_stop", "coast_surge"])
+def test_urban_environments_render_with_physics(tmp_path, name):
+    """City street, home interior and seafront (with rigid-body physics) build and render in real Blender."""
+    result = render_scene_video(EXAMPLES / "urban" / f"{name}.json", tmp_path / "out.mp4", blender=blender,
+                                ffmpeg=ffmpeg, aspect="9:16", quality="test", scale=0.08, samples=1, max_frames=3,
+                                threads=2, subtitles=False)
     assert result.frame_count == 3 and result.video_path.stat().st_size > 500

@@ -19,14 +19,23 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
     from render_engines.core.blender.scene import add_glow, configure_render
 
     configure_render(scene, ctx, frames_dir, motion_blur=spec.get("motion_blur", True))
+    from render_engines.cinematic import urban as urban_env
     from render_engines.cinematic.environment import sun_path
     from render_engines.cinematic.explainers import start_wind
     from render_engines.cinematic.space import build_space
 
     env = spec.get("environment", {})
     env_refs = {}
-    if env.get("type", "meadow") == "space":
+    urban = None
+    env_type = env.get("type", "meadow")
+    if env_type == "space":
         build_space(env, scene, ctx.seed)
+    elif env_type in ("city", "coast"):
+        urban = urban_env.build_city(env, ctx, scene, ctx.seed)
+        env_refs = urban.sky_refs
+    elif env_type == "interior":
+        urban = urban_env.build_interior(env, ctx, scene, ctx.seed)
+        env_refs = urban.sky_refs
     else:
         paths = [(tuple(a["from"]), tuple(a["to"])) for a in spec.get("actions", []) if a["type"] == "walk"]
         starts = {c["id"]: tuple(c.get("start", (0, 0))[:2]) for c in spec.get("characters", [])}
@@ -53,6 +62,33 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
         prop = PROP_BUILDERS[p["type"]](p["id"], tuple(p["location"]), p.get("facing", 0), **params)
         props[p["id"]] = prop
         timeline.register(p["id"], tuple(p["location"]), focus_height=getattr(prop, "focus_height", 1.0))
+
+    if urban is not None and env.get("pedestrians"):
+        import random as _random
+
+        rng = _random.Random(ctx.seed + 31)
+        for i in range(int(env["pedestrians"])):
+            side = 1 if i % 2 else -1
+            y = side * (urban_env.ROAD_HALF + rng.uniform(0.9, 2.6))
+            x0 = rng.uniform(-30, 30)
+            direction = rng.choice((-1, 1))
+            palette = {
+                "body": rng.choice(("#355c7d", "#6c5b7b", "#c06c84", "#4a7c59", "#8c6d46", "#2f3e46")),
+                "accent": rng.choice(("#e07a3a", "#f2c14e", "#e8e8e8", "#3f88c5")),
+                "skin": rng.choice(("#e0ac85", "#c68642", "#8d5524", "#f1c27d")),
+                "hair": rng.choice(("#2d1e14", "#6b4423", "#1b1b1b", "#b89778")),
+            }
+            walker = build_character(f"ped_{i}", palette, (x0, y, 0.0), 0, rng.uniform(0.92, 1.08))
+            walker.idle(ctx.frame_start, ctx.frame_end, ctx.fps, ctx.seed + 50 + i)
+            walker.walk(
+                ctx.frame_start,
+                ctx.frame_end,
+                (x0, y),
+                (x0 + direction * 1.3 * ctx.duration_seconds, y),
+                ctx.fps,
+                rng.uniform(1.6, 2.0),
+            )
+            characters.setdefault(f"ped_{i}", walker)
 
     if env.get("fireflies"):
         fireflies(env["fireflies"], env.get("firefly_center", (0, 2)), 6, ctx, ctx.seed)
@@ -126,6 +162,20 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
             sun_path(env_refs, start, end, float(action["elevation_from"]), float(action["elevation_to"]))
         elif kind == "migrate_oceans":
             props[action["prop"]].migrate_oceans(start, end, float(action.get("amount", 1.0)))
+        elif kind == "inertia_shock":
+            urban_env.inertia_shock(
+                scene, start, end, float(action.get("accel", 35.0)), float(action.get("direction_deg", 0.0))
+            )
+        elif kind == "shatter_windows":
+            urban.pending_shatter = start  # applied once the shards have rigid bodies
+        elif kind == "surge":
+            urban_env.surge(urban, start, end, float(action.get("height", 3.0)), float(action.get("inland", 40.0)))
+        elif kind == "lights_on":
+            urban_env.lights_on(urban, start, end)
+        elif kind == "cover":
+            char.cover(start, end)
+        elif kind == "fall":
+            char.fall(start, ctx.fps, float(action.get("direction_deg", 0.0)))
         elif kind == "appear":
             props[action["target"]].appear(start, end)
         elif kind == "fade":
@@ -142,6 +192,14 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
             prop.bake_spin(ctx.frame_start, ctx.frame_end, ctx.fps)
 
     camera = build_camera(scene, ctx, spec["camera"], timeline)
+    if urban is not None:
+        if urban.water is not None:
+            urban_env.animate_waves(urban.water, ctx.frame_start, ctx.frame_end)
+        if env.get("physics"):
+            urban_env.enable_physics(urban, scene, ctx)
+            if getattr(urban, "pending_shatter", None) is not None:
+                urban_env.shatter_windows(urban, urban.pending_shatter, ctx.fps)
+            urban_env.simulate(scene)
     for prop in props.values():
         if getattr(prop, "billboard", False):  # labels always face the camera
             constraint = prop.root.constraints.new("TRACK_TO")

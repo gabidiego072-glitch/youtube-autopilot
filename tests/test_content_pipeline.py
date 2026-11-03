@@ -33,7 +33,7 @@ def test_duplicate_detection_ignores_accents_and_prefix():
 
 
 def test_weighted_score_clamps_and_applies_category_weight():
-    scores = {"curiosity": 10, "visual_potential": 10, "scientific_grounding": 10, "evergreen": 10}
+    scores = {"curiosity": 10, "human_impact": 10, "visual_potential": 10, "scientific_grounding": 10, "evergreen": 10}
     assert weighted_score(scores) == 10.0
     assert weighted_score(scores, 1.2) == 12.0
     assert weighted_score({**scores, "curiosity": 99}) == 10.0
@@ -192,3 +192,25 @@ def test_ideas_and_research_api(make_client, channel):
     assert brief.status_code == 201 and brief.json()["status"] == "complete"
     client.post(f"/api/v1/projects/{pid}/scripts/generate")
     assert URL in ai.calls[-1]["prompt"]  # the script is grounded in the research sources
+
+
+def test_human_impact_rule_rejects_planet_heavy_scripts():
+    planet = copy.deepcopy(SCRIPT_RESPONSE)
+    for scene in planet["scenes"][1:6]:
+        scene["scale"] = "global"
+    problems = " ".join(structure_problems(_draft(planet), VideoFormat.SHORT))
+    assert "human scale" in problems and "global" in problems
+
+    no_consequence = copy.deepcopy(SCRIPT_RESPONSE)
+    no_consequence["scenes"][2]["consequence"] = ""
+    assert any("consequence" in p for p in structure_problems(_draft(no_consequence), VideoFormat.SHORT))
+
+
+def test_prompts_carry_the_human_impact_rule():
+    from app.services.ideas.generator import SYSTEM_PROMPT as IDEAS
+    from app.services.scenes.planner import SYSTEM_PROMPT as STORYBOARD
+    from app.services.scripts.prompts import SYSTEM_PROMPT as SCRIPT
+
+    for prompt in (IDEAS, SCRIPT, STORYBOARD):
+        assert "Human-impact rule" in prompt
+    assert "human_impact" in IDEAS and "'scale'" in SCRIPT

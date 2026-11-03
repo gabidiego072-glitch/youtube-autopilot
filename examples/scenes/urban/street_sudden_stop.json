@@ -1,0 +1,106 @@
+{
+  "engine": "cinematic",
+  "duration_seconds": 4,
+  "fps": 24,
+  "seed": 3,
+  "motion_blur": false,
+  "environment": {
+    "type": "city",
+    "time_of_day": "day",
+    "pedestrians": 5,
+    "parked_cars": 8,
+    "physics": true
+  },
+  "characters": [
+    {
+      "id": "lucia",
+      "start": [
+        -3.0,
+        -5.6
+      ],
+      "facing": -90,
+      "palette": {
+        "body": "#355c7d",
+        "accent": "#e07a3a"
+      }
+    }
+  ],
+  "actions": [
+    {
+      "type": "walk",
+      "character": "lucia",
+      "from": [
+        -3.0,
+        -5.6
+      ],
+      "to": [
+        1.0,
+        -5.6
+      ],
+      "start": 0.0,
+      "end": 1.4
+    },
+    {
+      "type": "inertia_shock",
+      "start": 1.5,
+      "end": 2.0,
+      "accel": 40,
+      "direction_deg": 0
+    },
+    {
+      "type": "fling",
+      "character": "lucia",
+      "start": 1.5,
+      "end": 4.0,
+      "direction_deg": 0,
+      "speed": 5,
+      "lift": 2.5,
+      "gravity": 2.0
+    },
+    {
+      "type": "shatter_windows",
+      "start": 1.7
+    }
+  ],
+  "camera": {
+    "fstop": 5.6,
+    "portrait_lens_scale": 1.0,
+    "shakes": [
+      {
+        "start": 1.5,
+        "end": 2.2,
+        "strength": 0.12
+      }
+    ],
+    "shots": [
+      {
+        "time": 0,
+        "location": [
+          -12,
+          -5.2,
+          1.6
+        ],
+        "target": [
+          -4,
+          6,
+          3.2
+        ],
+        "lens": 22
+      },
+      {
+        "time": 4,
+        "location": [
+          -11,
+          -5.0,
+          1.7
+        ],
+        "target": [
+          -2,
+          6,
+          3.6
+        ],
+        "lens": 22
+      }
+    ]
+  }
+}

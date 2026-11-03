@@ -154,6 +154,36 @@ class CinematicCharacter:
                 track.add(start + f, (x, y, z))
         set_interpolation(self.root, "LINEAR")
 
+    def cover(self, start: int, end: int) -> None:
+        """Crouch and protect the head with both arms."""
+        key(self.hips, "location", start, (0, 0, HIP_HEIGHT))
+        key(self.hips, "location", start + 6, (0, 0, HIP_HEIGHT * 0.55))
+        key(self.hips, "location", end, (0, 0, HIP_HEIGHT * 0.55))
+        for side, sign in (("L", 1), ("R", -1)):
+            key(self.arms[side], "rotation_euler", start, (0, 0, 0))
+            key(self.arms[side], "rotation_euler", start + 6, (math.radians(165), 0, math.radians(35 * sign)))
+            key(self.arms[side], "rotation_euler", end, (math.radians(165), 0, math.radians(35 * sign)))
+        for side in ("L", "R"):
+            key(self.legs[side], "rotation_euler", start, (0, 0, 0))
+            key(self.legs[side], "rotation_euler", start + 6, (math.radians(70), 0, 0))
+            key(self.legs[side], "rotation_euler", end, (math.radians(70), 0, 0))
+        key(self.neck, "rotation_euler", start + 6, (math.radians(25), 0, 0))
+
+    def fall(self, start: int, fps: int, direction_deg: float = 0.0) -> None:
+        """Topple over towards a direction (about the feet), arms out."""
+        heading = math.radians(direction_deg) - self.yaw
+        axis_x, axis_y = -math.sin(heading), math.cos(heading)
+        key(self.root, "rotation_euler", start, (0, 0, self.yaw))
+        key(
+            self.root,
+            "rotation_euler",
+            start + round(fps * 0.6),
+            (axis_x * math.radians(85), axis_y * math.radians(85), self.yaw),
+        )
+        for side in ("L", "R"):
+            key(self.arms[side], "rotation_euler", start, (0, 0, 0))
+            key(self.arms[side], "rotation_euler", start + 8, (math.radians(110), 0, 0))
+
     def grow(self, start: int, end: int, to_scale: float, scale_track=None) -> None:
         """Smooth growth (time-lapse). Children scale with the root, so the whole rig grows."""
         key(self.root, "scale", start, (self.scale,) * 3)

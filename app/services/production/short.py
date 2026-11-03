@@ -23,6 +23,7 @@ from app.services.production.modes import RenderMode, get_mode
 from app.services.rendering.blender import Blender
 from app.services.rendering.ffmpeg import FFmpeg
 from app.services.rendering.scene3d import render_scene_video
+from app.services.scenes.planner import environment_scale_problem
 from app.services.scripts.generator import ScriptDraft, structure_problems
 from render_engines.core.retime import retime
 from render_engines.core.spec import SpecError, build_context, validate_spec
@@ -48,6 +49,9 @@ def load_production(path: Path) -> dict:
             validate_spec({"engine": "cinematic", "fps": 24, "seed": data.get("seed", 0), **spec})
         except SpecError as exc:
             raise ProductionError(f"Scene {i}: {exc}") from exc
+        mismatch = environment_scale_problem(spec, script["scenes"][i].get("scale", "street"))
+        if mismatch:
+            raise ProductionError(f"Scene {i}: {mismatch}")
         for effect in spec.get("sfx", []):
             if effect.get("type") not in SFX:
                 raise ProductionError(f"Scene {i}: unknown sound effect '{effect.get('type')}'.")

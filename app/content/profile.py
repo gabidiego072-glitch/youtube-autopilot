@@ -76,6 +76,50 @@ VISUAL_STYLE = (
 )
 
 
+# --- Human-impact rule (mandatory for every topic) ------------------------
+# Videos show what would happen to US: people, homes, streets, cities and infrastructure.
+# Planets, maps and global views are allowed only when they explain something, and never dominate.
+HUMAN_SCALES = ("street", "interior", "building", "vehicle", "crowd")
+OTHER_SCALES = ("aerial", "global")
+SCENE_SCALES = HUMAN_SCALES + OTHER_SCALES
+MIN_HUMAN_SHARE = 0.70  # of the video's duration
+MAX_GLOBAL_SHARE = 0.15
+MAX_GLOBAL_SCENES = 1
+
+HUMAN_IMPACT_RULES = (
+    "Human-impact rule (mandatory): the video shows what the phenomenon would do to the viewer, their home, "
+    "their city and the people around them - not just what happens to the planet.\n"
+    "1. Buildings: homes, skyscrapers, bridges, roads, hospitals, schools, factories suffering the consequences.\n"
+    "2. People: real participants who react, act and are affected; never decoration.\n"
+    "3. Streets and cities: recognisable urban places with cars, traffic lights, street lamps, benches, shops.\n"
+    "4. Physical consequences: damage, movement, collapse, floods, fires, deformation - only what the science "
+    "supports for this phenomenon.\n"
+    "5. Human scale: street-level shots, building interiors, facades, vehicles, close perspectives; few aerial "
+    "views, almost never space.\n"
+    "6. Global information (the planet, maps): only when it is needed to explain something; at most one short "
+    "scene; it never dominates the video.\n"
+    "Scientific rigour comes first: never invent impossible consequences to get a spectacular scene. If people "
+    "would have no time to react (an instantaneous catastrophe), do not show them sheltering. Depict harm to "
+    "people in a stylised way, without blood or graphic injury."
+)
+
+
+def scale_problems(scales_and_durations: list[tuple[str, float]]) -> list[str]:
+    """Checks the human-impact rule on (scale, duration) pairs. Empty list = OK."""
+    total = sum(d for _, d in scales_and_durations) or 1.0
+    unknown = sorted({s for s, _ in scales_and_durations if s not in SCENE_SCALES})
+    problems = [f"Unknown scene scale(s): {unknown}."] if unknown else []
+    human = sum(d for s, d in scales_and_durations if s in HUMAN_SCALES) / total
+    global_scenes = [d for s, d in scales_and_durations if s == "global"]
+    if human < MIN_HUMAN_SHARE:
+        problems.append(f"Only {human:.0%} of the video is at human scale; at least {MIN_HUMAN_SHARE:.0%} required.")
+    if len(global_scenes) > MAX_GLOBAL_SCENES:
+        problems.append(f"{len(global_scenes)} global/planet scenes; at most {MAX_GLOBAL_SCENES} allowed.")
+    if sum(global_scenes) / total > MAX_GLOBAL_SHARE:
+        problems.append(f"Global views take {sum(global_scenes) / total:.0%}; at most {MAX_GLOBAL_SHARE:.0%}.")
+    return problems
+
+
 def is_off_topic(text: str) -> bool:
     lowered = text.lower()
     return any(term in lowered for term in OFF_TOPIC_TERMS)
