@@ -61,16 +61,9 @@ class Settings(BaseSettings):
     # Wikimedia asks for a descriptive agent with contact info.
     wikipedia_user_agent: str = "YouTubeAutopilot/0.2 (set WIKIPEDIA_USER_AGENT with your contact)"
 
-    # --- AI images / video ------------------------------------------------
-    # Option A (free, self-hosted): ComfyUI running open models (e.g. FLUX.1-schnell, Wan 2.x).
-    comfyui_url: str | None = None
-    comfyui_image_workflow: Path | None = None  # API-format workflow JSON with {{placeholders}}
-    comfyui_video_workflow: Path | None = None
-    # Option B (free tier): Hugging Face Inference Providers.
-    hf_token: SecretStr | None = None
-    hf_image_model: str = "black-forest-labs/FLUX.1-schnell"
-    hf_inference_url: str = "https://router.huggingface.co/hf-inference/models"
-    visuals_timeout_seconds: float = 300.0
+    # --- Procedural 3D scenes (Blender) ----------------------------------
+    scene_render_quality: str = "draft"  # test | draft | preview | final
+    scene_render_threads: int = 0  # 0 = all cores
 
     # --- Voice (free, local) ----------------------------------------------
     piper_binary: str = "piper"
@@ -105,14 +98,6 @@ class Settings(BaseSettings):
     @property
     def claude_configured(self) -> bool:
         return bool(self.anthropic_api_key and self.anthropic_api_key.get_secret_value())
-
-    @property
-    def image_provider_name(self) -> str | None:
-        if self.comfyui_url and self.comfyui_image_workflow:
-            return "comfyui"
-        if self.hf_token and self.hf_token.get_secret_value():
-            return "huggingface"
-        return None
 
     @property
     def youtube_configured(self) -> bool:

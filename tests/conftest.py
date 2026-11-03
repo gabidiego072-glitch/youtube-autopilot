@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session, sessionmaker
 
 import app.models  # noqa: F401 - registers all tables
-from app.api.deps import provide_ai
+from app.api.deps import provide_ai, provide_session_factory
 from app.core.config import Settings, get_settings
 from app.db.base import Base
 from app.db.session import build_engine, get_db
@@ -73,6 +73,7 @@ def make_client(db_session_factory) -> Iterator[Callable[..., TestClient]]:
 
         application.dependency_overrides[get_db] = _get_db
         application.dependency_overrides[get_settings] = lambda: settings
+        application.dependency_overrides[provide_session_factory] = lambda: db_session_factory
         if ai is not None:
             application.dependency_overrides[provide_ai] = lambda: ai
         client = TestClient(application)
@@ -252,3 +253,24 @@ IDEAS_RESPONSE = {
         },
     ]
 }
+
+
+def storyboard_scene(index: int) -> dict:
+    """A small valid planned scene (meadow, one character walking, one camera move)."""
+    return {
+        "environment": {"type": "meadow", "time_of_day": "day", "trees": 5},
+        "characters": [{"id": "narrator", "start": [-2.0, 0.0], "facing": -90}],
+        "props": [],
+        "actions": [
+            {"type": "walk", "character": "narrator", "from": [-2.0, 0.0], "to": [2.0, 0.5], "start": 0.0, "end": 1.0}
+        ],
+        "camera": {
+            "shots": [
+                {"time": 0.0, "location": [0.0, -6.0, 1.5], "target": "narrator", "lens": 35},
+                {"time": 1.0, "location": [1.0, -5.0, 1.6], "target": "narrator", "lens": 40},
+            ]
+        },
+    }
+
+
+STORYBOARD_RESPONSE = {"scenes": [storyboard_scene(i) for i in range(len(SCRIPT_RESPONSE["scenes"]))]}

@@ -1,7 +1,8 @@
 # Hoja de ruta
 
 Línea editorial fija: curiosidades, ciencia, situaciones hipotéticas y experimentos mentales («¿Qué pasaría
-si…?»). Sin videojuegos ni gaming. Prioridad: automatización en la nube con herramientas gratuitas.
+si…?»). Sin videojuegos ni gaming. Vídeos 100 % generados por código (animación 3D procedural con Blender),
+sin imágenes de IA ni hiperrealismo. Prioridad: automatización en la nube con herramientas gratuitas.
 Cada fase termina con código probado; nada se marca como hecho si no funciona contra el servicio real.
 
 ## Fase 0 — Base ✅ (v0.1)
@@ -23,12 +24,20 @@ Cada fase termina con código probado; nada se marca como hecho si no funciona c
 - [x] Investigación con Wikipedia (gratis) y hechos clave con fuente
 - [x] Guiones con gancho ≤ 2 s, escalada de consecuencias, final con pregunta o conclusión, afirmaciones etiquetadas
 - [x] Verificación científica obligatoria antes de aprobar
-- [x] Biblia visual + prompts hiperrealistas coherentes; proveedores ComfyUI (gratis, propio) y Hugging Face
-- [x] Vídeo IA vía ComfyUI image-to-video; si no hay, movimiento de cámara con FFmpeg
 - [x] Voz en español con Piper (gratis, offline)
 - [x] Montaje FFmpeg: ritmo de voz, subtítulos sincronizados, música con ducking
 - [x] Metadatos con fuentes, «ciencia vs. hipótesis» y comentario fijado
 - [x] Aprendizaje por categoría y tipo de final
+
+## Fase 1.5 — Vídeos generados solo por código ✅ (v0.3, esta versión)
+
+- [x] Retirada la generación de imágenes y vídeo por IA (Hugging Face, ComfyUI) y los prompts hiperrealistas
+- [x] Catálogo del motor 3D como única fuente para el validador y para los prompts
+- [x] Storyboard: cada escena del guion se convierte en una escena del motor, validada antes de guardarse
+- [x] Render de cada escena con Blender en segundo plano, ajustada a la duración de su voz
+- [x] Motor: entorno espacial con estrellas, planetas procedurales (Tierra con océanos, continentes, nubes y
+      atmósfera; Luna; Marte; Sol), acciones `spin` y `scale`
+- [x] Ejemplo «¿Qué pasaría si la Tierra dejase de girar?»
 
 ## Fase 2 — Calidad de contenido
 
@@ -38,17 +47,19 @@ Cada fase termina con código probado; nada se marca como hecho si no funciona c
 - [ ] Conjunto de evaluación de guiones (ganchos, precisión) para comparar versiones de prompts
 - [ ] Biblioteca de música y efectos libres de derechos
 
-## Fase 3 — Coherencia visual avanzada
+## Fase 3 — Más vocabulario visual para el motor 3D
 
-- [ ] Imagen de referencia del sujeto principal reutilizada en todas las escenas (IP-Adapter / PuLID en ComfyUI)
-- [ ] Control de calidad automático de cada imagen (texto no deseado, deformaciones) y regeneración
-- [ ] Miniaturas: imagen + texto compuesto a 1280×720, varias variantes
+- [ ] Entornos: ciudad, océano, interior, laboratorio, sistema solar a escala
+- [ ] Objetos: edificios, vehículos, animales, cuerpo humano simplificado, flechas y gráficos 3D (escalas, órbitas)
+- [ ] Acciones: caer, volar, explosión/onda expansiva, cambio de gravedad, paso del tiempo (día/noche)
+- [ ] Texto 3D y medidores dentro de la escena (alturas, velocidades)
+- [ ] Miniaturas: fotograma del render + texto compuesto a 1280×720, varias variantes
 
 ## Fase 4 — Ejecución en la nube
 
 - [ ] Cola de trabajos y worker para investigación, imágenes, voz y montaje (fuera de la petición HTTP)
 - [ ] Almacenamiento de medios en Supabase Storage o S3
-- [ ] Worker de GPU para ComfyUI (bajo demanda) y worker de CPU para Blender/FFmpeg
+- [ ] Workers de CPU para Blender/FFmpeg que reparten las escenas en paralelo (y GPU opcional para Cycles)
 
 ## Fase 5 — Publicación en YouTube
 

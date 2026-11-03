@@ -35,6 +35,10 @@ def _minimal(**overrides) -> dict:
     [
         ({"engine": "unreal"}, "engine"),
         ({"engine": "voxel"}, "engine"),  # the game-style engine was removed
+        ({"environment": {"type": "underwater"}}, "environment"),
+        ({"props": [{"id": "p", "type": "spaceship", "location": [0, 0, 0]}]}, "prop type"),
+        ({"props": [{"id": "p", "type": "planet", "location": [0, 0]}]}, "location"),
+        ({"actions": [{"type": "explode"}]}, "Unknown action"),
         ({"duration_seconds": 0}, "duration"),
         ({"fps": 23}, "fps"),
         ({"camera": {"shots": []}}, "shots"),

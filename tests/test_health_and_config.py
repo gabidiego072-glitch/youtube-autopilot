@@ -51,6 +51,5 @@ def test_integrations_status_is_honest(client):
     assert body["youtube_data_api"]["implemented"] is False
     assert body["youtube_analytics_api"]["implemented"] is False
     assert body["publishing_enabled"] is False
-    assert body["ai_images"]["configured"] is False and "HF_TOKEN" in body["ai_images"]["detail"]
-    assert body["ai_video"]["configured"] is False
+    assert "ai_images" not in body and "ai_video" not in body  # everything is rendered by code
     assert body["voice"]["configured"] is False

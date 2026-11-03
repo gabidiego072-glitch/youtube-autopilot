@@ -2,9 +2,9 @@
 
 Todo el sistema está orientado a una única línea editorial, definida en `app/content/profile.py`:
 curiosidades, ciencia, situaciones hipotéticas y experimentos mentales. Ese módulo contiene el concepto del
-canal, ejemplos de premisas, categorías, tono, **reglas de honestidad científica**, estilo visual hiperrealista
-y la lista de términos que sacan al sistema del tema (videojuegos, gaming…). Todos los prompts se construyen a
-partir de él.
+canal, ejemplos de premisas, categorías, tono, **reglas de honestidad científica**, el estilo visual (3D
+procedural generado por código, sin imágenes de IA ni hiperrealismo) y la lista de términos que sacan al sistema
+del tema (videojuegos, gaming…). Todos los prompts se construyen a partir de él.
 
 ## 1. Ideas y selección de temas
 
@@ -48,8 +48,9 @@ Estructura obligatoria, validada en código (si no se cumple, el guion se rechaz
 | `ending` | última escena: conclusión sorprendente o pregunta (termina en «?») para los comentarios |
 
 Cada escena trae sus **afirmaciones** etiquetadas (`established`, `estimate`, `speculation`) con la fuente si
-existe, y una descripción de plano realista. La **biblia visual** (estilo, sujetos recurrentes con descripción
-física, paleta y lenguaje de cámara) mantiene la coherencia entre escenas. Shorts: 30–60 s. Largos: según
+existe, y una descripción de lo que muestra la escena 3D, escrita con lo que el motor sabe dibujar (el prompt
+incluye su catálogo). La **biblia visual** (personajes y lugares recurrentes, paleta, lenguaje de cámara)
+mantiene la coherencia entre escenas. Shorts: 30–60 s. Largos: según
 duración objetivo, con *open loops*.
 
 ## 4. Verificación científica
@@ -62,46 +63,37 @@ revisión si hay alguna incorrecta o mal etiquetada, o si una afirmación marcad
 puede verificar. **La aprobación del vídeo exige que la verificación pase.** Es una ayuda, no sustituye una
 revisión humana de las fuentes.
 
-## 5. Imágenes y vídeo hiperrealistas
-
-`app/services/visuals/` · `POST /projects/{id}/visuals/generate`
-
-Prompt de cada plano = descripción de la escena + descripción de los sujetos recurrentes que aparecen + estilo
-del guion + estilo del canal («fotorrealista, como grabado con cámara real, documental»). Prompt negativo contra
-dibujo, CGI, videojuego, texto o marcas de agua. **Misma semilla en todo el proyecto.** Tamaños: 768×1344 (9:16)
-y 1344×768 (16:9).
-
-Proveedores, por orden de preferencia (ninguno se usa si no está configurado):
-
-| Opción | Configuración | Coste |
-| --- | --- | --- |
-| ComfyUI propio con modelos abiertos (FLUX.1-schnell, Apache-2.0; SDXL…) | `COMFYUI_URL`, `COMFYUI_IMAGE_WORKFLOW` | gratis con tu GPU (o Colab/Kaggle) |
-| Hugging Face Inference | `HF_TOKEN`, `HF_IMAGE_MODEL` | créditos mensuales gratuitos limitados |
-| Vídeo: ComfyUI image-to-video (Wan 2.x, LTX-Video) | `COMFYUI_VIDEO_WORKFLOW` | gratis con GPU |
-| Sin vídeo IA | — | las imágenes se animan con movimiento de cámara en FFmpeg |
-
-Los flujos de ComfyUI se exportan en «API format» y usan marcadores `{{prompt}}`, `{{negative_prompt}}`,
-`{{seed}}`, `{{width}}`, `{{height}}` (imagen) e `{{image}}`, `{{prompt}}`, `{{seconds}}`, `{{seed}}` (vídeo).
-
-Generar vídeo hiperrealista con IA necesita una GPU. Sin GPU propia, la opción gratuita realista es la capa
-gratuita de Hugging Face para imágenes más animación con FFmpeg; para escenas de escala o crecimiento,
-también la visualización 3D con Blender.
-
-## 6. Voz
+## 5. Voz
 
 `app/services/voice/piper.py` · `POST /projects/{id}/voice/generate`
 
 Piper (open source, CPU, sin conexión). `scripts/install_voice.sh` descarga `es_ES-davefx-medium` (conjunto de
-datos CC0). Un archivo por escena para que el montaje siga el ritmo real de la voz. `PIPER_LENGTH_SCALE=0.92`
-da una narración algo más rápida y dinámica. Antes de monetizar, revisa la licencia de cada voz en su
-MODEL_CARD: algunas están ajustadas a partir de otros conjuntos de datos.
+datos CC0). Se genera un archivo por escena: **la duración de cada voz marca la duración de su escena 3D**.
+`PIPER_LENGTH_SCALE=0.92` da una narración algo más rápida. Antes de monetizar, revisa la licencia de cada voz
+en su MODEL_CARD: algunas están ajustadas a partir de otros conjuntos de datos.
+
+## 6. Escenas 3D generadas por código
+
+`app/services/scenes/planner.py` · `POST /projects/{id}/scenes/plan` → `POST /projects/{id}/scenes/render`
+
+1. **Plan (storyboard):** Claude convierte cada escena del guion en una escena del motor 3D: entorno (`meadow`
+   o `space`), personajes, objetos (farola, planetas: Tierra, Luna, Marte, Sol), acciones (caminar, crecer,
+   saltar, girar un planeta, escalar un objeto…) y planos de cámara. Solo puede usar lo que lista
+   `render_engines/core/catalog.py`, y **cada escena pasa por el validador del motor** antes de guardarse. Todas
+   las escenas del proyecto comparten semilla, de modo que el mundo generado es el mismo de una escena a otra.
+2. **Render:** cada escena se ajusta a la duración real de su voz (`render_engines/core/retime.py`) y Blender la
+   renderiza en segundo plano (`RenderJob`: `queued → running → succeeded/failed`, consultable en
+   `GET /renders/{id}`). Calidad con `SCENE_RENDER_QUALITY` (`test`, `draft`, `preview`, `final`).
+
+Coste: cero (CPU). Tiempo orientativo en 4 núcleos y calidad `draft`: 2–8 s por fotograma según la escena,
+es decir, de 20 a 60 minutos para un Short de 45 s. Con más núcleos o GPU baja de forma proporcional.
 
 ## 7. Montaje
 
 `app/services/editing/assembler.py` · `POST /projects/{id}/assemble`
 
-Solo FFmpeg. Cada escena dura lo que su voz más 0,25 s. Las imágenes fijas llevan acercamiento o alejamiento
-lento alternado; los clips se recortan a esa duración. Subtítulos grandes por bloques de 4 palabras en Shorts
+Solo FFmpeg. Cada escena dura lo que su voz más 0,25 s; el clip 3D de cada escena ya viene renderizado con esa
+duración. Subtítulos grandes por bloques de 4 palabras en Shorts
 (9 en vídeos largos), sincronizados con la voz. Música opcional que baja sola cuando habla el narrador.
 `EDIT_RESOLUTION_SCALE` permite previsualizar más rápido.
 

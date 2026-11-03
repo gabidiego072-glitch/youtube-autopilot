@@ -90,6 +90,7 @@ def test_missing_blender_is_reported(tmp_path):
     [
         ("what_if_grow_each_step.json", "16:9"),
         ("what_if_grow_each_step.json", "9:16"),
+        ("what_if_earth_stops.json", "9:16"),
     ],
 )
 def test_real_blender_render_to_mp4(tmp_path, spec, aspect):

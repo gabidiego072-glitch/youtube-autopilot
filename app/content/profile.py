@@ -70,13 +70,9 @@ SCIENCE_RULES = (
 )
 
 VISUAL_STYLE = (
-    "Hyper-realistic live-action look, as if filmed with a real camera: photorealistic, natural light, "
-    "real-world textures, documentary / nature-film cinematography, shallow depth of field when it helps, "
-    "no text in the image."
-)
-VISUAL_NEGATIVE = (
-    "cartoon, anime, illustration, drawing, painting, 3d render, cgi look, video game, low poly, voxel, "
-    "plastic skin, text, watermark, logo, subtitles, distorted hands, extra limbs, blurry"
+    "Procedural 3D animation, generated entirely by code (Blender): clean stylised characters and worlds, "
+    "soft physically based light and shadows, smooth cinematic camera moves. No photos, no AI-generated "
+    "images, no hyper-realism, no text inside the scene (subtitles are added at the edit)."
 )
 
 

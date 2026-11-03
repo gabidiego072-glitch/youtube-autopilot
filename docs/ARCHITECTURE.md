@@ -37,7 +37,7 @@ app/
     ideas/                    idea generation, de-duplication and ranking
     research/                 Wikipedia client + research briefs (free)
     factcheck/                scientific review of labelled claims
-    visuals/                  shot prompts with visual continuity; ComfyUI / Hugging Face providers
+    scenes/                   storyboard: script scenes -> validated procedural 3D scene specs
     voice/                    Piper TTS (free, offline)
     editing/                  FFmpeg editor: voice-paced shots, subtitles, music ducking
     production/formats.py     Shorts vs long-form specs (modules 1 + 2)
@@ -51,7 +51,7 @@ app/
     analytics/metrics.py      derived metrics (module 7)
     learning/analyzer.py      performance analysis (module 8)
     reporting/builder.py      reports (module 9)
-render_engines/               procedural 3D visualisation engine for Blender (see docs/3D_ENGINES.md)
+render_engines/               procedural 3D engine for Blender: renders every visual (see docs/3D_ENGINES.md)
 examples/scenes/              example 3D scene specs
 scripts/                      render_3d.py (spec -> MP4), install_blender.sh
 alembic/                      migrations
@@ -64,7 +64,7 @@ tests/                        pytest suite
 | --- | --- |
 | `channels` | A YouTube channel we produce for: niche, language, style guide |
 | `video_projects` | One video, `format` = `short` or `long`, `status` follows the pipeline |
-| `scripts` | Versioned scripts: question title, hook, scenes (beat, narration, visual, duration, labelled claims), ending type, visual bible, fact-check result |
+| `scripts` | Versioned scripts: question title, hook, scenes (beat, narration, visual, duration, labelled claims), ending type, visual bible, procedural scene specs, fact-check result |
 | `render_jobs` | Render requests with output resolution, status and timing |
 | `video_metadata` | Versioned title/description/tags/hashtags/thumbnail concept |
 | `media_assets` | Files used or produced (images, clips, voice per scene, final render), linked to script and scene |

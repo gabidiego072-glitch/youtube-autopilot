@@ -4,10 +4,11 @@ happen if...?' scenarios (growth, scale, speed...) without paid services or a GP
 
 import math
 
+from render_engines.core.catalog import ACTIONS
 from render_engines.core.spec import RenderContext
 from render_engines.core.timeline import Timeline
 
-ACTION_TYPES = ("walk", "raise_arm", "wave", "look_at", "jump", "light_on", "turn", "grow")
+ACTION_TYPES = tuple(ACTIONS)
 
 
 def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
@@ -18,9 +19,14 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
     from render_engines.core.blender.scene import add_glow, configure_render
 
     configure_render(scene, ctx, frames_dir, motion_blur=spec.get("motion_blur", True))
+    from render_engines.cinematic.space import build_space
+
     env = spec.get("environment", {})
-    paths = [(tuple(a["from"]), tuple(a["to"])) for a in spec.get("actions", []) if a["type"] == "walk"]
-    build_environment(env, ctx, scene, paths)
+    if env.get("type", "meadow") == "space":
+        build_space(env, scene)
+    else:
+        paths = [(tuple(a["from"]), tuple(a["to"])) for a in spec.get("actions", []) if a["type"] == "walk"]
+        build_environment(env, ctx, scene, paths)
     add_glow(scene, threshold=env.get("glow_threshold", 1.0))
 
     timeline = Timeline()
@@ -32,7 +38,8 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
         characters[c["id"]] = char
         timeline.register(c["id"], start, focus_height=1.25, scale=char.scale)
     for p in spec.get("props", []):
-        prop = PROP_BUILDERS[p["type"]](p["id"], tuple(p["location"]), p.get("facing", 0))
+        params = {k: v for k, v in p.items() if k not in ("id", "type", "location", "facing")}
+        prop = PROP_BUILDERS[p["type"]](p["id"], tuple(p["location"]), p.get("facing", 0), **params)
         props[p["id"]] = prop
         timeline.register(p["id"], tuple(p["location"]), focus_height=getattr(prop, "focus_height", 1.0))
 
@@ -87,5 +94,17 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
             char.grow(start, end, float(action["to_scale"]), timeline.scales[action["character"]])
         elif kind == "light_on":
             props[action["prop"]].light_on(start)
+        elif kind == "spin":
+            props[action["prop"]].change_spin(start, end, float(action["rate_from"]), float(action["rate_to"]))
+        elif kind == "scale":
+            target = action["target"]
+            current = timeline.scales[target].at(start)[0]
+            props[target].scale_to(start, end, float(action["factor"]), current)
+            timeline.scales[target].add(start, (current, 0, 0))
+            timeline.scales[target].add(end, (float(action["factor"]), 0, 0))
+
+    for prop in props.values():
+        if hasattr(prop, "bake_spin"):
+            prop.bake_spin(ctx.frame_start, ctx.frame_end, ctx.fps)
 
     build_camera(scene, ctx, spec["camera"], timeline)

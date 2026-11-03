@@ -1,16 +1,18 @@
-# 3D science-visualisation engine
+# Procedural 3D engine
 
-A procedural 3D engine that runs inside **Blender in background mode** and renders with **Cycles on the CPU**
-(no GPU needed). It illustrates "What would happen if...?" scenarios that are about scale, growth or motion
-(a person growing with every step, objects at extreme speed...) when AI image/video generation is not
-available, at zero cost. **FFmpeg** is used only at the end, to encode, add audio and burn in subtitles.
+Every visual of the channel is produced by this engine: a procedural 3D engine that runs inside **Blender in
+background mode** and renders with **Cycles on the CPU** (no GPU needed, zero cost). There is no AI imagery
+and no photo-realism. **FFmpeg** is used only at the end, to encode, add audio and burn in subtitles.
+
+In the production pipeline, Claude writes one engine scene spec per script scene (`POST /scenes/plan`), using
+only what `render_engines/core/catalog.py` lists, and every spec is validated by `render_engines/core/spec.py`.
 
 The earlier voxel / game-style engine was removed when the channel's editorial line was fixed (no video games);
 it remains in git history.
 
 | Engine | Builds | Example |
 | --- | --- | --- |
-| `cinematic` | characters from primitives on a pivot rig, procedural meadow (terrain, trees, rocks, flowers, hills), Nishita sky, sun/fill/practical lights, depth of field, motion blur, lens glow; actions: walk, grow, turn, raise_arm, wave, jump, look_at, light_on | `examples/scenes/what_if_grow_each_step.json` |
+| `cinematic` | characters from primitives on a pivot rig; environments `meadow` (terrain, trees, rocks, flowers, hills, Nishita sky) and `space` (procedural stars); props: lantern post and procedural planets (Earth with oceans, continents, ice caps, clouds and atmosphere; Moon; Mars; Sun); depth of field, motion blur, lens glow; actions: walk, grow, turn, raise_arm, wave, jump, look_at, light_on, spin, scale | `examples/scenes/what_if_grow_each_step.json`, `examples/scenes/what_if_earth_stops.json` |
 
 ## Requirements
 
@@ -32,7 +34,8 @@ Run from the repository root. Blender renders the frames, then FFmpeg encodes
 ```bash
 # "¿Qué pasaría si cada paso que das crecieras un centímetro?" (8 s)
 python scripts/render_3d.py examples/scenes/what_if_grow_each_step.json --aspect 9:16 --quality draft --ambient
-python scripts/render_3d.py examples/scenes/what_if_grow_each_step.json --aspect 16:9 --quality draft --ambient
+# "¿Qué pasaría si la Tierra dejase de girar?" (8 s)
+python scripts/render_3d.py examples/scenes/what_if_earth_stops.json --aspect 9:16 --quality draft --ambient
 ```
 
 Useful options: `--quality test|draft|preview|final`, `--output path.mp4`, `--max-frames N` (quick check),
@@ -95,7 +98,10 @@ A spec is a JSON file.
   the target changes. Focus follows the target. In 9:16 the lens is multiplied by `portrait_lens_scale`.
 - **Actions**: `walk`, `grow` (`to_scale`, smooth time-lapse growth; the camera keeps the head framed),
   `turn` (`facing` or `towards`), `raise_arm`, `wave`, `jump`, `look_at` (any id or `camera`), `light_on`
-  (lantern). Characters also breathe and blink on their own.
+  (lantern), `spin` (planet: `rate_from` → `rate_to` deg/s between `start` and `end`), `scale` (prop: `factor`).
+  Characters also breathe and blink on their own.
+  Environment `type`: `meadow` (default) or `space` (`sun_azimuth`, `sun_elevation`, `stars`). Planet props:
+  `kind` (earth, moon, mars, sun), `radius`, `spin_rate`, `tilt`.
   Environment: `time_of_day` (`dawn`, `day`, `dusk`), `trees`, `rocks`, `flowers`, `fireflies`, `hill_height`.
 Walk paths are kept free of trees automatically.
 
@@ -105,12 +111,14 @@ Walk paths are kept free of trees automatically.
 render_engines/
   run.py                 Blender entry point (parses args after "--")
   core/                  pure Python, unit-tested without Blender:
+    catalog.py           what the engine can draw (used by the validator and the AI storyboard prompt)
     spec.py              spec validation, aspect ratios, quality presets, frame maths
+    retime.py            stretch a spec to a new duration (the scene's voice-over)
     noise.py             seeded value noise / fBm
     timeline.py          position tracks the camera uses to follow characters
     colors.py            sRGB hex -> linear
   core/blender/          shared bpy helpers: scene/render setup, materials, lights, meshes, camera, keyframes
-  cinematic/             character rig, environment, props, action director
+  cinematic/             character rig, meadow + space environments, props and planets, action director
 app/services/rendering/
   blender.py             runs Blender headless, checks the frames
   ffmpeg.py              encode, audio mux, ambient audio synthesis, subtitles

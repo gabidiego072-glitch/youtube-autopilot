@@ -53,6 +53,7 @@ class ScriptRead(ORMModel):
     call_to_action: str | None
     ending_type: str | None
     visual_bible: dict | None
+    scene_specs: list[dict] | None
     fact_check_status: FactCheckStatus
     fact_check: dict | None
     full_text: str

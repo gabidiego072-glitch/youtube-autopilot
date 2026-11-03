@@ -92,6 +92,19 @@ def validate_spec(spec: dict) -> dict:
         raise SpecError("Every character and prop needs a string 'id'.")
     if len(ids) != len(set(ids)):
         raise SpecError("Character and prop ids must be unique.")
+    from render_engines.core.catalog import ACTIONS, ENVIRONMENTS, PROPS
+
+    env_type = spec.get("environment", {}).get("type", "meadow")
+    if env_type not in ENVIRONMENTS:
+        raise SpecError(f"Unknown environment '{env_type}'. Use one of {sorted(ENVIRONMENTS)}.")
+    for prop in spec.get("props", []):
+        if prop.get("type") not in PROPS:
+            raise SpecError(f"Unknown prop type '{prop.get('type')}'.")
+        if not isinstance(prop.get("location"), list) or len(prop["location"]) != 3:
+            raise SpecError(f"Prop '{prop.get('id')}' needs a location [x, y, z].")
+    for action in spec.get("actions", []):
+        if action.get("type") not in ACTIONS:
+            raise SpecError(f"Unknown action '{action.get('type')}'.")
     known = set(ids) | {"camera"}
     for action in spec.get("actions", []):
         for ref in ("character", "prop", "target"):
