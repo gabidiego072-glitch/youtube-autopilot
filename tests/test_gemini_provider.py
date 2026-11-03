@@ -178,3 +178,50 @@ def test_dropped_connection_is_retried_then_explained():
 
     with pytest.raises(ProviderError, match="ReadTimeout"):
         _provider(dead).generate_json(system="s", prompt="p", schema=SCHEMA)
+
+
+def test_overloaded_model_switches_to_another_free_model():
+    used = []
+
+    def handler(request):
+        path = request.url.path
+        if path.endswith("/models"):
+            return httpx.Response(
+                200,
+                json={
+                    "models": [
+                        {"name": f"models/{n}", "supportedGenerationMethods": ["generateContent"]}
+                        for n in ("gemini-test", "gemini-9-flash", "gemini-9-flash-lite", "gemini-9-flash-image")
+                    ]
+                },
+            )
+        model = path.split("/models/")[1].split(":")[0]
+        used.append(model)
+        if model == "gemini-test":
+            return httpx.Response(503, json={"error": {"status": "UNAVAILABLE", "message": "high demand"}})
+        return _answer('{"ok": true}')
+
+    provider = _provider(handler)
+    assert provider.generate_json(system="s", prompt="p", schema=SCHEMA).data == {"ok": True}
+    assert used[-1] == "gemini-9-flash" and used.count("gemini-test") == 5  # 1 try + 4 waits, then switch
+    used.clear()
+    provider.generate_json(system="s", prompt="p", schema=SCHEMA)
+    assert used == ["gemini-9-flash"]  # sticks to the model that works
+
+
+def test_fallback_ranking():
+    from app.services.ai.gemini import pick_fallbacks
+
+    models = [
+        "gemini-3.8-flash",
+        "gemini-3.8-flash-lite",
+        "gemini-3.5-flash",
+        "gemini-4-flash-preview",
+        "gemini-3.8-flash-image",
+        "gemini-3.8-pro",
+    ]
+    assert pick_fallbacks(models, "gemini-3.8-flash") == [
+        "gemini-3.5-flash",
+        "gemini-3.8-flash-lite",
+        "gemini-4-flash-preview",
+    ]
