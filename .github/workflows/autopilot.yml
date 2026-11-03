@@ -21,16 +21,22 @@ on:
   workflow_dispatch:
     inputs:
       command:
-        description: "run | approve | resume | status | sync-analytics"
+        description: "Qué hacer"
+        type: choice
+        options: [run, approve, resume, status, sync-analytics, ai-check]
         default: run
       run_id:
-        description: "run id (approve/resume/status)"
+        description: "run id (solo para approve / resume / status)"
         default: ""
       mode:
-        description: "preview | draft | hd | final (empty = RENDER_MODE)"
-        default: ""
+        description: "Calidad (preview = fragmento, draft = barato, hd = publicable, final = máxima)"
+        type: choice
+        options: [draft, preview, hd, final]
+        default: draft
       format:
-        description: "short | long"
+        description: "Formato"
+        type: choice
+        options: [short, long]
         default: short
 
 concurrency:
@@ -84,7 +90,9 @@ jobs:
         id: plan
         run: |
           CMD="${{ github.event.inputs.command || 'run' }}"
-          MODE="${{ github.event.inputs.mode }}"; MODE="${MODE:-${{ vars.RENDER_MODE || 'hd' }}}"
+          RUN_ID_IN="$(echo "${{ github.event.inputs.run_id }}" | tr -d '[:space:]')"
+          # Scheduled runs have no inputs: they use the RENDER_MODE variable.
+          MODE="${{ github.event.inputs.mode }}"; MODE="$(echo "${MODE:-${{ vars.RENDER_MODE || 'hd' }}}" | tr -d '[:space:]')"
           SHARDS="${{ vars.RENDER_SHARDS || '4' }}"
           echo "shards=$(python -c "print(list(range(max(1, min(8, int('$SHARDS'))))))")" >> "$GITHUB_OUTPUT"
           if [ "$CMD" = "run" ]; then
@@ -100,10 +108,12 @@ jobs:
               # Preview fragments are rendered by 'finish'; whole videos in parallel shards.
               if [ "$MODE" != "preview" ]; then echo "render=true" >> "$GITHUB_OUTPUT"; fi
             fi
+          elif [ "$CMD" = "ai-check" ]; then
+            python scripts/autopilot.py ai-check || true
           elif [ "$CMD" = "sync-analytics" ] || [ "$CMD" = "status" ]; then
-            python scripts/autopilot.py "$CMD" ${{ github.event.inputs.run_id }}
+            python scripts/autopilot.py "$CMD" $RUN_ID_IN
           else
-            echo "run_id=${{ github.event.inputs.run_id }}" >> "$GITHUB_OUTPUT"
+            echo "run_id=$RUN_ID_IN" >> "$GITHUB_OUTPUT"
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
       - name: Keep the run's work files for the next jobs
