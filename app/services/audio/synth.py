@@ -80,21 +80,52 @@ def generate_sfx(ffmpeg: FFmpeg, kind: str, output_path: Path) -> Path:
 # Calm, slightly mysterious progression (A minor - F - C - G), 4 s per chord.
 CHORDS = ((220.00, 261.63, 329.63), (174.61, 220.00, 261.63), (130.81, 164.81, 196.00), (196.00, 246.94, 293.66))
 
+# Chord progressions as semitones above A3 (220 Hz) for root, third and fifth. Every video picks one
+# progression, a key shift and a tempo from its seed, so the channel's music never sounds like a template.
+PROGRESSIONS = (
+    ((0, 3, 7), (-4, 0, 3), (-9, -5, -2), (-2, 2, 5)),  # Am F C G (wistful)
+    ((0, 3, 7), (-2, 2, 5), (-4, 0, 3), (-5, -1, 2)),  # Am G F E-ish (descending, tense)
+    ((-9, -5, -2), (-2, 2, 5), (0, 3, 7), (-4, 0, 3)),  # C G Am F (bright)
+    ((0, 3, 7), (5, 8, 12), (-4, 0, 3), (-2, 2, 5)),  # Am Dm F G (curious)
+    ((-4, 0, 3), (-2, 2, 5), (0, 3, 7), (0, 3, 7)),  # F G Am Am (rising)
+)
+KEY_SHIFTS = (-3, -2, 0, 2, 3)
+CHORD_SECONDS = (3.5, 4.0, 4.5, 5.0)
 
-def generate_music(ffmpeg: FFmpeg, duration_seconds: float, output_path: Path, chord_seconds: float = 4.0) -> Path:
-    """Ambient pad: soft chord progression with slow swell, a sub-bass pulse and gentle reverb."""
-    period = chord_seconds * len(CHORDS)
+
+def music_variant(variant: int) -> tuple[tuple[tuple[float, ...], ...], float]:
+    """Chords (Hz) and seconds per chord for a variant number (e.g. the video's seed)."""
+    progression = PROGRESSIONS[variant % len(PROGRESSIONS)]
+    shift = KEY_SHIFTS[(variant // len(PROGRESSIONS)) % len(KEY_SHIFTS)]
+    seconds = CHORD_SECONDS[(variant // 7) % len(CHORD_SECONDS)]
+    chords = tuple(tuple(round(220.0 * 2 ** ((n + shift) / 12), 2) for n in chord) for chord in progression)
+    return chords, seconds
+
+
+def generate_music(
+    ffmpeg: FFmpeg,
+    duration_seconds: float,
+    output_path: Path,
+    chord_seconds: float = 4.0,
+    variant: int | None = None,
+) -> Path:
+    """Ambient pad: soft chord progression with slow swell, a sub-bass pulse and gentle reverb.
+    With a variant number the key, progression and tempo change (one variant per video)."""
+    chords = CHORDS
+    if variant is not None:
+        chords, chord_seconds = music_variant(variant)
+    period = chord_seconds * len(chords)
 
     def voice(index: int) -> str:
-        notes = [chord[index] for chord in CHORDS]
+        notes = [chord[index] for chord in chords]
         # Pick the chord's note for the current time slot.
         freq = notes[-1]
-        for i in reversed(range(len(CHORDS) - 1)):
+        for i in reversed(range(len(chords) - 1)):
             freq = f"if(lt(mod(t,{period}),{chord_seconds * (i + 1)}),{notes[i]},{freq})"
         return f"sin(2*PI*({freq})*t)"
 
     swell = f"(0.6+0.4*sin(2*PI*t/{chord_seconds}-PI/2))"
-    bass = f"0.25*sin(2*PI*({CHORDS[0][0] / 2})*t)*(0.5+0.5*sin(2*PI*t/{chord_seconds * 2}))"
+    bass = f"0.25*sin(2*PI*({chords[0][0] / 2})*t)*(0.5+0.5*sin(2*PI*t/{chord_seconds * 2}))"
     expression = f"0.12*{swell}*({voice(0)}+0.8*{voice(1)}+0.6*{voice(2)})+{bass}*0.4"
     output_path.parent.mkdir(parents=True, exist_ok=True)
     ffmpeg.run(
