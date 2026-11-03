@@ -27,16 +27,18 @@ def _provider(handler, waits=None):
 
 
 def _answer(text, reason="STOP"):
-    return httpx.Response(
-        200,
-        json={
-            "candidates": [
-                {"content": {"parts": [{"text": "thinking", "thought": True}, {"text": text}]}, "finishReason": reason}
-            ],
+    """A streamed answer: the text arrives in two chunks, usage and finish reason in the last one."""
+    half = len(text) // 2
+    chunks = [
+        {"candidates": [{"content": {"parts": [{"text": "thinking", "thought": True}, {"text": text[:half]}]}}]},
+        {
+            "candidates": [{"content": {"parts": [{"text": text[half:]}]}, "finishReason": reason}],
             "usageMetadata": {"promptTokenCount": 120, "candidatesTokenCount": 30, "thoughtsTokenCount": 50},
             "modelVersion": "gemini-test-001",
         },
-    )
+    ]
+    body = "".join(f"data: {json.dumps(c)}\r\n\r\n" for c in chunks)
+    return httpx.Response(200, content=body.encode(), headers={"Content-Type": "text/event-stream"})
 
 
 def test_structured_json_request_and_usage():
@@ -50,7 +52,8 @@ def test_structured_json_request_and_usage():
     assert result.data == {"ok": True} and result.provider == "gemini" and result.model == "gemini-test-001"
     assert result.usage == {"input_tokens": 120, "output_tokens": 80}
     request = seen[0]
-    assert request.url.path == "/v1beta/models/gemini-test:generateContent"
+    assert request.url.path == "/v1beta/models/gemini-test:streamGenerateContent"
+    assert request.url.params["alt"] == "sse"
     assert request.headers["x-goog-api-key"] == "key-123" and "key=" not in str(request.url)
     body = json.loads(request.content)
     assert body["systemInstruction"]["parts"][0]["text"] == "sys"
@@ -120,7 +123,7 @@ def test_schema_too_complex_falls_back_to_schema_in_prompt():
     [
         (_answer('{"ok": tr', reason="MAX_TOKENS"), "truncated"),
         (_answer("", reason="SAFETY"), "SAFETY"),
-        (httpx.Response(200, json={"promptFeedback": {"blockReason": "OTHER"}}), "blocked"),
+        (httpx.Response(200, content=b'data: {"promptFeedback": {"blockReason": "OTHER"}}\n\n'), "blocked"),
         (_answer("not json"), "invalid JSON"),
     ],
 )
@@ -157,3 +160,21 @@ def test_list_models_and_factory():
         get_ai_provider(make_settings())  # default provider is the free one
     assert get_ai_provider(make_settings(gemini_api_key="k")).name == "gemini"
     assert "key" not in repr(get_ai_provider(make_settings(gemini_api_key="secret-k")))
+
+
+def test_dropped_connection_is_retried_then_explained():
+    calls = []
+
+    def flaky(request):
+        calls.append(1)
+        if len(calls) == 1:
+            raise httpx.RemoteProtocolError("server disconnected")
+        return _answer('{"ok": true}')
+
+    assert _provider(flaky).generate_json(system="s", prompt="p", schema=SCHEMA).data == {"ok": True}
+
+    def dead(request):
+        raise httpx.ReadTimeout("timed out")
+
+    with pytest.raises(ProviderError, match="ReadTimeout"):
+        _provider(dead).generate_json(system="s", prompt="p", schema=SCHEMA)
