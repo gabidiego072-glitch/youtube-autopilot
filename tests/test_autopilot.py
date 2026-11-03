@@ -120,7 +120,7 @@ def test_autopilot_api_reports_missing_credentials(client):
     assert client.get("/api/v1/autopilot/preflight").json()["ready"] is False
     response = client.post("/api/v1/autopilot/runs", json={"channel_id": channel["id"]})
     assert response.status_code == 503
-    assert any("ANTHROPIC_API_KEY" in p for p in response.json()["detail"]["problems"])
+    assert any("GEMINI_API_KEY" in p for p in response.json()["detail"]["problems"])
 
 
 # --- parallel rendering ---------------------------------------------------------------------------

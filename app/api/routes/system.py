@@ -15,6 +15,14 @@ def integrations_status(settings: Settings, ffmpeg: FFmpeg) -> IntegrationsStatu
     blender_version = Blender(settings.blender_binary).version()
     youtube_note = "credentials present" if settings.youtube_configured else "YOUTUBE_* credentials not set"
     return IntegrationsStatus(
+        ai_provider=settings.ai_provider,
+        gemini=IntegrationState(
+            configured=settings.gemini_configured,
+            implemented=True,
+            detail=f"model={settings.gemini_model} (free tier)"
+            if settings.gemini_configured
+            else "GEMINI_API_KEY not set",
+        ),
         claude=IntegrationState(
             configured=settings.claude_configured,
             implemented=True,

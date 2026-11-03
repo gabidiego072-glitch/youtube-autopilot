@@ -7,7 +7,7 @@
     python scripts/autopilot.py approve <run_id>     # after reviewing the video: approve and continue
     python scripts/autopilot.py status [<run_id>]
     python scripts/autopilot.py render-shard <run_id> --shard 0 --shards 4   # parallel cloud rendering
-    python scripts/autopilot.py claude-check         # one tiny Claude call (fractions of a cent)
+    python scripts/autopilot.py ai-check             # verify the AI key (Gemini: free) with one tiny call
     python scripts/autopilot.py youtube-check        # verify the OAuth credentials (no upload)
     python scripts/autopilot.py upload-test video.mp4  # PRIVATE test upload (needs YOUTUBE_PUBLISHING_ENABLED)
     python scripts/autopilot.py sync-analytics       # YouTube Analytics -> learning loop
@@ -82,7 +82,7 @@ def main() -> int:
     shard_p.add_argument("--shard", type=int, required=True)
     shard_p.add_argument("--shards", type=int, required=True)
     sub.add_parser("youtube-check")
-    sub.add_parser("claude-check")
+    sub.add_parser("ai-check")
     upload_p = sub.add_parser("upload-test")
     upload_p.add_argument("video", type=Path)
     upload_p.add_argument("--title", default="Prueba privada YouTube-Autopilot")
@@ -94,8 +94,15 @@ def main() -> int:
 
     if args.command in ("youtube-check", "upload-test", "trends"):
         return youtube_command(args, settings)
-    if args.command == "claude-check":
-        result = get_ai_provider(settings).generate_json(
+    if args.command == "ai-check":
+        provider = get_ai_provider(settings)
+        if hasattr(provider, "list_models"):
+            models = provider.list_models()
+            print(json.dumps({"provider": provider.name, "available_models": models}, indent=2))
+            if settings.gemini_model not in models:
+                print(f"GEMINI_MODEL={settings.gemini_model} is not in the list: pick one above.", file=sys.stderr)
+                return 1
+        result = provider.generate_json(
             system="Answer briefly.",
             prompt="Reply with ok=true.",
             schema={

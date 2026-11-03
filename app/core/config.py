@@ -38,7 +38,15 @@ class Settings(BaseSettings):
     database_pool_size: int = 5
     database_max_overflow: int = 5
 
-    # --- AI provider: Claude (Anthropic) ----------------------------------
+    # --- AI provider ---------------------------------------------------------
+    # gemini: free tier of Google AI Studio (default). claude: paid, optional.
+    ai_provider: Literal["gemini", "claude"] = "gemini"
+    gemini_api_key: SecretStr | None = None
+    gemini_model: str = "gemini-3.8-flash"
+    gemini_max_tokens: int = 32000
+    gemini_timeout_seconds: float = 300.0
+
+    # --- AI provider: Claude (Anthropic), optional and paid -----------------
     anthropic_api_key: SecretStr | None = None
     claude_model: str = "claude-opus-5-5"
     claude_effort: ClaudeEffort = "medium"
@@ -107,6 +115,14 @@ class Settings(BaseSettings):
     @property
     def is_sqlite(self) -> bool:
         return self.database_url.startswith("sqlite")
+
+    @property
+    def gemini_configured(self) -> bool:
+        return bool(self.gemini_api_key and self.gemini_api_key.get_secret_value())
+
+    @property
+    def ai_configured(self) -> bool:
+        return self.gemini_configured if self.ai_provider == "gemini" else self.claude_configured
 
     @property
     def claude_configured(self) -> bool:

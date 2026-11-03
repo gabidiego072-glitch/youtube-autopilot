@@ -8,6 +8,8 @@ class IntegrationState(BaseModel):
 
 
 class IntegrationsStatus(BaseModel):
+    ai_provider: str
+    gemini: IntegrationState
     claude: IntegrationState
     ffmpeg: IntegrationState
     blender: IntegrationState
