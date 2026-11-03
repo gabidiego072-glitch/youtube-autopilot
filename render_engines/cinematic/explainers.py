@@ -245,11 +245,25 @@ def start_wind(explainer: Explainer, start: int, end: int, fps: int, speed: floa
     socket.keyframe_insert("default_value", frame=start)
     socket.default_value = 0.9
     socket.keyframe_insert("default_value", frame=start + 4)
+    # Each streak loops across the area for the whole gust (jumping back between two frames), with a
+    # random phase, so the wind keeps blowing instead of passing once and leaving an empty sky.
+    span = 2 * area
+    cycle = max(2, round(span / max(speed, 0.1) * fps))
     for obj in explainer.extra["streaks"]:
-        x0 = obj.location.x
-        travel = speed * (end - start) / fps
-        key(obj, "location", start, (x0 - area, obj.location.y, obj.location.z))
-        key(obj, "location", end, (x0 - area + travel, obj.location.y, obj.location.z))
+        x0, y, z = obj.location
+        left = x0 - area
+        phase = rng.randint(0, cycle - 1)
+        key(obj, "location", start, (left + span * phase / cycle, y, z))
+        frame = start + (cycle - phase)
+        while frame <= end:
+            key(obj, "location", frame, (left + span, y, z))
+            if frame + 1 <= end:
+                key(obj, "location", frame + 1, (left, y, z))
+            frame += cycle
+        last = frame - cycle
+        if last < end:
+            done = (end - last - 1) / cycle
+            key(obj, "location", end, (left + span * max(0.0, done), y, z))
         set_interpolation(obj, "LINEAR")
     for obj in explainer.extra["debris"]:
         delay = rng.randint(0, 6)
