@@ -2,15 +2,15 @@ import secrets
 from typing import Annotated
 
 from fastapi import Depends, Header, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import Settings, get_settings
-from app.db.session import get_db
+from app.db.session import get_db, get_session_factory
 from app.services.ai.base import AIProvider
 from app.services.ai.factory import get_ai_provider
+from app.services.rendering.blender import Blender
 from app.services.rendering.ffmpeg import FFmpeg
 from app.services.research.wikipedia import WikipediaClient
-from app.services.visuals.providers import ImageProvider, get_image_provider
 from app.services.voice.piper import PiperTTS
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]
@@ -39,8 +39,13 @@ def provide_wikipedia(settings: SettingsDep) -> WikipediaClient | None:
     return WikipediaClient(settings.wikipedia_language, settings.wikipedia_user_agent)
 
 
-def provide_image_provider(settings: SettingsDep) -> ImageProvider:
-    return get_image_provider(settings)
+def provide_blender(settings: SettingsDep) -> Blender:
+    return Blender(settings.blender_binary, settings.blender_timeout_seconds)
+
+
+def provide_session_factory() -> sessionmaker[Session]:
+    """For background jobs, which outlive the request's session."""
+    return get_session_factory()
 
 
 def provide_tts(settings: SettingsDep) -> PiperTTS:
@@ -49,6 +54,7 @@ def provide_tts(settings: SettingsDep) -> PiperTTS:
 
 AIProviderDep = Annotated[AIProvider, Depends(provide_ai)]
 WikipediaDep = Annotated[WikipediaClient | None, Depends(provide_wikipedia)]
-ImageProviderDep = Annotated[ImageProvider, Depends(provide_image_provider)]
+BlenderDep = Annotated[Blender, Depends(provide_blender)]
+SessionFactoryDep = Annotated[sessionmaker[Session], Depends(provide_session_factory)]
 TTSDep = Annotated[PiperTTS, Depends(provide_tts)]
 FFmpegDep = Annotated[FFmpeg, Depends(provide_ffmpeg)]

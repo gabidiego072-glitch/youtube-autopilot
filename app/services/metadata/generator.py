@@ -34,8 +34,8 @@ Rules:
 - Tags: specific science terms of the topic plus general ones (ciencia, curiosidades, qué pasaría si).
 - Hashtags: 3-5; Shorts must include #Shorts.
 - Never use '<' or '>'. Never mention video games or gaming.
-- 'thumbnail_text': 2-5 bold words. 'thumbnail_prompt': one hyper-realistic photo of the most striking moment,
-  for an image model, no text in the image.
+- 'thumbnail_text': 2-5 bold words. 'thumbnail_prompt': which moment of the video (its 3D scene) makes the most
+  striking thumbnail and why; the thumbnail is a frame of the rendered video, never a photo.
 - 'pinned_comment': a question that invites viewers to answer in the comments."""
 
 

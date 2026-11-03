@@ -28,20 +28,11 @@ def integrations_status(settings: Settings, ffmpeg: FFmpeg) -> IntegrationsStatu
         blender=IntegrationState(
             configured=blender_version is not None,
             implemented=True,
-            detail=blender_version or "blender not found (scripts/install_blender.sh or BLENDER_BINARY)",
-        ),
-        ai_images=IntegrationState(
-            configured=settings.image_provider_name is not None,
-            implemented=True,
-            detail=settings.image_provider_name
-            or "not configured: set COMFYUI_URL + COMFYUI_IMAGE_WORKFLOW (self-hosted) or HF_TOKEN",
-        ),
-        ai_video=IntegrationState(
-            configured=bool(settings.comfyui_url and settings.comfyui_video_workflow),
-            implemented=True,
-            detail="comfyui image-to-video workflow"
-            if settings.comfyui_url and settings.comfyui_video_workflow
-            else "not configured: stills are animated with free FFmpeg camera motion",
+            detail=(
+                f"{blender_version}; renders every scene procedurally"
+                if blender_version
+                else "blender not found (scripts/install_blender.sh or BLENDER_BINARY)"
+            ),
         ),
         voice=IntegrationState(
             configured=PiperTTS(settings.piper_binary, settings.piper_voice_model).is_available(),

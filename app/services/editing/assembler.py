@@ -1,7 +1,6 @@
-"""Final edit with FFmpeg only (free): one shot per scene, cut to the length of its
-voice-over, with slow camera motion on stills ("Ken Burns") or the AI clip itself,
-then subtitles timed to the narration and an optional music bed that ducks under
-the voice."""
+"""Final edit with FFmpeg only (free): one rendered 3D clip per scene, cut to the length
+of its voice-over (stills, e.g. a single rendered frame, get a slow camera move), then
+subtitles timed to the narration and an optional music bed that ducks under the voice."""
 
 from __future__ import annotations
 

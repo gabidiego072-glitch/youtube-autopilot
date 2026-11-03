@@ -11,8 +11,6 @@ class IntegrationsStatus(BaseModel):
     claude: IntegrationState
     ffmpeg: IntegrationState
     blender: IntegrationState
-    ai_images: IntegrationState
-    ai_video: IntegrationState
     voice: IntegrationState
     research: IntegrationState
     youtube_data_api: IntegrationState

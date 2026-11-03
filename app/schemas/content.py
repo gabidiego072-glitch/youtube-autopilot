@@ -49,9 +49,10 @@ class FactCheckRead(BaseModel):
     summary: str
 
 
-class VisualsRequest(BaseModel):
-    aspect: str | None = Field(default=None, pattern=r"^(9:16|16:9)$")  # default: from the project format
-    animate: bool = True  # use the AI video provider when one is configured
+class SceneRenderRequest(BaseModel):
+    quality: str | None = Field(default=None, pattern=r"^(test|draft|preview|final)$")  # default: settings
+    scale: float | None = Field(default=None, gt=0, le=1)  # override resolution (fraction of 1080p)
+    samples: int | None = Field(default=None, ge=1, le=512)
 
 
 class AssetRead(ORMModel):

@@ -61,4 +61,20 @@ def lantern_post(name: str, location, facing_deg: float = 0.0) -> LanternPost:
     return LanternPost(name, tuple(location), glass, lamp)
 
 
-PROP_BUILDERS = {"lantern_post": lantern_post}
+def _planet(name, location, facing_deg=0.0, **params):
+    from render_engines.cinematic.space import planet
+
+    return planet(
+        name,
+        location,
+        radius=params.get("radius", 1.0),
+        kind=params.get("kind", "earth"),
+        spin_rate=params.get("spin_rate", 0.0),
+        tilt=params.get("tilt", 23.4),
+    )
+
+
+PROP_BUILDERS = {
+    "lantern_post": lambda name, location, facing_deg=0.0, **_: lantern_post(name, location, facing_deg),
+    "planet": _planet,
+}

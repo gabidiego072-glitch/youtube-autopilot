@@ -28,6 +28,8 @@ class Script(UUIDPrimaryKeyMixin, Base):
     fact_check_status: Mapped[FactCheckStatus] = mapped_column(
         enum_column(FactCheckStatus), default=FactCheckStatus.NOT_CHECKED, server_default="not_checked", nullable=False
     )
+    # One procedural 3D scene spec per scene (render_engines format), from the storyboard step.
+    scene_specs: Mapped[list[dict] | None] = mapped_column(JSONType)
     # {"verdicts": [{"claim", "verdict", "note", "correction"}], "summary": str}
     fact_check: Mapped[dict | None] = mapped_column(JSONType)
     call_to_action: Mapped[str | None] = mapped_column(Text)

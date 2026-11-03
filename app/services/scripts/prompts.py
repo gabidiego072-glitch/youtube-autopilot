@@ -2,8 +2,9 @@
 
 from app.content.profile import CHANNEL_CONCEPT, SCIENCE_RULES, TONE_GUIDE, VISUAL_STYLE
 from app.models.enums import ClaimType, VideoFormat
+from render_engines.core.catalog import catalog_text
 
-PROMPT_VERSION = "whatif-script-v2"
+PROMPT_VERSION = "whatif-script-v3"
 HOOK_MAX_WORDS = 8  # ~2 seconds of fast narration
 BEATS = ("hook", "setup", "escalation", "climax", "ending")
 
@@ -84,17 +85,19 @@ Structure every script like this:
 Put every factual statement of a scene in its 'claims' list with its type; 'source' is the source URL from the
 research notes when one supports it, otherwise an empty string.
 
-Visuals: 'visual' describes one realistic shot as an image-generation prompt (subject, action, setting,
-lighting, lens). {VISUAL_STYLE} Keep the same people, places and objects consistent across scenes: define them
-once in 'visual_bible.recurring_subjects' (name + detailed physical description) and reuse the names in each
-scene's 'visual'. Do not describe text, captions or logos in shots.
+Visuals: {VISUAL_STYLE}
+'visual' describes what the 3D scene shows (who/what, what they do, where the camera is), using only things the
+3D engine can draw:
+{catalog_text()}
+Keep the same characters and places across scenes: define them once in 'visual_bible.recurring_subjects'
+(name + look) and reuse the names. Scale ideas work well: compare sizes with trees and people, show planets.
 
 'duration_seconds' is the speaking time of the scene's narration at a lively pace (about 150 words/minute)."""
 
 _FORMAT_GUIDANCE = {
     VideoFormat.SHORT: (
         "Format: vertical YouTube Short (9:16), 30-60 seconds. 6-10 fast scenes of 1-2 sentences. "
-        "At least 3 escalation scenes. Vertical framing for every shot."
+        "At least 3 escalation scenes. Vertical framing: keep the subject centred and tall in frame."
     ),
     VideoFormat.LONG: (
         "Format: horizontal long-form video (16:9). Cover the premise in depth: timeline of consequences, "
@@ -122,7 +125,7 @@ def build_script_prompt(
         f"Premise / working title: {working_title}",
         f"Topic details: {topic}",
         f"Target length: about {target_duration_seconds} seconds.",
-        f"Language: write title_question, narration and ending_line in '{language}'. Visual prompts in English.",
+        f"Language: write title_question, narration and ending_line in '{language}'. Visual descriptions in English.",
     ]
     if niche:
         parts.append(f"Channel niche: {niche}")
