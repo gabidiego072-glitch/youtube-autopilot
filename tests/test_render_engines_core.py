@@ -16,7 +16,7 @@ CINEMATIC = EXAMPLES / "what_if_grow_each_step.json"
 
 
 def test_example_specs_are_valid_and_on_theme():
-    specs = sorted(EXAMPLES.glob("*.json"))
+    specs = sorted(EXAMPLES.glob("*.json"))  # top-level examples; urban/ holds engine test scenes
     assert specs
     for path in specs:
         spec = load_spec(path)

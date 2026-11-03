@@ -6,10 +6,29 @@ the engine actually renders.
 """
 
 ENVIRONMENTS = {
+    "city": "Street at eye level: road (east-west, east = +x), sidewalks at z=0 (road is 0.15 m lower), buildings "
+    "both sides (north side y > 7.4; a foreground 'hero' building near x=-6 has real glass windows), shops, "
+    "awnings, street lamps, traffic lights, benches, bins, trees, parked cars, optional pedestrians. Options: "
+    "time_of_day (dawn|day|dusk|night), sun_azimuth, pedestrians (count), parked_cars, physics (true to let "
+    "things be thrown).",
+    "coast": "Seafront street: like 'city' but the south side is a promenade with a railing, a beach and the sea "
+    "(water starts around y=-35). Use 'surge' to bring the sea into the street.",
+    "interior": "Living room (x in [-3,3], y in [-2.5,2.5], height 2.7; east wall at x=+3; window in the north "
+    "wall): sofa, tables, chairs, bookshelf with books, TV, lamp, plant. Options: time_of_day, room_light (W), "
+    "physics (true lets furniture and books slide).",
     "meadow": "Outdoor countryside: hills, trees, rocks, flowers, sky. Options: time_of_day (dawn|day|dusk), "
     "trees, rocks, flowers, fireflies, hill_height. Characters stand on the ground at z=0 near the origin.",
     "space": "Outer space: black sky with stars, one sun light. Options: sun_azimuth, sun_elevation, stars "
     "(density 0-1). Use with planet props; there is no ground.",
+}
+
+# Which scene scales each environment can show (human-impact rule; see app/content/profile.py).
+ENVIRONMENT_SCALES = {
+    "city": ("street", "building", "vehicle", "crowd", "aerial"),
+    "coast": ("street", "building", "vehicle", "crowd", "aerial"),
+    "interior": ("interior",),
+    "meadow": ("street", "crowd", "aerial"),
+    "space": ("global",),
 }
 
 PROPS = {
@@ -44,7 +63,14 @@ ACTIONS = {
     "fling": "inertia: a character is thrown through the air: character, start, end, direction_deg (0 = +x/east), "
     "speed (m/s), lift (m/s), gravity (m/s^2, low = slow-motion arc)",
     "wind": "start a wind prop: prop, start, end, speed (m/s)",
-    "sun_path": "meadow only: the sun moves (time-lapse): start, end, elevation_from, elevation_to (deg; below 0 "
+    "inertia_shock": "city/coast/interior with physics: the ground stops and everything loose (cars, benches, "
+    "bins, furniture, books, glass) keeps moving: start, end, accel (m/s^2, ~20-60), direction_deg (0 = east)",
+    "shatter_windows": "the hero building's windows break (glass shards fall; needs physics): start",
+    "surge": "coast only: the sea rises and floods into the street: start, end, height (m), inland (m)",
+    "lights_on": "city: street lamps and random windows switch on: start, end",
+    "cover": "character crouches and covers the head: character, start, end",
+    "fall": "character falls over: character, start, direction_deg",
+    "sun_path": "meadow/city: the sun moves (time-lapse): start, end, elevation_from, elevation_to (deg; below 0 "
     "is night)",
     "migrate_oceans": "earth only: oceans flow to the poles, a continent rises at the equator: prop, start, end, "
     "amount (0-1)",

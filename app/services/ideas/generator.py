@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field, ValidationError
 from app.content.profile import (
     CHANNEL_CONCEPT,
     EXAMPLE_PREMISES,
+    HUMAN_IMPACT_RULES,
     SCIENCE_RULES,
     category_list,
     is_off_topic,
@@ -20,7 +21,13 @@ from app.models.enums import ContentCategory
 from app.services.ai.base import AIProvider
 
 PROMPT_VERSION = "ideas-v1"
-SCORE_WEIGHTS = {"curiosity": 0.35, "visual_potential": 0.25, "scientific_grounding": 0.25, "evergreen": 0.15}
+SCORE_WEIGHTS = {
+    "curiosity": 0.30,
+    "human_impact": 0.20,  # how strongly it changes daily life, homes and cities (human-impact rule)
+    "visual_potential": 0.20,
+    "scientific_grounding": 0.20,
+    "evergreen": 0.10,
+}
 DUPLICATE_THRESHOLD = 0.82
 
 IDEA_SCHEMA = {
@@ -37,6 +44,7 @@ IDEA_SCHEMA = {
                     "angle": {"type": "string"},
                     "science_basis": {"type": "string"},
                     "curiosity": {"type": "integer"},
+                    "human_impact": {"type": "integer"},
                     "visual_potential": {"type": "integer"},
                     "scientific_grounding": {"type": "integer"},
                     "evergreen": {"type": "integer"},
@@ -48,6 +56,7 @@ IDEA_SCHEMA = {
                     "angle",
                     "science_basis",
                     "curiosity",
+                    "human_impact",
                     "visual_potential",
                     "scientific_grounding",
                     "evergreen",
@@ -73,8 +82,12 @@ Never propose anything about video games or gaming.
 
 {SCIENCE_RULES}
 
-Score each idea honestly from 0 to 10 on: curiosity, visual_potential, scientific_grounding (how much real
-science can explain it), evergreen. 'hook' is the first spoken line (at most 8 words). 'angle' says which
+{HUMAN_IMPACT_RULES}
+
+Score each idea honestly from 0 to 10 on: curiosity, human_impact (how clearly it changes people's lives, homes,
+streets and cities - a premise that only affects the planet from afar scores low), visual_potential,
+scientific_grounding (how much real science can explain it), evergreen.
+'hook' is the first spoken line (at most 8 words). 'angle' says which
 consequences the video will follow. 'science_basis' names the real science behind it."""
 
 

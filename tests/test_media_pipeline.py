@@ -305,22 +305,20 @@ def test_scene_render_reports_missing_blender(make_client, channel):
     assert client.post(f"/api/v1/projects/{pid}/scenes/render", json={}).status_code == 409  # not planned yet
 
 
-PRODUCTION = REPO / "productions" / "what_if_earth_stops" / "production.json"
+PRODUCTION_V1 = REPO / "productions" / "archive" / "what_if_earth_stops_v1_planet" / "production.json"
 
 
-def test_first_short_production_is_valid_and_rigorous():
-    from app.services.production.short import load_production
+def test_planet_centred_v1_production_is_rejected_by_the_human_impact_rule():
+    from app.services.production.short import ProductionError, load_production
 
-    production = load_production(PRODUCTION)
-    scenes = production["script"]["scenes"]
-    assert len(scenes) == len(production["scenes"]) == 9
-    assert len(production["script"]["hook"].split()) <= 8
-    assert production["script"]["ending_line"].endswith("?")
-    assert {c["type"] for s in scenes for c in s["claims"]} == {"established", "estimate", "speculation"}
-    text = " ".join(s["narration"] for s in scenes)
-    assert "de golpe" in text and "poco a poco" in text  # instant stop and gradual stop are both explained
-    env_types = {spec["environment"]["type"] for spec in production["scenes"]}
-    assert env_types == {"space", "meadow"}
+    data = json.loads(PRODUCTION_V1.read_text())
+    for scene, spec in zip(data["script"]["scenes"], data["scenes"], strict=True):  # declare its real scales
+        scene["scale"] = "global" if spec["environment"]["type"] == "space" else "street"
+    path = REPO / "out" / "_v1_scaled.json"
+    path.parent.mkdir(exist_ok=True)
+    path.write_text(json.dumps(data, ensure_ascii=False))
+    with pytest.raises(ProductionError, match="human scale"):
+        load_production(path)
 
 
 def _second_production(tmp_path) -> Path:
@@ -353,6 +351,10 @@ def _second_production(tmp_path) -> Path:
         ],
         {"beat": "ending", "narration": "¿Te atreverías?", "visual": "x", "duration_seconds": 2, "claims": []},
     ]
+    for item in script_scenes:
+        if item["beat"] in ("escalation", "climax"):
+            item.setdefault("human_subject", "tú")
+            item.setdefault("consequence", "lo que cuenta la narración")
     production = {
         "id": "second",
         "format": "short",

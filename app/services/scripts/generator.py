@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, Field, ValidationError
 
-from app.content.profile import is_off_topic
+from app.content.profile import is_off_topic, scale_problems
 from app.core.errors import ProviderError
 from app.models.enums import ClaimType, VideoFormat
 from app.services.ai.base import AIProvider
@@ -31,6 +31,9 @@ class SceneDraft(BaseModel):
     narration: str = Field(min_length=1)
     visual: str = Field(min_length=1)
     duration_seconds: float = Field(gt=0)
+    scale: str = "street"
+    human_subject: str = ""
+    consequence: str = ""
     claims: list[ClaimDraft] = Field(default_factory=list)
 
 
@@ -98,6 +101,14 @@ def structure_problems(draft: ScriptDraft, video_format: VideoFormat) -> list[st
         problems.append("The script makes no labelled claims.")
     if is_off_topic(draft.full_text + " " + draft.title_question):
         problems.append("Script drifts into video game / gaming content.")
+    # Human-impact rule: what happens to us, not just to the planet.
+    problems += scale_problems([(scene.scale, scene.duration_seconds) for scene in draft.scenes])
+    for index, scene in enumerate(draft.scenes):
+        if scene.beat in ("escalation", "climax"):
+            if not scene.consequence.strip() or not scene.human_subject.strip():
+                problems.append(f"Scene {index} needs a human subject and the consequence it shows.")
+            if not scene.claims:
+                problems.append(f"Scene {index} shows a consequence with no scientific claim behind it.")
     return problems
 
 

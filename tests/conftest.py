@@ -97,12 +97,24 @@ def channel(client) -> dict:
     return response.json()
 
 
-def _scene(beat: str, narration: str, visual: str, seconds: float, claims: list[tuple[str, str]]) -> dict:
+def _scene(
+    beat: str,
+    narration: str,
+    visual: str,
+    seconds: float,
+    claims: list[tuple[str, str]],
+    scale: str = "street",
+    subject: str = "Lucía, una vecina",
+    consequence: str = "",
+) -> dict:
     return {
         "beat": beat,
         "narration": narration,
         "visual": visual,
         "duration_seconds": seconds,
+        "scale": scale,
+        "human_subject": subject,
+        "consequence": consequence or ("the effect described in the narration" if claims else ""),
         "claims": [{"text": t, "type": k, "source": ""} for t, k in claims],
     }
 
@@ -159,6 +171,13 @@ SCRIPT_RESPONSE = {
     },
 }
 
+# Human-impact rule: mostly street/interior/building scenes, one short global view.
+for _scene_data, _scale in zip(
+    SCRIPT_RESPONSE["scenes"], ["street", "global", "street", "building", "interior", "street", "street"], strict=True
+):
+    _scene_data["scale"] = _scale
+SCRIPT_RESPONSE["scenes"][1]["duration_seconds"] = 3  # the global view stays under 15 % of the video
+
 LONG_SCRIPT_RESPONSE = {
     **SCRIPT_RESPONSE,
     "scenes": SCRIPT_RESPONSE["scenes"][:2]
@@ -203,6 +222,7 @@ IDEAS_RESPONSE = {
             "angle": "mareas, eje, noches",
             "science_basis": "mareas y estabilidad del eje",
             "curiosity": 9,
+            "human_impact": 7,
             "visual_potential": 9,
             "scientific_grounding": 8,
             "evergreen": 10,
@@ -214,6 +234,7 @@ IDEAS_RESPONSE = {
             "angle": "cerebro, cuerpo",
             "science_basis": "privación de sueño",
             "curiosity": 7,
+            "human_impact": 7,
             "visual_potential": 6,
             "scientific_grounding": 9,
             "evergreen": 9,
@@ -225,6 +246,7 @@ IDEAS_RESPONSE = {
             "angle": "x",
             "science_basis": "x",
             "curiosity": 10,
+            "human_impact": 7,
             "visual_potential": 10,
             "scientific_grounding": 1,
             "evergreen": 5,
@@ -236,6 +258,7 @@ IDEAS_RESPONSE = {
             "angle": "x",
             "science_basis": "x",
             "curiosity": 9,
+            "human_impact": 7,
             "visual_potential": 9,
             "scientific_grounding": 9,
             "evergreen": 9,
@@ -247,6 +270,7 @@ IDEAS_RESPONSE = {
             "angle": "x",
             "science_basis": "x",
             "curiosity": 5,
+            "human_impact": 7,
             "visual_potential": 5,
             "scientific_grounding": 5,
             "evergreen": 5,
@@ -255,22 +279,50 @@ IDEAS_RESPONSE = {
 }
 
 
-def storyboard_scene(index: int) -> dict:
-    """A small valid planned scene (meadow, one character walking, one camera move)."""
+def storyboard_scene(index: int, scale: str = "street") -> dict:
+    """A small valid planned scene whose environment can show the given scale."""
+    if scale == "global":
+        return {
+            "environment": {"type": "space"},
+            "characters": [],
+            "props": [{"id": "earth", "type": "planet", "kind": "earth", "location": [0, 0, 0], "radius": 2.0}],
+            "actions": [],
+            "camera": {"shots": [{"time": 0.0, "location": [0.0, -9.0, 1.0], "target": "earth", "lens": 35}]},
+        }
+    environment = {"type": "interior"} if scale == "interior" else {"type": "city", "time_of_day": "day"}
     return {
-        "environment": {"type": "meadow", "time_of_day": "day", "trees": 5},
-        "characters": [{"id": "narrator", "start": [-2.0, 0.0], "facing": -90}],
+        "environment": environment,
+        "characters": [{"id": "narrator", "start": [-1.0, -0.5] if scale == "interior" else [-2.0, -5.5], "facing": 0}],
         "props": [],
         "actions": [
-            {"type": "walk", "character": "narrator", "from": [-2.0, 0.0], "to": [2.0, 0.5], "start": 0.0, "end": 1.0}
+            {
+                "type": "walk",
+                "character": "narrator",
+                "from": [-1.0, -0.5] if scale == "interior" else [-2.0, -5.5],
+                "to": [0.5, -0.5] if scale == "interior" else [2.0, -5.5],
+                "start": 0.0,
+                "end": 1.0,
+            }
         ],
         "camera": {
             "shots": [
-                {"time": 0.0, "location": [0.0, -6.0, 1.5], "target": "narrator", "lens": 35},
-                {"time": 1.0, "location": [1.0, -5.0, 1.6], "target": "narrator", "lens": 40},
+                {
+                    "time": 0.0,
+                    "location": [0.0, -2.2, 1.5] if scale == "interior" else [-6.0, -6.0, 1.6],
+                    "target": "narrator",
+                    "lens": 24,
+                },
+                {
+                    "time": 1.0,
+                    "location": [0.2, -2.2, 1.5] if scale == "interior" else [-5.0, -6.0, 1.6],
+                    "target": "narrator",
+                    "lens": 26,
+                },
             ]
         },
     }
 
 
-STORYBOARD_RESPONSE = {"scenes": [storyboard_scene(i) for i in range(len(SCRIPT_RESPONSE["scenes"]))]}
+STORYBOARD_RESPONSE = {
+    "scenes": [storyboard_scene(i, scene["scale"]) for i, scene in enumerate(SCRIPT_RESPONSE["scenes"])]
+}

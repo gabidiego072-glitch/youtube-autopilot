@@ -1,10 +1,19 @@
 """Prompt templates for 'What would happen if...?' scripts. Bump PROMPT_VERSION on any change."""
 
-from app.content.profile import CHANNEL_CONCEPT, SCIENCE_RULES, TONE_GUIDE, VISUAL_STYLE
+from app.content.profile import (
+    CHANNEL_CONCEPT,
+    HUMAN_IMPACT_RULES,
+    MAX_GLOBAL_SCENES,
+    MIN_HUMAN_SHARE,
+    SCENE_SCALES,
+    SCIENCE_RULES,
+    TONE_GUIDE,
+    VISUAL_STYLE,
+)
 from app.models.enums import ClaimType, VideoFormat
 from render_engines.core.catalog import catalog_text
 
-PROMPT_VERSION = "whatif-script-v3"
+PROMPT_VERSION = "whatif-script-v4"
 HOOK_MAX_WORDS = 8  # ~2 seconds of fast narration
 BEATS = ("hook", "setup", "escalation", "climax", "ending")
 
@@ -22,6 +31,9 @@ SCRIPT_SCHEMA = {
                     "narration": {"type": "string"},
                     "visual": {"type": "string"},
                     "duration_seconds": {"type": "number"},
+                    "scale": {"type": "string", "enum": list(SCENE_SCALES)},
+                    "human_subject": {"type": "string"},
+                    "consequence": {"type": "string"},
                     "claims": {
                         "type": "array",
                         "items": {
@@ -36,7 +48,16 @@ SCRIPT_SCHEMA = {
                         },
                     },
                 },
-                "required": ["beat", "narration", "visual", "duration_seconds", "claims"],
+                "required": [
+                    "beat",
+                    "narration",
+                    "visual",
+                    "duration_seconds",
+                    "scale",
+                    "human_subject",
+                    "consequence",
+                    "claims",
+                ],
                 "additionalProperties": False,
             },
         },
@@ -81,6 +102,13 @@ Structure every script like this:
 
 {TONE_GUIDE}
 
+{HUMAN_IMPACT_RULES}
+For every scene set 'scale' (street, interior, building, vehicle, crowd = human scale; aerial; global = the
+planet, a map or space), 'human_subject' (who or what of ours is affected: a person, a family, a street, a
+hospital...) and 'consequence' (the physical effect shown, which must be backed by one of the scene's claims).
+At least {MIN_HUMAN_SHARE:.0%} of the duration must be at human scale and at most {MAX_GLOBAL_SCENES} scene may
+be global.
+
 {SCIENCE_RULES}
 Put every factual statement of a scene in its 'claims' list with its type; 'source' is the source URL from the
 research notes when one supports it, otherwise an empty string.
@@ -90,7 +118,7 @@ Visuals: {VISUAL_STYLE}
 3D engine can draw:
 {catalog_text()}
 Keep the same characters and places across scenes: define them once in 'visual_bible.recurring_subjects'
-(name + look) and reuse the names. Scale ideas work well: compare sizes with trees and people, show planets.
+(name + look) and reuse the names: follow the same person, street or home through the video.
 
 'duration_seconds' is the speaking time of the scene's narration at a lively pace (about 150 words/minute)."""
 

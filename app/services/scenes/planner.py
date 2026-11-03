@@ -6,10 +6,10 @@ validated by the engine's own validator before it is stored.
 
 from __future__ import annotations
 
-from app.content.profile import CHANNEL_CONCEPT, VISUAL_STYLE
+from app.content.profile import CHANNEL_CONCEPT, HUMAN_IMPACT_RULES, VISUAL_STYLE, scale_problems
 from app.core.errors import ProviderError
 from app.services.ai.base import AIProvider
-from render_engines.core.catalog import ACTIONS, ENVIRONMENTS, PROPS, catalog_text
+from render_engines.core.catalog import ACTIONS, ENVIRONMENT_SCALES, ENVIRONMENTS, PROPS, catalog_text
 from render_engines.core.spec import SpecError, validate_spec
 
 PROMPT_VERSION = "storyboard-v1"
@@ -137,7 +137,11 @@ Every video is made only with a procedural 3D engine (no photos, no AI images). 
 You turn each scene of a script into one engine scene. Use ONLY what the engine supports:
 {catalog_text()}
 
+{HUMAN_IMPACT_RULES}
+
 Rules:
+- Respect each script scene's 'scale': human-scale scenes happen among people and buildings, at eye level;
+  only 'global' scenes may use space and planets.
 - One output scene per script scene, in the same order; each lasts exactly the given duration and all times
   are within it.
 - Show the idea of the narration with what exists (scale comparisons with trees and people, planets spinning,
@@ -151,9 +155,18 @@ Rules:
 
 def _scene_list(scenes: list[dict], durations: list[float]) -> str:
     return "\n".join(
-        f"{i}. [{s['beat']}] {durations[i]:.1f}s - narration: {s['narration']!r} - shot idea: {s['visual']}"
+        f"{i}. [{s['beat']}] [{s.get('scale', 'street')}] {durations[i]:.1f}s - narration: {s['narration']!r} - "
+        f"shows: {s.get('consequence', '')} (to: {s.get('human_subject', '')}) - shot idea: {s['visual']}"
         for i, s in enumerate(scenes)
     )
+
+
+def environment_scale_problem(spec: dict, scale: str) -> str | None:
+    env = spec.get("environment", {}).get("type", "meadow")
+    allowed = ENVIRONMENT_SCALES.get(env, ())
+    if scale not in allowed:
+        return f"environment '{env}' cannot show a '{scale}' scene (allowed: {list(allowed)})"
+    return None
 
 
 def finalize(raw: dict, *, duration: float, seed: int, palette: dict | None) -> dict:
@@ -215,9 +228,14 @@ def plan_scenes(
     for index, (raw, duration) in enumerate(zip(planned, durations, strict=True)):
         try:
             spec = finalize(raw, duration=duration, seed=seed, palette=palette)
+            spec["scale"] = scenes[index].get("scale", "street")
             specs.append(validate_spec(spec))
+            mismatch = environment_scale_problem(spec, spec["scale"])
+            if mismatch:
+                problems.append(f"scene {index}: {mismatch}")
         except (SpecError, KeyError, TypeError, IndexError) as exc:
             problems.append(f"scene {index}: {exc}")
+    problems += scale_problems([(s.get("scale", "street"), d) for s, d in zip(scenes, durations, strict=True)])
     if problems:
         raise ProviderError("Storyboard rejected: " + "; ".join(problems))
     return specs
