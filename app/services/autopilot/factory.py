@@ -20,7 +20,7 @@ def piper_binary(settings: Settings) -> str:
 
 def real_services(settings: Settings, log=print) -> Services:
     return Services(
-        ai=get_ai_provider(settings),  # raises a clear error if ANTHROPIC_API_KEY is missing
+        ai=get_ai_provider(settings),  # raises a clear error if the AI key is missing
         wiki=WikipediaClient(settings.wikipedia_language, settings.wikipedia_user_agent)
         if settings.research_enabled
         else None,
@@ -36,8 +36,9 @@ def real_services(settings: Settings, log=print) -> Services:
 def preflight(settings: Settings) -> list[str]:
     """What is missing before an unattended run can succeed."""
     problems = []
-    if not settings.claude_configured:
-        problems.append("ANTHROPIC_API_KEY is not set (ideas, research, scripts, fact-check, storyboard, metadata).")
+    if not settings.ai_configured:
+        key = "GEMINI_API_KEY" if settings.ai_provider == "gemini" else "ANTHROPIC_API_KEY"
+        problems.append(f"{key} is not set (ideas, research, scripts, fact-check, storyboard, metadata).")
     if not PiperTTS(piper_binary(settings), settings.piper_voice_model).is_available():
         problems.append(
             "Piper voice not available (pip install piper-tts; scripts/install_voice.sh; PIPER_VOICE_MODEL)."

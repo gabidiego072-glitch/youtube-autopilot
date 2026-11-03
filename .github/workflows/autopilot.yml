@@ -44,6 +44,9 @@ permissions:
 env:
   ENVIRONMENT: staging
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  AI_PROVIDER: ${{ vars.AI_PROVIDER || 'gemini' }}
+  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-3.8-flash' }}
   ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
   CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL || 'claude-opus-5-5' }}
   WIKIPEDIA_USER_AGENT: ${{ vars.WIKIPEDIA_USER_AGENT }}

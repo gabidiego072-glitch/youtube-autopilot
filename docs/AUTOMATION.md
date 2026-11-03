@@ -13,6 +13,7 @@ seguridad](#6-interruptores-de-seguridad) · [7. Comandos](#7-comandos)
 | Pieza | Estado | Dónde |
 | --- | --- | --- |
 | API, PostgreSQL/Supabase, migraciones | ✅ con tests (SQLite y PostgreSQL) | `app/`, `alembic/` |
+| IA de texto gratis (Gemini) con Claude opcional | ✅ probada contra la API simulada; falta tu clave | `app/services/ai/` |
 | Ideas puntuadas, sin duplicados, guiadas por el rendimiento real y por **tendencias** (Wikipedia gratis + búsqueda de YouTube opcional) | ✅ (tendencias probadas en vivo con Wikipedia) | `app/services/ideas/`, `trends/` |
 | Investigación (Wikipedia) y verificación científica obligatoria | ✅ | `research/`, `factcheck/` |
 | Guion con regla de **impacto humano** | ✅ | `scripts/`, `app/content/profile.py` |
@@ -87,11 +88,11 @@ Suposiciones: 30 Shorts de ~50 s y 4 vídeos largos de ~8 min, en escenas urbana
 | Solo los 30 Shorts en `hd` | ~7.800 min → ~35 $/mes | 0 € | 0 € |
 | Base de datos (Supabase Free) | 0 € | 0 € | 0 € |
 | Voz, 3D, montaje, Wikipedia, YouTube API | 0 € | 0 € | 0 € |
-| **Claude (texto)** | ~0,40–0,80 $ por Short y ~1,5–3 $ por vídeo largo con Opus 5.5 → **~30–35 $/mes**; con Sonnet 5.5 aprox. la mitad; con Haiku 5.5 1–3 $ (peor calidad) | igual | igual |
+| **IA de texto: Gemini (capa gratuita)** | **0 €** (límites diarios de peticiones) | 0 € | 0 € |
+| IA de texto opcional: Claude | ~30–35 $/mes con Opus 5.5 (solo si decides pagar) | igual | igual |
 
-Son estimaciones: el coste real de Claude queda registrado en cada ejecución (`usage`) y el tiempo de render en
-cada informe. **Claude no tiene capa gratuita**, así que 0 € totales no es posible; el mínimo realista es el coste
-de Claude (~15–35 $/mes según el modelo) con render gratis en un ejecutor propio.
+Con Gemini gratis y el render en un ejecutor propio (tu PC), **el sistema completo cuesta 0 €**. Los tokens de
+cada ejecución quedan registrados (`usage`) y el tiempo de render en cada informe.
 
 ## 4. Credenciales paso a paso
 
@@ -100,18 +101,22 @@ Regla general: **ninguna clave va en el código ni en el repositorio**. En la nu
 (ya ignorado por git; copia `.env.example`). Los interruptores no secretos van como *variables* de GitHub (misma
 pantalla, pestaña *Variables*).
 
-### 4.1 Claude (Anthropic): `ANTHROPIC_API_KEY`, de pago
+### 4.1 IA de texto (gratis): `GEMINI_API_KEY`
 
-- **Dónde**: [console.anthropic.com](https://console.anthropic.com) (Claude Console). Cuenta: correo y método de
-  pago. Es independiente de una suscripción a Claude.ai.
-- **Coste**: de pago por uso, con créditos de prepago. No hay capa gratuita permanente (a veces dan un pequeño
-  crédito de prueba). Cada nivel de uso tiene un tope de gasto mensual.
-- **Pasos**: Settings → Billing → compra créditos (p. ej. 10 $). En Limits pon un **límite de gasto mensual**.
-  En API Keys → Create Key, nómbrala `youtube-autopilot` y cópiala (solo se muestra una vez).
-- **Dónde ponerla**: el secreto `ANTHROPIC_API_KEY` en GitHub, o `ANTHROPIC_API_KEY=` en `.env`.
-- **Modelo** (variable `CLAUDE_MODEL`): `claude-opus-5-5` (mejor calidad), `claude-sonnet-5-5` (mitad de
-  precio) o `claude-haiku-5-5` (muy barato).
-- **Verificar**: `python scripts/autopilot.py claude-check` hace una llamada mínima (una fracción de céntimo).
+- **Dónde**: [aistudio.google.com](https://aistudio.google.com) → **Get API key → Create API key**. Necesita una
+  cuenta de Google de una persona **mayor de edad** (si eres menor, la crea tu madre, padre o tutor).
+- **Coste**: 0 €. Usa la capa gratuita de Google AI Studio; si no añades facturación, nunca cobra.
+- **Límites**: peticiones por minuto y por día según el modelo (los ves en AI Studio; Google los cambia a veces).
+  Un Short usa ~8–10 peticiones. Las esperas por minuto se gestionan solas; si se acaba el cupo del día, la
+  ejecución se para con un mensaje claro y `resume` la continúa al día siguiente.
+- **Privacidad**: en la capa gratuita Google puede usar lo enviado para mejorar sus productos. Solo se envían
+  ideas, guiones y verificaciones (nada personal).
+- **Dónde ponerla**: secreto `GEMINI_API_KEY` en GitHub (o en `.env`).
+- **Verificar**: `python scripts/autopilot.py ai-check` lista los modelos que tu clave puede usar y hace una
+  llamada mínima. Si `gemini-3.8-flash` no aparece, crea la variable `GEMINI_MODEL` con uno de la lista.
+
+Opcional, de pago: Claude (`AI_PROVIDER=claude` + `ANTHROPIC_API_KEY` de console.anthropic.com) escribe
+guiones de más calidad, pero cuesta ~0,40–0,80 $ por Short. No hace falta.
 
 ### 4.2 Base de datos (Supabase): `DATABASE_URL`, gratis
 
@@ -209,7 +214,8 @@ públicos.
 | `RENDER_MODE` | `hd` | `draft` (barato, 540p), `hd` (publicable), `final` (1080p nativo, 2,2× más caro) |
 | `RENDER_SHARDS` | `4` | Trabajos de render en paralelo (1–8) |
 | `RUNS_ON` | vacío, o `["self-hosted","linux","x64"]` | Dónde se ejecuta |
-| `CLAUDE_MODEL` | `claude-opus-5-5` | Modelo de texto |
+| `AI_PROVIDER` | `gemini` | IA de texto (`gemini` gratis, `claude` de pago) |
+| `GEMINI_MODEL` | `gemini-3.8-flash` | Modelo de Gemini (ver `ai-check`) |
 | `WIKIPEDIA_USER_AGENT` | `YouTubeAutopilot/1.0 (tu-correo)` | Wikimedia pide un contacto |
 | `CHANNEL_NAME` | el nombre de tu canal | |
 | `YOUTUBE_PUBLISHING_ENABLED` | `false` hasta la primera prueba | Interruptor de subida |
@@ -281,7 +287,7 @@ reintentos con espera creciente).
 
 ```bash
 python scripts/autopilot.py preflight            # ¿falta algo para una ejecución desatendida?
-python scripts/autopilot.py claude-check         # verifica ANTHROPIC_API_KEY (llamada mínima)
+python scripts/autopilot.py ai-check             # verifica la clave de la IA (llamada mínima)
 python scripts/autopilot.py youtube-check        # verifica el OAuth de YouTube (no sube nada)
 python scripts/autopilot.py trends               # tendencias que verá el generador de ideas
 python scripts/autopilot.py run --channel "Qué Pasaría Si" --mode hd   # hasta «esperando aprobación»
