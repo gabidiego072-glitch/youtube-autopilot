@@ -149,7 +149,17 @@ def test_first_short_scenes_render(tmp_path, index):
 @pytest.mark.parametrize("name", ["street_sudden_stop", "home_sudden_stop", "coast_surge"])
 def test_urban_environments_render_with_physics(tmp_path, name):
     """City street, home interior and seafront (with rigid-body physics) build and render in real Blender."""
-    result = render_scene_video(EXAMPLES / "urban" / f"{name}.json", tmp_path / "out.mp4", blender=blender,
-                                ffmpeg=ffmpeg, aspect="9:16", quality="test", scale=0.08, samples=1, max_frames=3,
-                                threads=2, subtitles=False)
+    result = render_scene_video(
+        EXAMPLES / "urban" / f"{name}.json",
+        tmp_path / "out.mp4",
+        blender=blender,
+        ffmpeg=ffmpeg,
+        aspect="9:16",
+        quality="test",
+        scale=0.08,
+        samples=1,
+        max_frames=3,
+        threads=2,
+        subtitles=False,
+    )
     assert result.frame_count == 3 and result.video_path.stat().st_size > 500

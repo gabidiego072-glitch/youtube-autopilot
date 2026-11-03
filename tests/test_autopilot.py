@@ -1,0 +1,123 @@
+"""The autonomous pipeline end to end, with stub AI/voice/Blender and real FFmpeg (edit, QA, thumbnails)."""
+
+import copy
+from pathlib import Path
+
+import pytest
+
+from app.models import Channel, PipelineRun
+from app.models.enums import RunStatus, VideoFormat
+from app.services.autopilot.runner import STEPS, Services, create_run, run_pipeline
+from app.services.rendering.ffmpeg import FFmpeg
+from tests.conftest import (
+    FACTCHECK_PASS,
+    IDEAS_RESPONSE,
+    METADATA_RESPONSE,
+    SCRIPT_RESPONSE,
+    STORYBOARD_RESPONSE,
+    StubAIProvider,
+    make_settings,
+)
+from tests.test_content_pipeline import CONCEPTS, _wiki, _wiki_handler
+from tests.test_media_pipeline import _StubBlender, _StubVoice
+
+ffmpeg = FFmpeg()
+pytestmark = pytest.mark.skipif(not ffmpeg.is_available(), reason="ffmpeg not installed")
+
+FACTS = {"facts": []}
+FULL_RUN = [IDEAS_RESPONSE, CONCEPTS, FACTS, SCRIPT_RESPONSE, FACTCHECK_PASS, STORYBOARD_RESPONSE, METADATA_RESPONSE]
+
+
+def _services(tmp_path, responses, **settings) -> Services:
+    return Services(
+        ai=StubAIProvider(list(responses)),
+        wiki=_wiki(_wiki_handler),
+        tts=_StubVoice(),
+        blender=_StubBlender(),
+        ffmpeg=ffmpeg,
+        settings=make_settings(media_root=tmp_path / "media", **settings),
+        log=lambda *_: None,
+    )
+
+
+def _channel(db) -> Channel:
+    channel = Channel(name="Qué Pasaría Si", niche="ciencia hipotética", language="es")
+    db.add(channel)
+    db.commit()
+    return channel
+
+
+def _status(run: PipelineRun) -> dict:
+    return {s["name"]: s["status"] for s in run.steps}
+
+
+def test_full_run_stops_for_approval_then_publishing_is_refused(db, tmp_path):
+    channel = _channel(db)
+    services = _services(tmp_path, FULL_RUN)
+    run = run_pipeline(db, create_run(db, channel, VideoFormat.SHORT, "draft"), services)
+
+    assert run.status == RunStatus.WAITING_APPROVAL, run.error
+    statuses = _status(run)
+    assert all(statuses[s] == "succeeded" for s in STEPS[: STEPS.index("approval")])
+    assert statuses["approval"] == "blocked" and statuses["publish"] == "pending"
+    details = {s["name"]: s.get("detail") for s in run.steps}
+    assert details["topic"]["idea"].startswith("¿Qué pasaría si")
+    assert Path(details["render"]["output"]).is_file() and details["render"]["resolution"] == "540x960"
+    assert details["qa"]["passed"] is True
+    assert Path(details["thumbnail"]["landscape"]).is_file() and Path(details["thumbnail"]["vertical"]).is_file()
+    assert set(run.usage["by_step"]) >= {"topic", "research", "script", "fact_check", "storyboard", "metadata"}
+
+    # A person approves the video, then the run resumes: publishing is still switched off, so it stops safely.
+    from app.models import VideoProject
+    from app.services.autopilot.runner import approve_run
+
+    approve_run(db, run)
+    run = run_pipeline(db, run, services)
+    assert _status(run)["approval"] == "succeeded"
+    assert run.status == RunStatus.FAILED and "Publishing is disabled" in run.error
+    assert db.get(VideoProject, run.project_id).youtube_video_id is None
+
+
+def test_run_without_credentials_never_fakes_an_upload(db, tmp_path):
+    channel = _channel(db)
+    services = _services(tmp_path, FULL_RUN, youtube_publishing_enabled=True)
+    run = run_pipeline(db, create_run(db, channel, VideoFormat.SHORT, "draft", auto_publish=True), services)
+    assert _status(run)["approval"] == "succeeded"  # authorised in advance by auto_publish + the switch
+    assert run.status == RunStatus.FAILED and "YouTube is not configured" in run.error
+
+
+def test_failed_fact_check_is_rewritten_once_then_needs_a_human(db, tmp_path):
+    failing = copy.deepcopy(FACTCHECK_PASS)
+    failing["verdicts"][0]["verdict"] = "incorrect"
+    responses = [IDEAS_RESPONSE, CONCEPTS, FACTS, SCRIPT_RESPONSE, failing, SCRIPT_RESPONSE, failing]
+    run = run_pipeline(db, create_run(db, _channel(db)), _services(tmp_path, responses))
+    assert run.status == RunStatus.FAILED and _status(run)["fact_check"] == "blocked"
+    assert "human review" in run.error
+    project = run.project_id
+    from app.models import VideoProject
+
+    assert len(db.get(VideoProject, project).scripts) == 2  # original + one rewrite with the corrections
+
+
+def test_runs_resume_from_the_failed_step(db, tmp_path):
+    channel = _channel(db)
+    # The storyboard is rejected (planet environment for a street scene) -> the run stops there.
+    bad = copy.deepcopy(STORYBOARD_RESPONSE)
+    bad["scenes"][0]["environment"] = {"type": "space"}
+    services = _services(tmp_path, [IDEAS_RESPONSE, CONCEPTS, FACTS, SCRIPT_RESPONSE, FACTCHECK_PASS, bad])
+    run = run_pipeline(db, create_run(db, channel), services)
+    assert run.status == RunStatus.FAILED and _status(run)["storyboard"] == "failed"
+    assert "cannot show a 'street' scene" in run.error
+    # Resume: earlier steps are not repeated (no new ideas or scripts are requested).
+    services.ai = StubAIProvider([STORYBOARD_RESPONSE, METADATA_RESPONSE])
+    run = run_pipeline(db, run, services)
+    assert run.status == RunStatus.WAITING_APPROVAL, run.error
+    assert next(s for s in run.steps if s["name"] == "script")["attempts"] == 1
+
+
+def test_autopilot_api_reports_missing_credentials(client):
+    channel = client.post("/api/v1/channels", json={"name": "C"}).json()
+    assert client.get("/api/v1/autopilot/preflight").json()["ready"] is False
+    response = client.post("/api/v1/autopilot/runs", json={"channel_id": channel["id"]})
+    assert response.status_code == 503
+    assert any("ANTHROPIC_API_KEY" in p for p in response.json()["detail"]["problems"])

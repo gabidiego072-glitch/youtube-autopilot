@@ -14,6 +14,12 @@ No se usan fotos, imágenes de IA ni hiperrealismo.
 > reales que se activan al configurarlos. **No se publica nada en YouTube**: la publicación está desactivada
 > por defecto y la subida aún no está implementada. Ver [docs/ROADMAP.md](docs/ROADMAP.md).
 
+## Automatización
+
+`scripts/autopilot.py` ejecuta el proceso completo sin intervención (tema → investigación → guion → verificación →
+voz → escenas 3D → render → control de calidad → metadatos → miniatura) y se detiene a esperar tu aprobación antes
+de publicar. Plan, herramientas, costes y credenciales: [docs/AUTOMATION.md](docs/AUTOMATION.md).
+
 ## Pipeline
 
 ```

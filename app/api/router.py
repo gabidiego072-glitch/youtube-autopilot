@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from app.api.deps import require_api_key
 from app.api.routes import (
     analytics,
+    autopilot,
     channels,
     dashboard,
     ideas,
@@ -34,5 +35,6 @@ for module in (
     insights,
     reports,
     dashboard,
+    autopilot,
 ):
     api_router.include_router(module.router)
