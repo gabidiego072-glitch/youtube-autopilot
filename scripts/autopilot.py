@@ -138,7 +138,8 @@ def main() -> int:
         if problems:
             print(json.dumps({"ready": False, "problems": problems}, ensure_ascii=False, indent=2))
             return 2
-        services = real_services(settings)
+        # Progress goes to stderr so stdout stays one clean JSON document (the workflow parses it).
+        services = real_services(settings, log=lambda *a: print(*a, file=sys.stderr, flush=True))
         if args.command == "run":
             channel = None
             try:
