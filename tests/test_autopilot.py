@@ -196,3 +196,49 @@ def test_public_default_without_authorisation_never_uploads(db, tmp_path):
     run = run_pipeline(db, create_run(db, _channel(db), VideoFormat.SHORT, "draft", auto_publish=True), services)
     assert run.status == RunStatus.FAILED and "YOUTUBE_ALLOW_PUBLIC" in run.error
     assert services.publisher.requests == []
+
+
+# --- variety between videos -------------------------------------------------------------------------
+def test_second_video_is_steered_away_from_the_first(db, tmp_path):
+    from app.models import VideoProject
+
+    channel = _channel(db)
+    first = run_pipeline(db, create_run(db, channel, VideoFormat.SHORT, "draft"), _services(tmp_path, FULL_RUN))
+    assert first.status == RunStatus.WAITING_APPROVAL, first.error
+    first_project = db.get(VideoProject, first.project_id)
+
+    services = _services(tmp_path, FULL_RUN)
+    second = run_pipeline(db, create_run(db, channel, VideoFormat.SHORT, "draft"), services)
+    assert second.status == RunStatus.WAITING_APPROVAL, second.error
+    second_project = db.get(VideoProject, second.project_id)
+
+    assert second_project.category != first_project.category  # a different kind of topic
+    prompts = [c["prompt"] for c in services.ai.calls]
+    script_prompt = next(p for p in prompts if "Recent videos on this channel" in p)
+    assert first_project.scripts[-1].title_question in script_prompt
+    assert any("Variety: the last videos used these places" in p for p in prompts)
+
+
+def test_pick_idea_prefers_new_categories_and_unlike_titles():
+    from types import SimpleNamespace as NS
+
+    from app.models.enums import ContentCategory
+    from app.services.variety import RecentVideos, pick_idea, too_similar
+
+    cats = list(ContentCategory)
+    ideas = [
+        NS(premise="¿Qué pasaría si la Tierra dejara de girar de golpe?", category=cats[0]),
+        NS(premise="¿Qué pasaría si dejaras de dormir?", category=cats[1]),
+        NS(premise="¿Qué pasaría si el Sol se apagara?", category=cats[2]),
+    ]
+    recent = RecentVideos(titles=["¿Qué pasaría si la Tierra dejara de girar?"], categories=[cats[1].value])
+    assert too_similar(ideas[0].premise, recent.titles)
+    assert pick_idea(ideas, recent) is ideas[2]  # 0 repeats a title, 1 repeats the last category
+    assert pick_idea(ideas[:1], recent) is ideas[0]  # never blocks a run
+
+
+def test_music_changes_between_videos():
+    from app.services.audio.synth import music_variant
+
+    variants = {music_variant(seed) for seed in range(30)}
+    assert len(variants) >= 20

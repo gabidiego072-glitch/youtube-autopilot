@@ -212,6 +212,7 @@ def plan_scenes(
     visual_bible: dict | None,
     seed: int,
     palette: dict | None = None,
+    variety_note: str | None = None,
 ) -> list[dict]:
     if len(scenes) != len(durations):
         raise ValueError("One duration per scene is required.")
@@ -220,6 +221,8 @@ def plan_scenes(
         f"Visual continuity notes: {bible}\n\nScript scenes (index, beat, duration, narration, shot idea):\n"
         f"{_scene_list(scenes, durations)}"
     )
+    if variety_note:
+        prompt += f"\n\n{variety_note}"
     result = provider.generate_json(system=SYSTEM_PROMPT, prompt=prompt, schema=STORYBOARD_SCHEMA)
     planned = result.data.get("scenes", [])
     if len(planned) != len(scenes):
