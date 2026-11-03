@@ -33,13 +33,24 @@ from app.models import (
     Idea,
     MediaAsset,
     PipelineRun,
+    PublishJob,
     RenderJob,
     ResearchBrief,
     Script,
     VideoMetadata,
     VideoProject,
 )
-from app.models.enums import AssetKind, FactCheckStatus, IdeaStatus, JobStatus, ProjectStatus, RunStatus, VideoFormat
+from app.models.enums import (
+    AssetKind,
+    FactCheckStatus,
+    IdeaStatus,
+    JobStatus,
+    PrivacyStatus,
+    ProjectStatus,
+    PublishStatus,
+    RunStatus,
+    VideoFormat,
+)
 from app.services.ai.base import AIProvider, GenerationResult
 from app.services.factcheck.checker import fact_check
 from app.services.ideas.generator import generate_ideas
@@ -104,6 +115,8 @@ class Services:
     ffmpeg: Any
     settings: Settings
     log: Any = field(default=logger.info)
+    trends: Any = None  # callable returning TrendSignals (best effort), or None
+    publisher: Any = None  # defaults to the real YouTubeDataAPIPublisher
 
 
 class StepBlocked(AutopilotError):
@@ -160,6 +173,7 @@ def step_topic(db, run, services, ai) -> dict:
         existing = list(db.scalars(select(Idea.premise).where(Idea.channel_id == channel.id)))
         existing += list(db.scalars(select(VideoProject.working_title).where(VideoProject.channel_id == channel.id)))
         past = performances(db, channel.id)
+        signals = services.trends() if services.trends else None
         drafts = generate_ideas(
             ai,
             count=10,
@@ -168,6 +182,7 @@ def step_topic(db, run, services, ai) -> dict:
             category_weights=category_weights(past),
             top_premises=top_premises(past),
             focus=channel.niche,
+            trends=signals.prompt_text() if signals else None,
         )
         db.add_all([Idea(channel_id=channel.id, **d.model_dump()) for d in drafts])
         db.commit()
@@ -508,28 +523,46 @@ def step_publish(db, run, services, ai) -> dict:
     project = _project(db, run)
     metadata = project.metadata_versions[-1]
     output = _render_output(_step(run, "render")["detail"])
-    publisher = YouTubeDataAPIPublisher(services.settings)
+    publisher = services.publisher or YouTubeDataAPIPublisher(services.settings)
     publisher.check_ready()
     thumb = next(
         (Path(a.uri) for a in reversed(project.assets) if a.kind == AssetKind.THUMBNAIL and "1280x720" in a.uri), None
     )
-    result = publisher.upload(
-        UploadRequest(
-            video_path=output,
-            title=metadata.title,
-            description=metadata.description,
-            tags=metadata.tags,
-            category_id=metadata.category_id,
-            thumbnail_path=thumb,
-        )
+    request = UploadRequest(
+        video_path=output,
+        title=metadata.title,
+        description=metadata.description,
+        tags=metadata.tags,
+        category_id=metadata.category_id,
+        privacy=PrivacyStatus(services.settings.youtube_default_privacy),
+        thumbnail_path=thumb,
+        comment=metadata.pinned_comment,
     )
+    publisher.check_privacy(request)  # public needs YOUTUBE_ALLOW_PUBLIC=true, checked before uploading
+    job = PublishJob(project_id=project.id, metadata_id=metadata.id, privacy=request.privacy)
+    job.status = PublishStatus.UPLOADING
+    db.add(job)
+    db.commit()
+    try:
+        result = publisher.upload(request)
+    except Exception as exc:
+        job.status, job.error = PublishStatus.FAILED, getattr(exc, "message", str(exc))
+        db.commit()
+        raise
+    job.status, job.youtube_video_id = PublishStatus.PUBLISHED, result.youtube_video_id
+    job.error = "; ".join(result.warnings) or None
     project.youtube_video_id, project.status, project.published_at = (
         result.youtube_video_id,
         ProjectStatus.PUBLISHED,
         utcnow(),
     )
     db.commit()
-    return {"youtube_video_id": result.youtube_video_id}
+    return {
+        "youtube_video_id": result.youtube_video_id,
+        "privacy": result.privacy,
+        "thumbnail_set": result.thumbnail_set,
+        "warnings": result.warnings,
+    }
 
 
 STEP_FUNCTIONS = {

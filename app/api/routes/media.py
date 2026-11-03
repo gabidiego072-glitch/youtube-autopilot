@@ -261,7 +261,7 @@ def assemble(
         )
         for i, scene in enumerate(script.scenes)
     ]
-    spec = output_format(project.format.value, mode.quality)
+    spec = output_format(project.format.value, mode.output_quality or mode.quality)
     previous = project.status
     transition(project, ProjectStatus.RENDERING)
     job = RenderJob(

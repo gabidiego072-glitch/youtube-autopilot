@@ -68,7 +68,7 @@ tests/                        pytest suite
 | `render_jobs` | Render requests with output resolution, status and timing |
 | `video_metadata` | Versioned title/description/tags/hashtags/thumbnail concept |
 | `media_assets` | Files used or produced (images, clips, voice per scene, final render), linked to script and scene |
-| `publish_jobs` | Upload attempts (used from Phase 5) |
+| `publish_jobs` | Upload attempts: privacy, status, YouTube id, warnings |
 | `analytics_snapshots` | Cumulative metrics per video over time; names mirror YouTube Analytics metrics |
 | `ideas` | Candidate premises with scores, category and status (new / used / rejected) |
 | `research_briefs` | Concepts, Wikipedia sources and key facts per project |

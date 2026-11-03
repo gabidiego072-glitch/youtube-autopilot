@@ -129,6 +129,7 @@ def build_prompt(
     category_weights: dict[str, float],
     top_premises: list[str],
     focus: str | None,
+    trends: str | None = None,
 ) -> str:
     parts = [
         f"Propose {count} new premises. Write premise, hook, angle and science_basis in '{language}'.",
@@ -137,6 +138,8 @@ def build_prompt(
     ]
     if focus:
         parts.append(f"Focus for this batch: {focus}")
+    if trends:
+        parts.append(trends)
     if top_premises:
         parts.append(
             "Our best performing videos so far (find new premises with similar appeal):\n"
@@ -164,6 +167,7 @@ def generate_ideas(
     category_weights: dict[str, float] | None = None,
     top_premises: list[str] | None = None,
     focus: str | None = None,
+    trends: str | None = None,
 ) -> list[IdeaDraft]:
     """Returns new, on-topic, non-duplicate ideas ranked by score (best first)."""
     weights = category_weights or {}
@@ -174,6 +178,7 @@ def generate_ideas(
         category_weights=weights,
         top_premises=top_premises or [],
         focus=focus,
+        trends=trends,
     )
     result = provider.generate_json(system=SYSTEM_PROMPT, prompt=prompt, schema=IDEA_SCHEMA)
     raw = result.data.get("ideas")

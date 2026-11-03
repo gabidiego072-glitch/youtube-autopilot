@@ -17,7 +17,7 @@ from pathlib import Path
 
 from app.models.enums import VideoFormat
 from app.services.audio.synth import SFX, generate_music, generate_sfx
-from app.services.editing.assembler import EditScene, assemble_video, plan_timeline
+from app.services.editing.assembler import EditScene, SceneSlot, assemble_video, plan_timeline
 from app.services.production.formats import FormatSpec
 from app.services.production.modes import RenderMode, get_mode
 from app.services.rendering.blender import Blender
@@ -26,9 +26,18 @@ from app.services.rendering.scene3d import render_scene_video
 from app.services.scenes.planner import environment_scale_problem
 from app.services.scripts.generator import ScriptDraft, structure_problems
 from render_engines.core.retime import retime
-from render_engines.core.spec import SpecError, build_context, validate_spec
+from render_engines.core.spec import SpecError, build_context, engine_fingerprint, validate_spec
 
-__all__ = ["load_production", "produce_short", "scene_effects", "output_format", "timed_spec"]
+__all__ = [
+    "load_production",
+    "produce_short",
+    "render_clip",
+    "render_scene_shard",
+    "scene_effects",
+    "output_format",
+    "shard_scenes",
+    "timed_spec",
+]
 
 
 class ProductionError(ValueError):
@@ -147,27 +156,9 @@ def produce_short(
     # 3. Render each selected scene, retimed to its slot (+ the next transition's tail).
     clips, render_times = {}, {}
     for i in selected:
-        slot = slots[i]
-        timed = _timed_spec(specs[i], slot, seed, mode)
-        spec_path = out_dir / mode.name / "specs" / f"scene_{i:02d}.json"
-        spec_path.parent.mkdir(parents=True, exist_ok=True)
-        spec_path.write_text(json.dumps(timed, ensure_ascii=False, indent=2), encoding="utf-8")
-        log(f"[produce] scene {i}: {slot.clip_length:.2f}s ({mode.name})")
-        t0 = time.monotonic()
-        result = render_scene_video(
-            spec_path,
-            out_dir / mode.name / "clips" / f"scene_{i:02d}.mp4",
-            blender=blender,
-            ffmpeg=ffmpeg,
-            aspect="9:16" if production.get("format", "short") == "short" else "16:9",
-            quality=mode.quality,
-            subtitles=False,
-            threads=threads,
-            motion_blur=timed["motion_blur"],
-            work_dir=out_dir / mode.name / "work" / f"scene_{i:02d}",
+        clips[i], render_times[i] = render_clip(
+            production, i, slots[i], mode, out_dir, blender=blender, ffmpeg=ffmpeg, threads=threads, log=log
         )
-        clips[i] = result.video_path
-        render_times[i] = round(time.monotonic() - t0, 1)
 
     # 4. Sound effects and music (generated, cached).
     edit_scenes, offset = [], selected and slots[selected[0]].start
@@ -194,7 +185,7 @@ def produce_short(
         generate_music(ffmpeg, total + 1.0, music)
 
     # 5. Edit.
-    spec = output_format(production.get("format", "short"), mode.quality)
+    spec = output_format(production.get("format", "short"), mode.output_quality or mode.quality)
     output = out_dir / f"{production.get('id', 'short')}_{mode.name}.mp4"
     t0 = time.monotonic()
     probe = assemble_video(
@@ -235,6 +226,80 @@ def produce_short(
         json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     return report
+
+
+def clip_path(out_dir: Path, mode_name: str, index: int) -> Path:
+    return out_dir / mode_name / "clips" / f"scene_{index:02d}.mp4"
+
+
+def render_clip(
+    production: dict, index: int, slot, mode: RenderMode, out_dir: Path, *, blender, ffmpeg, threads=0, log=print
+) -> tuple[Path, float]:
+    """Render one scene to a silent clip. A clip whose spec, quality and engine code are unchanged is
+    reused, so scenes rendered on other machines (parallel cloud jobs) are picked up by the final edit."""
+    timed = _timed_spec(production["scenes"][index], slot, production.get("seed", 0), mode)
+    aspect = "9:16" if production.get("format", "short") == "short" else "16:9"
+    spec_path = out_dir / mode.name / "specs" / f"scene_{index:02d}.json"
+    spec_path.parent.mkdir(parents=True, exist_ok=True)
+    spec_json = json.dumps(timed, ensure_ascii=False, indent=2, sort_keys=True)
+    spec_path.write_text(spec_json, encoding="utf-8")
+    key = hashlib.sha256(f"{spec_json}|{mode.quality}|{aspect}|{engine_fingerprint()}".encode()).hexdigest()
+    output = clip_path(out_dir, mode.name, index)
+    if _cached(output, key):
+        log(f"[produce] scene {index}: reusing rendered clip")
+        return output, 0.0
+    log(f"[produce] scene {index}: {slot.clip_length:.2f}s ({mode.name})")
+    t0 = time.monotonic()
+    render_scene_video(
+        spec_path,
+        output,
+        blender=blender,
+        ffmpeg=ffmpeg,
+        aspect=aspect,
+        quality=mode.quality,
+        subtitles=False,
+        threads=threads,
+        motion_blur=timed["motion_blur"],
+        work_dir=out_dir / mode.name / "work" / f"scene_{index:02d}",
+    )
+    _stamp(output, key)
+    return output, round(time.monotonic() - t0, 1)
+
+
+def shard_scenes(count: int, shard: int, shards: int) -> list[int]:
+    """Scenes for one of several parallel render jobs (round-robin keeps the shards balanced)."""
+    if shards < 1 or not 0 <= shard < shards:
+        raise ProductionError(f"Invalid shard {shard}/{shards}.")
+    return list(range(shard, count, shards))
+
+
+def render_scene_shard(
+    production_path: Path,
+    mode_name: str,
+    out_dir: Path,
+    *,
+    blender,
+    ffmpeg,
+    tts,
+    shard: int,
+    shards: int,
+    threads: int = 0,
+    log=print,
+) -> dict:
+    """Render only this shard's scenes (clips only, no edit). Run the full production afterwards to edit."""
+    plan = produce_short(production_path, "plan", out_dir, blender=blender, ffmpeg=ffmpeg, tts=tts, log=log)
+    production = load_production(production_path)
+    mode = get_mode(mode_name)
+    if not mode.full_video:
+        raise ProductionError("Parallel rendering is for draft/final/hd videos.")
+    slots = [SceneSlot(**t) for t in plan["timeline"]]
+    done = {}
+    for i in shard_scenes(len(slots), shard, shards):
+        path, seconds = render_clip(
+            production, i, slots[i], mode, out_dir, blender=blender, ffmpeg=ffmpeg, threads=threads, log=log
+        )
+        done[i] = {"clip": str(path), "render_seconds": seconds}
+    return {"shard": shard, "shards": shards, "mode": mode.name, "scenes": done}
 
 
 def timed_spec(spec: dict, slot, seed: int, mode_name: str) -> dict:
