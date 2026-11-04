@@ -36,7 +36,7 @@ from app.models.enums import (
 )
 from app.services.ai.factory import get_ai_provider  # noqa: E402
 from app.services.analytics.sync import sync_youtube_metrics  # noqa: E402
-from app.services.autopilot.factory import piper_binary, preflight, real_services  # noqa: E402
+from app.services.autopilot.factory import piper_binary, preflight, real_services, voice_tts  # noqa: E402
 from app.services.autopilot.runner import approve_run, create_run, run_pipeline  # noqa: E402
 from app.services.experiments import channel_standings  # noqa: E402
 from app.services.production.short import render_scene_shard  # noqa: E402
@@ -74,6 +74,9 @@ def main() -> int:
     run_p.add_argument("--until", help="stop after this step (e.g. storyboard)")
     resume_p = sub.add_parser("resume")
     resume_p.add_argument("run_id")
+    resume_p.add_argument(
+        "--reuse-renders", action="store_true", help="keep rendered clips and voice already on disk (no re-render)"
+    )
     approve_p = sub.add_parser("approve")
     approve_p.add_argument("run_id")
     status_p = sub.add_parser("status")
@@ -165,6 +168,7 @@ def main() -> int:
             run = run_pipeline(db, run, services, until=args.until)
         else:
             run = db.get(PipelineRun, uuid.UUID(args.run_id))
+            services.reuse_existing = getattr(args, "reuse_renders", False)
             if args.command == "approve":
                 approve_run(db, run)
             run = run_pipeline(db, run, services)
@@ -186,7 +190,8 @@ def render_shard(db, args, settings) -> int:
         work,
         blender=Blender(settings.blender_binary, settings.blender_timeout_seconds),
         ffmpeg=FFmpeg(settings.ffmpeg_binary, settings.ffprobe_binary),
-        tts=PiperTTS(piper_binary(settings), settings.piper_voice_model, settings.piper_length_scale),
+        tts=voice_tts(settings, json.loads(production.read_text(encoding="utf-8")).get("voice", ""))
+        or PiperTTS(piper_binary(settings), settings.piper_voice_model, settings.piper_length_scale),
         shard=args.shard,
         shards=args.shards,
         threads=settings.scene_render_threads,

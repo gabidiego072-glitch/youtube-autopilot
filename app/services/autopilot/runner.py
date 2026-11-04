@@ -120,6 +120,7 @@ class Services:
     trends: Any = None  # callable returning TrendSignals (best effort), or None
     publisher: Any = None  # defaults to the real YouTubeDataAPIPublisher
     voices: Any = None  # callable(voice_id) -> TTS, or None when that voice is not installed
+    reuse_existing: bool = False  # resume: keep renders on disk even if made by an older code version
 
 
 class StepBlocked(AutopilotError):
@@ -254,6 +255,12 @@ def step_topic(db, run, services, ai) -> dict:
         "ideas_generated": generated,
         "variants": features,
     }
+
+
+def _voice_tts(services, project):
+    """The narrator chosen for this video (only used if a recording is missing), else the default."""
+    voice = (project.features or {}).get("voice")
+    return (services.voices(voice) if services.voices and voice else None) or services.tts
 
 
 def _music_variant(project) -> int:
@@ -454,6 +461,7 @@ def step_storyboard(db, run, services, ai) -> dict:
         "language": project.language,
         "seed": int(project.id.int % 100_000),
         "music_variant": _music_variant(project),
+        "voice": (project.features or {}).get("voice", ""),
         "script": {
             "title_question": script.title_question,
             "hook": script.hook,
@@ -479,8 +487,9 @@ def step_render(db, run, services, ai) -> dict:
         work,
         blender=services.blender,
         ffmpeg=services.ffmpeg,
-        tts=services.tts,
+        tts=_voice_tts(services, project),
         log=services.log,
+        reuse_existing=services.reuse_existing,
     )
     output = Path(report["output"])
     job = RenderJob(

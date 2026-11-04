@@ -209,7 +209,8 @@ jobs:
           if [ "$CMD" = "approve" ]; then
             python scripts/autopilot.py approve "$RUN_ID"
           else
-            python scripts/autopilot.py resume "$RUN_ID"
+            # Resuming keeps the clips already rendered (hours of work), even from an older code version.
+            python scripts/autopilot.py resume "$RUN_ID" --reuse-renders
           fi
       - name: Keep the video, thumbnails and QA sheet for review
         if: always()
