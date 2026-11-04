@@ -54,6 +54,8 @@ class GeminiProvider:
         self._active: str | None = None
         self._configured_fallbacks = [m.strip() for m in settings.gemini_fallback_models.split(",") if m.strip()]
         self._fallback_cache: list[str] | None = None
+        self._busy: set[str] = set()
+        self._exhausted: set[str] = set()
 
     def __repr__(self) -> str:  # never leak the key
         return f"GeminiProvider(model={self.model!r})"
@@ -75,6 +77,7 @@ class GeminiProvider:
                 data = self._generate(body, schema, prompt, model)
             except _ModelUnavailable as exc:
                 logger.warning("gemini model %s unavailable (%s); trying another free model", model, exc.message)
+                (self._exhausted if exc.daily else self._busy).add(model)
                 last = exc
                 continue
             self._active = model  # stick to the model that answered for the rest of the run
@@ -102,14 +105,20 @@ class GeminiProvider:
             return self._post(relaxed, model)
 
     def _candidates(self):
-        """The model that last answered, then GEMINI_MODEL, then free fallbacks (looked up only if needed)."""
-        tried = set()
-        for model in (self._active, self.model):
-            if model and model not in tried:
-                tried.add(model)
-                yield model
-        for model in self._fallbacks():
-            if model not in tried:
+        """Model that last answered, GEMINI_MODEL, then free fallbacks (looked up only if needed).
+        Models out of daily quota are skipped for the rest of the run; busy ones are tried last."""
+        tried: set[str] = set()
+
+        def fresh(models):
+            for model in models:
+                if model and model not in tried and model not in self._exhausted and model not in self._busy:
+                    tried.add(model)
+                    yield model
+
+        yield from fresh((self._active, self.model))
+        yield from fresh(self._fallbacks())
+        for model in list(self._busy):  # one more chance for models that were only busy
+            if model not in tried and model not in self._exhausted:
                 tried.add(model)
                 yield model
 
@@ -226,10 +235,23 @@ class _ModelUnavailable(ProviderError):
         self.daily = daily
 
 
-SKIP_MODEL_WORDS = ("image", "tts", "audio", "live", "embedding", "vision", "robotics", "computer-use", "native")
+SKIP_MODEL_WORDS = (
+    "image",
+    "tts",
+    "audio",
+    "live",
+    "embedding",
+    "vision",
+    "robotics",
+    "computer-use",
+    "native",
+    "omni",
+    "transcribe",
+    "latest",  # omni: no free tier; '-latest' aliases point at the busiest model
+)
 
 
-def pick_fallbacks(models: list[str], primary: str, limit: int = 3) -> list[str]:
+def pick_fallbacks(models: list[str], primary: str, limit: int = 8) -> list[str]:
     """Other text 'flash' models (free tier): stable before preview, full before lite, newest first."""
     usable = [m for m in models if "flash" in m and m != primary and not any(word in m for word in SKIP_MODEL_WORDS)]
 
