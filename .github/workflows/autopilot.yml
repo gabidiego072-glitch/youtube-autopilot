@@ -19,7 +19,9 @@ name: Autopilot
 
 on:
   schedule:
-    - cron: "17 5 * * *"  # 05:17 UTC every day
+    # 05:17 UTC every 5th day (~6 videos a month: what GitHub's 2,000 free minutes can render in hd).
+    # With your own computer as a runner (RUNS_ON) you can make it daily: "17 5 * * *".
+    - cron: "17 5 */5 * *"
   workflow_dispatch:
     inputs:
       command:
