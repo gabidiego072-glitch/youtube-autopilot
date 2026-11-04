@@ -11,7 +11,7 @@
 #   AUTOPILOT_ENABLED  true to run the daily schedule
 #   AUTO_PUBLISH       true to publish without human approval (also needs YOUTUBE_PUBLISHING_ENABLED=true;
 #                      public videos also need YOUTUBE_ALLOW_PUBLIC=true and YOUTUBE_DEFAULT_PRIVACY=public)
-#   RENDER_MODE        draft | hd | final            (default hd)
+#   RENDER_MODE        draft | lite | hd | final     (default hd; lite for slow PCs)
 #   RENDER_SHARDS      parallel render jobs, 1-8      (default 4)
 #   RUNS_ON            runner labels as JSON          (default "ubuntu-latest";
 #                      your own PC: ["self-hosted","linux","x64"])
@@ -36,7 +36,7 @@ on:
       mode:
         description: "Calidad (preview = fragmento, draft = barato, hd = publicable, final = máxima)"
         type: choice
-        options: [draft, preview, hd, final]
+        options: [draft, preview, lite, hd, final]
         default: draft
       format:
         description: "Formato"

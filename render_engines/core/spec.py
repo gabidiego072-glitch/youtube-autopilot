@@ -20,6 +20,8 @@ QUALITY_PRESETS = {
     "test": {"scale": 0.1, "samples": 1},  # automated tests
     "preview": {"scale": 1 / 3, "samples": 6},  # 360x640: check scenes, objects, light, animation
     "draft": {"scale": 0.5, "samples": 8},  # 540x960: full video, all scenes, voice and subtitles
+    # 540x960, 3 samples + denoise, upscaled to 1080x1920: for slow computers (~0.4x the cost of hd).
+    "lite": {"scale": 0.5, "samples": 3},
     # 720x1280, upscaled to 1080x1920 in the edit. 4 samples + OIDN look like 8 (no extra flicker
     # measured); ~4x cheaper than final.
     "hd": {"scale": 2 / 3, "samples": 4},
