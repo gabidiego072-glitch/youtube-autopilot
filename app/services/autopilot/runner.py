@@ -256,6 +256,12 @@ def step_topic(db, run, services, ai) -> dict:
     }
 
 
+def _voice_tts(services, project):
+    """The narrator chosen for this video (only used if a recording is missing), else the default."""
+    voice = (project.features or {}).get("voice")
+    return (services.voices(voice) if services.voices and voice else None) or services.tts
+
+
 def _music_variant(project) -> int:
     """Progression from the experiment's music mood; key and tempo still vary with the seed."""
     seed = int(project.id.int % 100_000)
@@ -454,6 +460,7 @@ def step_storyboard(db, run, services, ai) -> dict:
         "language": project.language,
         "seed": int(project.id.int % 100_000),
         "music_variant": _music_variant(project),
+        "voice": (project.features or {}).get("voice", ""),
         "script": {
             "title_question": script.title_question,
             "hook": script.hook,
@@ -479,7 +486,7 @@ def step_render(db, run, services, ai) -> dict:
         work,
         blender=services.blender,
         ffmpeg=services.ffmpeg,
-        tts=services.tts,
+        tts=_voice_tts(services, project),
         log=services.log,
     )
     output = Path(report["output"])
