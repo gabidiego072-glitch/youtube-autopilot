@@ -83,6 +83,8 @@ def main() -> int:
     shard_p.add_argument("--shards", type=int, required=True)
     sub.add_parser("youtube-check")
     sub.add_parser("ai-check")
+    publish_p = sub.add_parser("publish-file", help="upload a finished video folder (metadata.json + video)")
+    publish_p.add_argument("folder", type=Path)
     upload_p = sub.add_parser("upload-test")
     upload_p.add_argument("video", type=Path)
     upload_p.add_argument("--title", default="Prueba privada YouTube-Autopilot")
@@ -92,7 +94,7 @@ def main() -> int:
     args = parser.parse_args()
     settings = get_settings()
 
-    if args.command in ("youtube-check", "upload-test", "trends"):
+    if args.command in ("youtube-check", "upload-test", "trends", "publish-file"):
         return youtube_command(args, settings)
     if args.command == "ai-check":
         provider = get_ai_provider(settings)
@@ -204,6 +206,24 @@ def youtube_command(args, settings) -> int:
                 indent=2,
             )
         )
+        return 0
+    if args.command == "publish-file":
+        meta = json.loads((args.folder / "metadata.json").read_text(encoding="utf-8"))
+        thumb = args.folder / meta["thumbnail"] if meta.get("thumbnail") else None
+        result = publisher.upload(
+            UploadRequest(
+                video_path=args.folder / meta.get("video", "video.mp4"),
+                title=meta["title"],
+                description=meta["description"],
+                tags=meta.get("tags", []),
+                category_id=meta.get("category_id"),
+                privacy=PrivacyStatus(meta.get("privacy", "private")),
+                thumbnail_path=thumb,
+                comment=meta.get("comment"),
+            )
+        )
+        print(json.dumps(result.__dict__, ensure_ascii=False, indent=2))
+        print(f"Studio: https://studio.youtube.com/video/{result.youtube_video_id}/edit")
         return 0
     # upload-test: always private, whatever the settings say.
     result = publisher.upload(
