@@ -7,8 +7,18 @@ runs:
   using: composite
   steps:
     - uses: actions/setup-python@v5
+      if: runner.environment == 'github-hosted'
       with:
         python-version: "3.13"
+    # On your own PC: the system Python (Ubuntu 24.04 has 3.12) in a virtualenv kept between runs.
+    # GitHub's prebuilt Python needs a newer CPU (x86-64-v3/AVX2) than older laptops have.
+    - name: Python on a self-hosted PC
+      if: runner.environment != 'github-hosted'
+      shell: bash
+      run: |
+        VENV="$HOME/.autopilot-venv"
+        if [ ! -x "$VENV/bin/python" ]; then python3 -m venv "$VENV"; fi
+        echo "$VENV/bin" >> "$GITHUB_PATH"
     - name: FFmpeg and fonts
       shell: bash
       run: |
@@ -38,4 +48,4 @@ runs:
         echo "PIPER_VOICE_MODEL=$VOICES/es_ES-davefx-medium.onnx" >> "$GITHUB_ENV"
     - name: Python dependencies
       shell: bash
-      run: pip install -q -r requirements.txt
+      run: python -m pip install -q -r requirements.txt
