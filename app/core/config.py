@@ -107,6 +107,13 @@ class Settings(BaseSettings):
     long_form_min_duration_seconds: int = 181
 
     @model_validator(mode="after")
+    def _empty_means_default(self) -> "Settings":
+        # CI passes unset repository variables as empty strings; an empty User-Agent gets 403 from Wikimedia.
+        if not self.wikipedia_user_agent.strip():
+            self.wikipedia_user_agent = type(self).model_fields["wikipedia_user_agent"].default
+        return self
+
+    @model_validator(mode="after")
     def _check_production_safety(self) -> "Settings":
         if self.environment == "production":
             if self.database_url.startswith("sqlite"):
