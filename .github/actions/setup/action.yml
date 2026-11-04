@@ -1,7 +1,8 @@
-# Shared setup for the autopilot jobs: Python, FFmpeg, Blender and the Piper voice (cached).
-# Works on GitHub-hosted runners and on a self-hosted Linux x64 runner (your own computer).
+# Shared setup for the autopilot jobs: Python, FFmpeg, Blender and the Piper voices.
+# Works on GitHub-hosted runners (tools restored from the Actions cache) and on a self-hosted Linux x64
+# runner such as your own PC under WSL (tools stay installed in the runner's tool folder, no download).
 name: Autopilot setup
-description: Install Python dependencies, FFmpeg, Blender and the voice model
+description: Install Python dependencies, FFmpeg, Blender and the voice models
 runs:
   using: composite
   steps:
@@ -14,21 +15,27 @@ runs:
         if ! command -v ffmpeg >/dev/null || ! fc-list | grep -qi inter; then
           sudo apt-get update && sudo apt-get install -y ffmpeg fonts-inter fonts-dejavu-core
         fi
-    - name: Cache Blender and voice
+    - name: Cache Blender and voices (GitHub-hosted only; a self-hosted PC keeps them on disk)
+      if: runner.environment == 'github-hosted'
       uses: actions/cache@v4
       with:
         path: |
           ${{ runner.tool_cache }}/blender
-          models/voices
-        key: tools-${{ runner.os }}-blender-4.5.15-piper-davefx-v1
-    - name: Install Blender and voice
+          ${{ runner.tool_cache }}/voices
+        key: tools-${{ runner.os }}-blender-4.5.15-piper-voices-v3
+    - name: Install Blender and voices
       shell: bash
       run: |
         BLENDER_DIR="${{ runner.tool_cache }}/blender"
+        VOICES="${{ runner.tool_cache }}/voices"
         if [ ! -x "$BLENDER_DIR/blender-4.5.15-linux-x64/blender" ]; then scripts/install_blender.sh "$BLENDER_DIR"; fi
         echo "BLENDER_BINARY=$BLENDER_DIR/blender-4.5.15-linux-x64/blender" >> "$GITHUB_ENV"
-        if [ ! -f models/voices/es_ES-davefx-medium.onnx ]; then scripts/install_voice.sh; fi
-        echo "PIPER_VOICE_MODEL=$PWD/models/voices/es_ES-davefx-medium.onnx" >> "$GITHUB_ENV"
+        # Narrator voices the system experiments with (all allow commercial use; see app/services/experiments.py).
+        for v in es/es_ES/davefx/medium es/es_ES/sharvard/medium es/es_MX/claude/high es/es_MX/ald/medium es/es_AR/daniela/high; do
+          name="$(echo "$v" | awk -F/ '{print $2"-"$3"-"$4}')"
+          if [ ! -f "$VOICES/${name}.onnx" ]; then scripts/install_voice.sh "$v" "$VOICES"; fi
+        done
+        echo "PIPER_VOICE_MODEL=$VOICES/es_ES-davefx-medium.onnx" >> "$GITHUB_ENV"
     - name: Python dependencies
       shell: bash
-      run: pip install -r requirements.txt
+      run: pip install -q -r requirements.txt

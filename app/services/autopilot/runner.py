@@ -52,6 +52,7 @@ from app.models.enums import (
     VideoFormat,
 )
 from app.services.ai.base import AIProvider, GenerationResult
+from app.services.experiments import HOOKS, MUSIC, VOICES, choose_for_channel
 from app.services.factcheck.checker import fact_check
 from app.services.ideas.generator import generate_ideas
 from app.services.learning.feedback import category_weights, top_premises
@@ -118,6 +119,7 @@ class Services:
     log: Any = field(default=logger.info)
     trends: Any = None  # callable returning TrendSignals (best effort), or None
     publisher: Any = None  # defaults to the real YouTubeDataAPIPublisher
+    voices: Any = None  # callable(voice_id) -> TTS, or None when that voice is not installed
 
 
 class StepBlocked(AutopilotError):
@@ -129,6 +131,7 @@ class TopicRejected(StepBlocked):
 
 
 MAX_TOPIC_RESTARTS = 2
+DEFAULT_VOICE = "davefx"
 TOPIC_STEPS = ("topic", "research", "script", "fact_check")
 
 
@@ -234,10 +237,35 @@ def step_topic(db, run, services, ai) -> dict:
     )
     db.add(project)
     db.flush()
+    # Variants this video tries (voice, music, length, hook), chosen from past results.
+    features = choose_for_channel(db, channel.id, seed=int(project.id.int % 100_000))
+    if run.format == VideoFormat.SHORT:
+        project.target_duration_seconds = int(features["length"])
+    else:
+        features.pop("length")
+    project.features = features
     idea.status, idea.project_id = IdeaStatus.USED, project.id
     run.project_id = project.id
     db.commit()
-    return {"idea": idea.premise, "score": idea.score, "category": idea.category.value, "ideas_generated": generated}
+    return {
+        "idea": idea.premise,
+        "score": idea.score,
+        "category": idea.category.value,
+        "ideas_generated": generated,
+        "variants": features,
+    }
+
+
+def _music_variant(project) -> int:
+    """Progression from the experiment's music mood; key and tempo still vary with the seed."""
+    seed = int(project.id.int % 100_000)
+    mood = (project.features or {}).get("music")
+    return (MUSIC.index(mood) if mood in MUSIC else seed % len(MUSIC)) + len(MUSIC) * (seed % 35)
+
+
+def _hook_note(project) -> str | None:
+    hook = (project.features or {}).get("hook")
+    return f"Hook style for this video: {HOOKS[hook]}" if hook in HOOKS else None
 
 
 def _recent(db, project) -> RecentVideos:
@@ -297,7 +325,10 @@ def _write_script(db, project, services, ai, notes: str | None = None) -> Script
                 language=project.language,
                 niche=project.channel.niche,
                 style_guide=project.channel.style_guide,
-                notes="\n".join(n for n in (project.notes, notes, _recent(db, project).script_note()) if n) or None,
+                notes="\n".join(
+                    n for n in (project.notes, notes, _hook_note(project), _recent(db, project).script_note()) if n
+                )
+                or None,
                 research=_research(project),
             )
             break
@@ -367,13 +398,20 @@ def step_voice(db, run, services, ai) -> dict:
     project = _project(db, run)
     script = project.scripts[-1]
     work = _work_dir(services, run)
+    features = dict(project.features or {})
+    tts = services.voices(features["voice"]) if services.voices and features.get("voice") else None
+    if tts is None:  # voice not installed: use the default narrator and record it, so results stay honest
+        tts = services.tts
+        if features.get("voice"):
+            features["voice"] = DEFAULT_VOICE
+            project.features = features
     durations = []
     for i, scene in enumerate(script.scenes):
         wav = work / "voice" / f"scene_{i:02d}.wav"
-        key = hashlib.sha256(scene["narration"].encode()).hexdigest()
+        key = hashlib.sha256(f"{features.get('voice', '')}|{scene['narration']}".encode()).hexdigest()
         stamp = wav.with_suffix(".wav.key")
         if not (wav.is_file() and stamp.is_file() and stamp.read_text() == key):
-            services.tts.synthesize(scene["narration"], wav)
+            tts.synthesize(scene["narration"], wav)
             stamp.write_text(key)
             db.add(
                 MediaAsset(
@@ -384,7 +422,7 @@ def step_voice(db, run, services, ai) -> dict:
                     mime_type="audio/wav",
                     size_bytes=wav.stat().st_size,
                     scene_index=i,
-                    provider=getattr(services.tts, "name", "tts"),
+                    provider=f"{getattr(tts, 'name', 'tts')}:{features.get('voice', 'default')}",
                 )
             )
         durations.append(services.ffmpeg.probe(wav).duration_seconds)
@@ -415,6 +453,7 @@ def step_storyboard(db, run, services, ai) -> dict:
         "format": project.format.value,
         "language": project.language,
         "seed": int(project.id.int % 100_000),
+        "music_variant": _music_variant(project),
         "script": {
             "title_question": script.title_question,
             "hook": script.hook,
@@ -516,6 +555,9 @@ def step_metadata(db, run, services, ai) -> dict:
         ending_line=script.call_to_action,
         sources=project.research_briefs[-1].sources if project.research_briefs else None,
     )
+    voice = VOICES.get((project.features or {}).get("voice", ""))
+    if voice and voice.credit and voice.credit not in draft.description:
+        draft.description = f"{draft.description}\n\n{voice.credit}"  # the voice's licence asks for it
     db.add(VideoMetadata(project_id=project.id, version=len(project.metadata_versions) + 1, **draft.model_dump()))
     project.status = ProjectStatus.METADATA_READY
     db.commit()

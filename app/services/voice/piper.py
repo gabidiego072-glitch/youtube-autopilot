@@ -19,10 +19,13 @@ class TTSProvider(Protocol):
 class PiperTTS:
     name = "piper"
 
-    def __init__(self, binary: str, model_path: Path | None, length_scale: float = 1.0) -> None:
+    def __init__(
+        self, binary: str, model_path: Path | None, length_scale: float = 1.0, speaker: int | None = None
+    ) -> None:
         self.binary = binary
         self.model_path = model_path
         self.length_scale = length_scale
+        self.speaker = speaker
 
     def is_available(self) -> bool:
         return shutil.which(self.binary) is not None and self.model_path is not None and self.model_path.is_file()
@@ -36,6 +39,7 @@ class PiperTTS:
             str(output_path),
             "--length-scale",
             str(self.length_scale),
+            *(["--speaker", str(self.speaker)] if self.speaker is not None else []),
         ]
 
     def synthesize(self, text: str, output_path: Path) -> Path:

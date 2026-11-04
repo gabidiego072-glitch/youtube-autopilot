@@ -2,6 +2,7 @@
 
 preview  a 5-10 s fragment (chosen scenes) to check scenes, objects, light and animation
 draft    the whole video at reduced resolution/quality, with voice, music, effects and subtitles
+lite     the whole video at 540p/3 samples, upscaled to 1080p: for slow computers
 hd       the whole video at 720p/4 samples, upscaled to 1080p: publishable, ~4x cheaper than final
 final    the whole video, publishable: 1080x1920 for Shorts, every audio layer, subtitles burned in
 """
@@ -30,6 +31,16 @@ MODES = {
         "preview", "preview", full_video=False, max_seconds=10.0, motion_blur=False, crf=24, preset="veryfast"
     ),
     "draft": RenderMode("draft", "draft", full_video=True, max_seconds=None, motion_blur=False, crf=22, preset="fast"),
+    "lite": RenderMode(
+        "lite",
+        "lite",
+        full_video=True,
+        max_seconds=None,
+        motion_blur=False,
+        crf=19,
+        preset="medium",
+        output_quality="final",
+    ),
     "hd": RenderMode(
         "hd",
         "hd",
