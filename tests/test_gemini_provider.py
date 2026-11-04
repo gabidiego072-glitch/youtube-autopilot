@@ -225,3 +225,41 @@ def test_fallback_ranking():
         "gemini-3.8-flash-lite",
         "gemini-4-flash-preview",
     ]
+
+
+def test_models_out_of_quota_are_not_retried_in_the_same_run():
+    used = []
+
+    def handler(request):
+        path = request.url.path
+        if path.endswith("/models"):
+            return httpx.Response(
+                200,
+                json={
+                    "models": [
+                        {"name": f"models/{n}", "supportedGenerationMethods": ["generateContent"]}
+                        for n in ("gemini-test", "gemini-omni-1-flash", "gemini-flash-latest", "gemini-9-flash")
+                    ]
+                },
+            )
+        model = path.split("/models/")[1].split(":")[0]
+        used.append(model)
+        if model == "gemini-test":
+            return httpx.Response(
+                429,
+                json={
+                    "error": {
+                        "status": "RESOURCE_EXHAUSTED",
+                        "message": "quota",
+                        "details": [{"violations": [{"quotaId": "GenerateRequestsPerDayPerProjectPerModel-FreeTier"}]}],
+                    }
+                },
+            )
+        return _answer('{"ok": true}')
+
+    provider = _provider(handler)
+    provider.generate_json(system="s", prompt="p", schema=SCHEMA)
+    provider._active = None  # even without the sticky model, the exhausted one is skipped
+    used.clear()
+    provider.generate_json(system="s", prompt="p", schema=SCHEMA)
+    assert used == ["gemini-9-flash"]  # omni and '-latest' aliases are never picked as fallbacks

@@ -64,6 +64,7 @@ from app.services.research.briefing import build_brief
 from app.services.scenes.planner import plan_scenes
 from app.services.scripts.generator import generate_script
 from app.services.thumbnails.generator import best_moment, generate_thumbnails
+from app.services.variety import RECENT, RecentVideos, pick_idea, recent_videos
 from app.services.youtube.base import UploadRequest
 from app.services.youtube.data_api import YouTubeDataAPIPublisher
 
@@ -196,7 +197,7 @@ def step_topic(db, run, services, ai) -> dict:
         )
     if not fresh:
         raise ProviderError("No usable idea was generated.")
-    idea = fresh[0]
+    idea = pick_idea(fresh, recent_videos(db, channel.id))
     project = VideoProject(
         channel_id=channel.id,
         working_title=idea.premise[:200],
@@ -213,6 +214,16 @@ def step_topic(db, run, services, ai) -> dict:
     run.project_id = project.id
     db.commit()
     return {"idea": idea.premise, "score": idea.score, "category": idea.category.value, "ideas_generated": generated}
+
+
+def _recent(db, project) -> RecentVideos:
+    """Recent videos of the channel, excluding this one."""
+    recent = recent_videos(db, project.channel_id, limit=RECENT + 1)
+    own = (project.scripts[-1].title_question if project.scripts else None) or project.working_title
+    if own in recent.titles:
+        i = recent.titles.index(own)
+        del recent.titles[i], recent.hooks[i]
+    return recent
 
 
 def _project(db, run) -> VideoProject:
@@ -262,7 +273,7 @@ def _write_script(db, project, services, ai, notes: str | None = None) -> Script
                 language=project.language,
                 niche=project.channel.niche,
                 style_guide=project.channel.style_guide,
-                notes="\n".join(n for n in (project.notes, notes) if n) or None,
+                notes="\n".join(n for n in (project.notes, notes, _recent(db, project).script_note()) if n) or None,
                 research=_research(project),
             )
             break
@@ -366,6 +377,7 @@ def step_storyboard(db, run, services, ai) -> dict:
         durations=durations,
         visual_bible=script.visual_bible,
         seed=int(project.id.int % 100_000),
+        variety_note=_recent(db, project).storyboard_note(),
     )
     db.commit()
     production = {
