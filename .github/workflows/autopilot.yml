@@ -25,10 +25,10 @@ on:
       command:
         description: "Qué hacer"
         type: choice
-        options: [run, approve, resume, status, sync-analytics, ai-check]
+        options: [run, approve, resume, status, sync-analytics, ai-check, publish-file]
         default: run
       run_id:
-        description: "run id (solo para approve / resume / status)"
+        description: "run id (approve / resume / status) o carpeta (publish-file)"
         default: ""
       mode:
         description: "Calidad (preview = fragmento, draft = barato, hd = publicable, final = máxima)"
@@ -112,6 +112,9 @@ jobs:
               # Preview fragments are rendered by 'finish'; whole videos in parallel shards.
               if [ "$MODE" != "preview" ]; then echo "render=true" >> "$GITHUB_OUTPUT"; fi
             fi
+          elif [ "$CMD" = "publish-file" ]; then
+            # Started by hand = authorised upload of that folder (privacy comes from its metadata.json).
+            YOUTUBE_PUBLISHING_ENABLED=true python scripts/autopilot.py publish-file "${RUN_ID_IN:-productions/what_if_earth_stops_v2/publish}"
           elif [ "$CMD" = "ai-check" ]; then
             python scripts/autopilot.py ai-check || true
           elif [ "$CMD" = "sync-analytics" ] || [ "$CMD" = "status" ]; then
