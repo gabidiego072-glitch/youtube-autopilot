@@ -20,7 +20,7 @@ router = APIRouter(prefix="/autopilot", tags=["autopilot"])
 class RunCreate(BaseModel):
     channel_id: uuid.UUID
     format: VideoFormat = VideoFormat.SHORT
-    render_mode: str = Field(default="draft", pattern=r"^(preview|draft|hd|final)$")
+    render_mode: str = Field(default="draft", pattern=r"^(preview|draft|lite|hd|final)$")
     auto_publish: bool = False
 
 

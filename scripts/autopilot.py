@@ -69,7 +69,7 @@ def main() -> int:
     run_p.add_argument("--channel", required=True, help="channel name (created if missing) or id")
     run_p.add_argument("--niche", default="curiosidades, ciencia y situaciones hipotéticas")
     run_p.add_argument("--format", choices=[f.value for f in VideoFormat], default="short")
-    run_p.add_argument("--mode", choices=["preview", "draft", "hd", "final"], default="draft")
+    run_p.add_argument("--mode", choices=["preview", "draft", "lite", "hd", "final"], default="draft")
     run_p.add_argument("--auto-publish", action="store_true")
     run_p.add_argument("--until", help="stop after this step (e.g. storyboard)")
     resume_p = sub.add_parser("resume")
