@@ -160,6 +160,14 @@ def test_scenes_rendered_in_parallel_shards_are_reused_by_the_edit(db, tmp_path)
     run = run_pipeline(db, create_run(db, _channel(db), VideoFormat.SHORT, "draft"), services, until="storyboard")
     work = tmp_path / "media" / "autopilot" / str(run.id)
     shard_blender = _StubBlender()
+
+    class NoVoice:  # the voice step's recordings must be reused, never redone with another narrator
+        name = "none"
+
+        def synthesize(self, text, output_path):
+            raise AssertionError("voice re-synthesized during the shard render")
+
+    no_voice = NoVoice()
     for shard in range(2):  # in CI each shard is a separate job on its own machine
         render_scene_shard(
             work / "production.json",
@@ -167,7 +175,7 @@ def test_scenes_rendered_in_parallel_shards_are_reused_by_the_edit(db, tmp_path)
             work,
             blender=shard_blender,
             ffmpeg=ffmpeg,
-            tts=_StubVoice(),
+            tts=no_voice,
             shard=shard,
             shards=2,
             log=lambda *_: None,

@@ -36,7 +36,7 @@ from app.models.enums import (
 )
 from app.services.ai.factory import get_ai_provider  # noqa: E402
 from app.services.analytics.sync import sync_youtube_metrics  # noqa: E402
-from app.services.autopilot.factory import piper_binary, preflight, real_services  # noqa: E402
+from app.services.autopilot.factory import piper_binary, preflight, real_services, voice_tts  # noqa: E402
 from app.services.autopilot.runner import approve_run, create_run, run_pipeline  # noqa: E402
 from app.services.experiments import channel_standings  # noqa: E402
 from app.services.production.short import render_scene_shard  # noqa: E402
@@ -186,7 +186,8 @@ def render_shard(db, args, settings) -> int:
         work,
         blender=Blender(settings.blender_binary, settings.blender_timeout_seconds),
         ffmpeg=FFmpeg(settings.ffmpeg_binary, settings.ffprobe_binary),
-        tts=PiperTTS(piper_binary(settings), settings.piper_voice_model, settings.piper_length_scale),
+        tts=voice_tts(settings, json.loads(production.read_text(encoding="utf-8")).get("voice", ""))
+        or PiperTTS(piper_binary(settings), settings.piper_voice_model, settings.piper_length_scale),
         shard=args.shard,
         shards=args.shards,
         threads=settings.scene_render_threads,

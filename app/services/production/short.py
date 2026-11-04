@@ -126,7 +126,9 @@ def produce_short(
     voices, speech = [], []
     for i, scene in enumerate(script["scenes"]):
         wav = out_dir / "voice" / f"scene_{i:02d}.wav"
-        key = hashlib.sha256(scene["narration"].encode()).hexdigest()
+        # Same key as the autopilot's voice step: "<voice id>|<text>", so its recordings are reused as-is
+        # (with the narrator chosen for this video) instead of being redone with the default voice.
+        key = hashlib.sha256(f"{production.get('voice', '')}|{scene['narration']}".encode()).hexdigest()
         if not _cached(wav, key):
             tts.synthesize(scene["narration"], wav)
             _stamp(wav, key)
