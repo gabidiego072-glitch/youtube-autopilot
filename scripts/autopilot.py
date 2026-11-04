@@ -74,6 +74,9 @@ def main() -> int:
     run_p.add_argument("--until", help="stop after this step (e.g. storyboard)")
     resume_p = sub.add_parser("resume")
     resume_p.add_argument("run_id")
+    resume_p.add_argument(
+        "--reuse-renders", action="store_true", help="keep rendered clips and voice already on disk (no re-render)"
+    )
     approve_p = sub.add_parser("approve")
     approve_p.add_argument("run_id")
     status_p = sub.add_parser("status")
@@ -165,6 +168,7 @@ def main() -> int:
             run = run_pipeline(db, run, services, until=args.until)
         else:
             run = db.get(PipelineRun, uuid.UUID(args.run_id))
+            services.reuse_existing = getattr(args, "reuse_renders", False)
             if args.command == "approve":
                 approve_run(db, run)
             run = run_pipeline(db, run, services)

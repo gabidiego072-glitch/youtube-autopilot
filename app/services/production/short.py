@@ -114,7 +114,10 @@ def produce_short(
     scenes: list[int] | None = None,
     threads: int = 0,
     log=print,
+    reuse_existing: bool = False,
 ) -> dict:
+    """reuse_existing: keep any voice recording and rendered clip already on disk even if its cache key
+    does not match (to finish a run whose renders were made by an older version of the code)."""
     started = time.monotonic()
     production = load_production(production_path)
     mode: RenderMode = get_mode("preview" if mode_name == "plan" else mode_name)
@@ -129,7 +132,7 @@ def produce_short(
         # Same key as the autopilot's voice step: "<voice id>|<text>", so its recordings are reused as-is
         # (with the narrator chosen for this video) instead of being redone with the default voice.
         key = hashlib.sha256(f"{production.get('voice', '')}|{scene['narration']}".encode()).hexdigest()
-        if not _cached(wav, key):
+        if not (_cached(wav, key) or (reuse_existing and wav.is_file())):
             tts.synthesize(scene["narration"], wav)
             _stamp(wav, key)
         voices.append(wav)
@@ -159,7 +162,16 @@ def produce_short(
     clips, render_times = {}, {}
     for i in selected:
         clips[i], render_times[i] = render_clip(
-            production, i, slots[i], mode, out_dir, blender=blender, ffmpeg=ffmpeg, threads=threads, log=log
+            production,
+            i,
+            slots[i],
+            mode,
+            out_dir,
+            blender=blender,
+            ffmpeg=ffmpeg,
+            threads=threads,
+            log=log,
+            reuse_existing=reuse_existing,
         )
 
     # 4. Sound effects and music (generated, cached).
@@ -235,7 +247,17 @@ def clip_path(out_dir: Path, mode_name: str, index: int) -> Path:
 
 
 def render_clip(
-    production: dict, index: int, slot, mode: RenderMode, out_dir: Path, *, blender, ffmpeg, threads=0, log=print
+    production: dict,
+    index: int,
+    slot,
+    mode: RenderMode,
+    out_dir: Path,
+    *,
+    blender,
+    ffmpeg,
+    threads=0,
+    log=print,
+    reuse_existing: bool = False,
 ) -> tuple[Path, float]:
     """Render one scene to a silent clip. A clip whose spec, quality and engine code are unchanged is
     reused, so scenes rendered on other machines (parallel cloud jobs) are picked up by the final edit."""
@@ -247,7 +269,7 @@ def render_clip(
     spec_path.write_text(spec_json, encoding="utf-8")
     key = hashlib.sha256(f"{spec_json}|{mode.quality}|{aspect}|{engine_fingerprint()}".encode()).hexdigest()
     output = clip_path(out_dir, mode.name, index)
-    if _cached(output, key):
+    if _cached(output, key) or (reuse_existing and output.is_file() and output.stat().st_size > 0):
         log(f"[produce] scene {index}: reusing rendered clip")
         return output, 0.0
     log(f"[produce] scene {index}: {slot.clip_length:.2f}s ({mode.name})")

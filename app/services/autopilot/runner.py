@@ -120,6 +120,7 @@ class Services:
     trends: Any = None  # callable returning TrendSignals (best effort), or None
     publisher: Any = None  # defaults to the real YouTubeDataAPIPublisher
     voices: Any = None  # callable(voice_id) -> TTS, or None when that voice is not installed
+    reuse_existing: bool = False  # resume: keep renders on disk even if made by an older code version
 
 
 class StepBlocked(AutopilotError):
@@ -488,6 +489,7 @@ def step_render(db, run, services, ai) -> dict:
         ffmpeg=services.ffmpeg,
         tts=_voice_tts(services, project),
         log=services.log,
+        reuse_existing=services.reuse_existing,
     )
     output = Path(report["output"])
     job = RenderJob(
