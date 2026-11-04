@@ -11,7 +11,7 @@
 #   AUTOPILOT_ENABLED  true to run the daily schedule
 #   AUTO_PUBLISH       true to publish without human approval (also needs YOUTUBE_PUBLISHING_ENABLED=true;
 #                      public videos also need YOUTUBE_ALLOW_PUBLIC=true and YOUTUBE_DEFAULT_PRIVACY=public)
-#   RENDER_MODE        draft | hd | final            (default hd)
+#   RENDER_MODE        draft | lite | hd | final     (default hd; lite for slow PCs)
 #   RENDER_SHARDS      parallel render jobs, 1-8      (default 4)
 #   RUNS_ON            runner labels as JSON          (default "ubuntu-latest";
 #                      your own PC: ["self-hosted","linux","x64"])
@@ -19,15 +19,16 @@ name: Autopilot
 
 on:
   schedule:
-    # 05:17 UTC every 5th day (~6 videos a month: what GitHub's 2,000 free minutes can render in hd).
-    # With your own computer as a runner (RUNS_ON) you can make it daily: "17 5 * * *".
-    - cron: "17 5 */5 * *"
+    # Daily at 14:17 UTC (15:17 in Spain in winter, 16:17 in summer): the afternoon, when the owner's PC
+    # renders (RUNS_ON = ["self-hosted","linux","x64"]). On GitHub's own machines the 2,000 free
+    # minutes cover about 6 videos a month; after that GitHub pauses the runs (it never charges).
+    - cron: "17 14 * * *"
   workflow_dispatch:
     inputs:
       command:
         description: "Qué hacer"
         type: choice
-        options: [run, approve, resume, status, sync-analytics, ai-check, publish-file]
+        options: [run, approve, resume, status, sync-analytics, ai-check, publish-file, learning]
         default: run
       run_id:
         description: "run id (approve / resume / status) o carpeta (publish-file)"
@@ -35,7 +36,7 @@ on:
       mode:
         description: "Calidad (preview = fragmento, draft = barato, hd = publicable, final = máxima)"
         type: choice
-        options: [draft, preview, hd, final]
+        options: [draft, preview, lite, hd, final]
         default: draft
       format:
         description: "Formato"
@@ -119,7 +120,7 @@ jobs:
             YOUTUBE_PUBLISHING_ENABLED=true python scripts/autopilot.py publish-file "${RUN_ID_IN:-productions/what_if_earth_stops_v2/publish}"
           elif [ "$CMD" = "ai-check" ]; then
             python scripts/autopilot.py ai-check || true
-          elif [ "$CMD" = "sync-analytics" ] || [ "$CMD" = "status" ]; then
+          elif [ "$CMD" = "sync-analytics" ] || [ "$CMD" = "status" ] || [ "$CMD" = "learning" ]; then
             python scripts/autopilot.py "$CMD" $RUN_ID_IN
           else
             echo "run_id=$RUN_ID_IN" >> "$GITHUB_OUTPUT"

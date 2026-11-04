@@ -6,6 +6,7 @@ from pathlib import Path
 from app.core.config import Settings
 from app.services.ai.factory import get_ai_provider
 from app.services.autopilot.runner import Services
+from app.services.experiments import VOICES
 from app.services.rendering.blender import Blender
 from app.services.rendering.ffmpeg import FFmpeg
 from app.services.research.wikipedia import WikipediaClient
@@ -30,7 +31,17 @@ def real_services(settings: Settings, log=print) -> Services:
         settings=settings,
         log=log,
         trends=(lambda: collect_signals(settings)) if settings.trends_enabled else None,
+        voices=lambda voice_id: voice_tts(settings, voice_id),
     )
+
+
+def voice_tts(settings: Settings, voice_id: str) -> PiperTTS | None:
+    """The narrator for an experiment voice, or None if its model is not installed."""
+    voice = VOICES.get(voice_id)
+    folder = settings.piper_voice_model.parent if settings.piper_voice_model else Path("models/voices")
+    if voice is None or not (folder / voice.model).is_file():
+        return None
+    return PiperTTS(piper_binary(settings), folder / voice.model, settings.piper_length_scale, voice.speaker)
 
 
 def preflight(settings: Settings) -> list[str]:

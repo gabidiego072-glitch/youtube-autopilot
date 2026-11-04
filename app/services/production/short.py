@@ -182,7 +182,7 @@ def produce_short(
     music = None
     if mode.music:
         music = out_dir / mode.name / "music.wav"
-        generate_music(ffmpeg, total + 1.0, music, variant=production.get("seed", 0))
+        generate_music(ffmpeg, total + 1.0, music, variant=production.get("music_variant", production.get("seed", 0)))
 
     # 5. Edit.
     spec = output_format(production.get("format", "short"), mode.output_quality or mode.quality)
