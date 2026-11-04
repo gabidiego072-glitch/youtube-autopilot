@@ -38,6 +38,7 @@ from app.services.ai.factory import get_ai_provider  # noqa: E402
 from app.services.analytics.sync import sync_youtube_metrics  # noqa: E402
 from app.services.autopilot.factory import piper_binary, preflight, real_services  # noqa: E402
 from app.services.autopilot.runner import approve_run, create_run, run_pipeline  # noqa: E402
+from app.services.experiments import channel_standings  # noqa: E402
 from app.services.production.short import render_scene_shard  # noqa: E402
 from app.services.rendering.blender import Blender  # noqa: E402
 from app.services.rendering.ffmpeg import FFmpeg  # noqa: E402
@@ -90,6 +91,7 @@ def main() -> int:
     upload_p.add_argument("--title", default="Prueba privada YouTube-Autopilot")
     upload_p.add_argument("--thumbnail", type=Path)
     sub.add_parser("sync-analytics")
+    sub.add_parser("learning", help="what the system has learnt so far (voices, music, length, hooks)")
     sub.add_parser("trends")
     args = parser.parse_args()
     settings = get_settings()
@@ -130,6 +132,13 @@ def main() -> int:
                 else list(db.scalars(select(PipelineRun).order_by(PipelineRun.created_at.desc()).limit(10)))
             )
             print(json.dumps([summary(r) for r in runs if r], ensure_ascii=False, indent=2, default=str))
+            return 0
+        if args.command == "learning":
+            channel = db.scalar(select(Channel).order_by(Channel.created_at))
+            if channel is None:
+                print("No channel yet.")
+                return 0
+            print(json.dumps(channel_standings(db, channel.id), ensure_ascii=False, indent=2))
             return 0
         if args.command == "sync-analytics":
             print(json.dumps(sync_youtube_metrics(db, YouTubeAnalyticsCollector(settings)), indent=2))
