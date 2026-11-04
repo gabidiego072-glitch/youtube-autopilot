@@ -27,7 +27,7 @@ on:
       command:
         description: "Qué hacer"
         type: choice
-        options: [run, approve, resume, status, sync-analytics, ai-check, publish-file]
+        options: [run, approve, resume, status, sync-analytics, ai-check, publish-file, learning]
         default: run
       run_id:
         description: "run id (approve / resume / status) o carpeta (publish-file)"
@@ -119,7 +119,7 @@ jobs:
             YOUTUBE_PUBLISHING_ENABLED=true python scripts/autopilot.py publish-file "${RUN_ID_IN:-productions/what_if_earth_stops_v2/publish}"
           elif [ "$CMD" = "ai-check" ]; then
             python scripts/autopilot.py ai-check || true
-          elif [ "$CMD" = "sync-analytics" ] || [ "$CMD" = "status" ]; then
+          elif [ "$CMD" = "sync-analytics" ] || [ "$CMD" = "status" ] || [ "$CMD" = "learning" ]; then
             python scripts/autopilot.py "$CMD" $RUN_ID_IN
           else
             echo "run_id=$RUN_ID_IN" >> "$GITHUB_OUTPUT"

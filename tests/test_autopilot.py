@@ -270,3 +270,67 @@ def test_music_changes_between_videos():
 
     variants = {music_variant(seed) for seed in range(30)}
     assert len(variants) >= 20
+
+
+# --- experiments: each video tries variants, results pick the next ones -------------------------------
+def test_experiment_choice_explores_then_exploits():
+    import random
+
+    from app.services.experiments import DIMENSIONS, MIN_TRIES, choose
+
+    rng = random.Random(1)
+    assert set(choose([], rng)) == set(DIMENSIONS)
+    # Every option tried MIN_TRIES times; 'tense' music clearly wins -> chosen most of the time.
+    history = []
+    for dim, options in DIMENSIONS.items():
+        for option in options:
+            for _ in range(MIN_TRIES):
+                base = {d: o[0] for d, o in DIMENSIONS.items()}
+                history.append(({**base, dim: option}, 0.9 if option == "tense" else 0.3))
+    picks = [choose(history, random.Random(seed))["music"] for seed in range(200)]
+    assert picks.count("tense") / len(picks) > 0.7  # exploit ~75 %, the rest explores
+
+
+def test_run_records_variants_and_applies_them(db, tmp_path):
+    import json
+
+    from app.models import VideoProject
+    from app.services.experiments import HOOKS, VOICES
+
+    used_voices = []
+
+    class NamedVoice(_StubVoice):
+        def __init__(self, voice_id):
+            self.voice_id = voice_id
+
+        def synthesize(self, text, output_path):
+            used_voices.append(self.voice_id)
+            return super().synthesize(text, output_path)
+
+    services = _services(tmp_path, FULL_RUN)
+    services.voices = NamedVoice
+    run = run_pipeline(db, create_run(db, _channel(db), VideoFormat.SHORT, "draft"), services)
+    assert run.status == RunStatus.WAITING_APPROVAL, run.error
+    project = db.get(VideoProject, run.project_id)
+    features = project.features
+    assert set(features) == {"voice", "music", "length", "hook"}
+    assert project.target_duration_seconds == int(features["length"])
+    assert used_voices and set(used_voices) == {features["voice"]}
+    script_prompt = next(c["prompt"] for c in services.ai.calls if "Hook style for this video" in c["prompt"])
+    assert HOOKS[features["hook"]] in script_prompt
+    production = json.loads((tmp_path / "media" / "autopilot" / str(run.id) / "production.json").read_text())
+    assert production["music_variant"] % 5 == ["wistful", "tense", "bright", "curious", "rising"].index(
+        features["music"]
+    )
+    credit = VOICES[features["voice"]].credit
+    if credit:
+        assert credit in project.metadata_versions[-1].description
+
+
+def test_missing_voice_falls_back_and_is_recorded(db, tmp_path):
+    from app.models import VideoProject
+
+    services = _services(tmp_path, FULL_RUN)
+    services.voices = lambda voice_id: None  # not installed
+    run = run_pipeline(db, create_run(db, _channel(db), VideoFormat.SHORT, "draft"), services)
+    assert db.get(VideoProject, run.project_id).features["voice"] == "davefx"

@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
+from app.db.base import Base, JSONType, TimestampMixin, UUIDPrimaryKeyMixin
 from app.models._types import enum_column
 from app.models.enums import ContentCategory, ProjectStatus, VideoFormat
 
@@ -30,6 +30,8 @@ class VideoProject(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     notes: Mapped[str | None] = mapped_column(Text)
     youtube_video_id: Mapped[str | None] = mapped_column(String(32), unique=True)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Variants this video tried (voice, music, length, hook) so results can be compared.
+    features: Mapped[dict | None] = mapped_column(JSONType)
 
     channel: Mapped["Channel"] = relationship(back_populates="projects")  # noqa: F821
     scripts: Mapped[list["Script"]] = relationship(  # noqa: F821

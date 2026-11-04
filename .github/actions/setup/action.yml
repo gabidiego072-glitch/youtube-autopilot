@@ -20,14 +20,18 @@ runs:
         path: |
           ${{ runner.tool_cache }}/blender
           models/voices
-        key: tools-${{ runner.os }}-blender-4.5.15-piper-davefx-v1
+        key: tools-${{ runner.os }}-blender-4.5.15-piper-voices-v2
     - name: Install Blender and voice
       shell: bash
       run: |
         BLENDER_DIR="${{ runner.tool_cache }}/blender"
         if [ ! -x "$BLENDER_DIR/blender-4.5.15-linux-x64/blender" ]; then scripts/install_blender.sh "$BLENDER_DIR"; fi
         echo "BLENDER_BINARY=$BLENDER_DIR/blender-4.5.15-linux-x64/blender" >> "$GITHUB_ENV"
-        if [ ! -f models/voices/es_ES-davefx-medium.onnx ]; then scripts/install_voice.sh; fi
+        # Narrator voices the system experiments with (all allow commercial use; see app/services/experiments.py).
+        for v in es/es_ES/davefx/medium es/es_ES/sharvard/medium es/es_MX/claude/high es/es_MX/ald/medium es/es_AR/daniela/high; do
+          name="$(echo "$v" | awk -F/ '{print $2"-"$3"-"$4}')"
+          if [ ! -f "models/voices/${name}.onnx" ]; then scripts/install_voice.sh "$v"; fi
+        done
         echo "PIPER_VOICE_MODEL=$PWD/models/voices/es_ES-davefx-medium.onnx" >> "$GITHUB_ENV"
     - name: Python dependencies
       shell: bash
