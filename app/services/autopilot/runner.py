@@ -124,6 +124,30 @@ class StepBlocked(AutopilotError):
     """The step cannot continue without a person (approval) or a missing integration."""
 
 
+class TopicRejected(StepBlocked):
+    """The topic could not be turned into a scientifically sound script: try the next idea."""
+
+
+MAX_TOPIC_RESTARTS = 2
+TOPIC_STEPS = ("topic", "research", "script", "fact_check")
+
+
+def _restart_with_next_idea(db, run, reason: str) -> None:
+    """Drop the rejected project and idea, and run the topic steps again with the next idea."""
+    project = db.get(VideoProject, run.project_id) if run.project_id else None
+    if project is not None:
+        project.status = ProjectStatus.ARCHIVED
+        project.notes = f"Rejected automatically: {reason}"[:2000]
+        if project.idea_id:
+            idea = db.get(Idea, project.idea_id)
+            if idea is not None:
+                idea.status = IdeaStatus.REJECTED
+    run.project_id = None
+    for name in TOPIC_STEPS:
+        _save_step(db, run, name, status="pending", error=None, detail=None)
+    db.commit()
+
+
 def create_run(
     db: Session,
     channel: Channel,
@@ -331,7 +355,12 @@ def step_fact_check(db, run, services, ai) -> dict:
                 if v["verdict"] in ("incorrect", "mislabeled", "unverifiable")
             ]
             _write_script(db, project, services, ai, notes="Fix these fact-check findings:\n" + "\n".join(corrections))
-    raise StepBlocked("The script failed the fact-check twice; it needs a human review.")
+    problems = [
+        f"{v['claim']} ({v['verdict']})"
+        for v in project.scripts[-1].fact_check.get("verdicts", [])
+        if v.get("verdict") in ("incorrect", "mislabeled", "unverifiable")
+    ][:3]
+    raise TopicRejected("The script failed the fact-check twice: " + "; ".join(problems))
 
 
 def step_voice(db, run, services, ai) -> dict:
@@ -614,7 +643,10 @@ def run_pipeline(db: Session, run: PipelineRun, services: Services, until: str |
     tracker = UsageTracker(services.ai)
     run.status, run.error = RunStatus.RUNNING, None
     db.commit()
-    for name in STEPS:
+    restarts = 0
+    pending = list(STEPS)
+    while pending:
+        name = pending.pop(0)
         step = _step(run, name)
         if step["status"] == "succeeded":
             continue
@@ -632,6 +664,17 @@ def run_pipeline(db: Session, run: PipelineRun, services: Services, until: str |
         services.log(f"[autopilot] {run.id} step {name}")
         try:
             detail = STEP_FUNCTIONS[name](db, run, services, tracker)
+        except TopicRejected as exc:
+            db.rollback()
+            if restarts < MAX_TOPIC_RESTARTS:  # autonomous: drop this topic and try the next idea
+                restarts += 1
+                services.log(f"[autopilot] {run.id} topic rejected ({exc.message}); trying the next idea")
+                _restart_with_next_idea(db, run, exc.message)
+                pending = list(STEPS)
+                continue
+            _save_step(db, run, name, status="blocked", error=exc.message, finished_at=utcnow().isoformat())
+            run.status, run.error = RunStatus.FAILED, f"{exc.message} (after trying {restarts + 1} topics)"
+            break
         except StepBlocked as exc:
             db.rollback()
             _save_step(db, run, name, status="blocked", error=exc.message, finished_at=utcnow().isoformat())

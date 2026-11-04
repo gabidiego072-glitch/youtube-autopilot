@@ -54,3 +54,8 @@ def test_integrations_status_is_honest(client):
     assert body["publishing_enabled"] is False
     assert "ai_images" not in body and "ai_video" not in body  # everything is rendered by code
     assert body["voice"]["configured"] is False
+
+
+def test_empty_wikipedia_user_agent_falls_back_to_the_default():
+    # GitHub passes an unset repository variable as an empty string; Wikimedia answers 403 to an empty agent.
+    assert make_settings(wikipedia_user_agent="").wikipedia_user_agent.startswith("YouTubeAutopilot/")

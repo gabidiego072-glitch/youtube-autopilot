@@ -86,17 +86,45 @@ def test_run_without_credentials_never_fakes_an_upload(db, tmp_path):
     assert run.status == RunStatus.FAILED and "YouTube is not configured" in run.error
 
 
-def test_failed_fact_check_is_rewritten_once_then_needs_a_human(db, tmp_path):
+def test_failed_fact_check_is_rewritten_once_then_the_next_idea_is_tried(db, tmp_path):
+    from app.models import Idea, VideoProject
+    from app.models.enums import IdeaStatus, ProjectStatus
+
     failing = copy.deepcopy(FACTCHECK_PASS)
     failing["verdicts"][0]["verdict"] = "incorrect"
-    responses = [IDEAS_RESPONSE, CONCEPTS, FACTS, SCRIPT_RESPONSE, failing, SCRIPT_RESPONSE, failing]
-    run = run_pipeline(db, create_run(db, _channel(db)), _services(tmp_path, responses))
-    assert run.status == RunStatus.FAILED and _status(run)["fact_check"] == "blocked"
-    assert "human review" in run.error
-    project = run.project_id
-    from app.models import VideoProject
+    first_topic = [IDEAS_RESPONSE, CONCEPTS, FACTS, SCRIPT_RESPONSE, failing, SCRIPT_RESPONSE, failing]
+    second_topic = [
+        IDEAS_RESPONSE,
+        CONCEPTS,
+        FACTS,
+        SCRIPT_RESPONSE,
+        FACTCHECK_PASS,
+        STORYBOARD_RESPONSE,
+        METADATA_RESPONSE,
+    ]
+    run = run_pipeline(db, create_run(db, _channel(db)), _services(tmp_path, first_topic + second_topic))
+    assert run.status == RunStatus.WAITING_APPROVAL, run.error  # no human needed: it moved on by itself
 
-    assert len(db.get(VideoProject, project).scripts) == 2  # original + one rewrite with the corrections
+    projects = db.query(VideoProject).order_by(VideoProject.created_at).all()
+    rejected, used = projects
+    assert rejected.status == ProjectStatus.ARCHIVED and "Rejected automatically" in rejected.notes
+    assert len(rejected.scripts) == 2  # original + one rewrite with the corrections
+    assert db.get(Idea, rejected.idea_id).status == IdeaStatus.REJECTED
+    assert run.project_id == used.id and used.idea_id != rejected.idea_id
+
+
+def test_gives_up_after_three_rejected_topics(db, tmp_path, monkeypatch):
+    import app.services.autopilot.runner as runner
+
+    monkeypatch.setattr(runner, "MAX_TOPIC_RESTARTS", 1)
+    failing = copy.deepcopy(FACTCHECK_PASS)
+    failing["verdicts"][0]["verdict"] = "incorrect"
+    topic = [CONCEPTS, FACTS, SCRIPT_RESPONSE, failing, SCRIPT_RESPONSE, failing]
+    run = run_pipeline(
+        db, create_run(db, _channel(db)), _services(tmp_path, [IDEAS_RESPONSE, *topic, IDEAS_RESPONSE, *topic])
+    )
+    assert run.status == RunStatus.FAILED and _status(run)["fact_check"] == "blocked"
+    assert "after trying 2 topics" in run.error and "(incorrect)" in run.error
 
 
 def test_runs_resume_from_the_failed_step(db, tmp_path):
