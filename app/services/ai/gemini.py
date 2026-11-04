@@ -175,9 +175,9 @@ class GeminiProvider:
             if response.status_code == 400 and "schema" in detail.lower():
                 raise _SchemaRejected(detail)
             if response.status_code == 404:
-                raise IntegrationNotConfiguredError(
-                    f"Gemini model '{model}' not found. Run `python scripts/autopilot.py ai-check` to list "
-                    "the models your key can use and set GEMINI_MODEL."
+                # Not available to this key: another free model may be. Counts as "exhausted" for the run.
+                raise _ModelUnavailable(
+                    f"model '{model}' not found for this key (run ai-check to list the available ones)", daily=True
                 )
             if response.status_code in (401, 403):
                 raise IntegrationNotConfiguredError(f"Gemini rejected the API key: {detail}")

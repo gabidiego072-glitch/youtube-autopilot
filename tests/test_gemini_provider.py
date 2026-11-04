@@ -133,7 +133,7 @@ def test_bad_answers_are_errors_not_guesses(response, message):
 
 
 def test_wrong_model_or_key_is_explained():
-    with pytest.raises(IntegrationNotConfiguredError, match="ai-check"):
+    with pytest.raises(ProviderError, match="free daily quota"):  # no model left at all
         _provider(lambda r: httpx.Response(404, json={"error": {"message": "not found"}})).generate_json(
             system="s", prompt="p", schema=SCHEMA
         )
