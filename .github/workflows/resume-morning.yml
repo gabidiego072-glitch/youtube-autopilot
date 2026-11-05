@@ -62,7 +62,7 @@ jobs:
         run: |
           set -euo pipefail
           alembic upgrade head
-          python scripts/autopilot.py resume 6e9f487f-aab3-453f-9602-0d42b3cc02c8 --reuse-renders
+          python scripts/autopilot.py approve 6e9f487f-aab3-453f-9602-0d42b3cc02c8
       - name: Save final video and report
         if: always()
         uses: actions/upload-artifact@v4
