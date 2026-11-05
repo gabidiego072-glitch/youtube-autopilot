@@ -106,8 +106,8 @@ Structure every script like this:
 For every scene set 'scale' (street, interior, building, vehicle, crowd = human scale; aerial; global = the
 planet, a map or space), 'human_subject' (who or what of ours is affected: a person, a family, a street, a
 hospital...) and 'consequence' (the physical effect shown, which must be backed by one of the scene's claims).
-Hard limits: at least {MIN_HUMAN_SHARE:.0%} of the duration must be at human scale and at most {MAX_GLOBAL_SCENES} scene may
-be global; these limits are enforced by validation. To leave a safety margin and avoid rounding/estimation drift,
+Hard limits: at least {MIN_HUMAN_SHARE:.0%} of the duration must be at human scale and at most
+{MAX_GLOBAL_SCENES} scene may be global; these limits are enforced by validation. To leave a safety margin and avoid rounding/estimation drift,
 aim for at least 80% human-scale duration and keep global/planet/map/space footage to 10% or less of the total
 duration. Prefer 0% global footage unless it is genuinely needed to explain the premise. If one global scene is
 essential, keep it short enough to remain within 10%; never exceed one global scene.
