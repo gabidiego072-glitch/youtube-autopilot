@@ -125,17 +125,17 @@ class GeminiProvider:
 
     def _fallbacks(self) -> list[str]:
         if self._fallback_cache is None:
-            if self._configured_fallbacks:
-                self._fallback_cache = self._configured_fallbacks
-            else:
-                try:
-                    # Discover every model exposed to this API key. Do not cache a transient
-                    # discovery failure: the next generation may be able to fetch the list.
-                    self._fallback_cache = pick_fallbacks(self.list_models(), self.model)
-                    logger.info("Gemini fallback models available: %s", self._fallback_cache)
-                except ProviderError as exc:
-                    logger.warning("Could not discover Gemini fallback models: %s", exc.message)
-                    return []
+            # Preserve the owner's explicit preference order, then append every other
+            # compatible model discovered for this key. A short manual list must never
+            # disable automatic discovery of additional models.
+            discovered: list[str] = []
+            try:
+                discovered = pick_fallbacks(self.list_models(), self.model)
+            except ProviderError as exc:
+                logger.warning("Could not discover Gemini fallback models: %s", exc.message)
+            combined = [*self._configured_fallbacks, *discovered]
+            self._fallback_cache = list(dict.fromkeys(m for m in combined if m and m != self.model))
+            logger.info("Gemini fallback models available: %s", self._fallback_cache)
         return self._fallback_cache
 
     def list_models(self) -> list[str]:
