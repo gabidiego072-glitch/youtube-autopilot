@@ -133,7 +133,7 @@ def test_bad_answers_are_errors_not_guesses(response, message):
 
 
 def test_wrong_model_or_key_is_explained():
-    with pytest.raises(ProviderError, match="free daily quota"):  # no model left at all
+    with pytest.raises(ProviderError, match="No available Gemini model"):  # model ID is invalid, not quota
         _provider(lambda r: httpx.Response(404, json={"error": {"message": "not found"}})).generate_json(
             system="s", prompt="p", schema=SCHEMA
         )
@@ -219,11 +219,14 @@ def test_fallback_ranking():
         "gemini-4-flash-preview",
         "gemini-3.8-flash-image",
         "gemini-3.8-pro",
+        "gemini-3.7-pro-preview",
     ]
     assert pick_fallbacks(models, "gemini-3.8-flash") == [
         "gemini-3.5-flash",
         "gemini-3.8-flash-lite",
         "gemini-4-flash-preview",
+        "gemini-3.8-pro",
+        "gemini-3.7-pro-preview",
     ]
 
 
@@ -263,3 +266,30 @@ def test_models_out_of_quota_are_not_retried_in_the_same_run():
     used.clear()
     provider.generate_json(system="s", prompt="p", schema=SCHEMA)
     assert used == ["gemini-9-flash"]  # omni and '-latest' aliases are never picked as fallbacks
+
+
+def test_list_models_follows_all_pages_and_deduplicates():
+    calls = []
+
+    def handler(request):
+        calls.append(dict(request.url.params))
+        if len(calls) == 1:
+            return httpx.Response(
+                200,
+                json={
+                    "models": [{"name": "models/gemini-a", "supportedGenerationMethods": ["generateContent"]}],
+                    "nextPageToken": "page-2",
+                },
+            )
+        return httpx.Response(
+            200,
+            json={
+                "models": [
+                    {"name": "models/gemini-a", "supportedGenerationMethods": ["generateContent"]},
+                    {"name": "models/gemini-b", "supportedGenerationMethods": ["generateContent"]},
+                ]
+            },
+        )
+
+    assert _provider(handler).list_models() == ["gemini-a", "gemini-b"]
+    assert len(calls) == 2 and calls[1]["pageToken"] == "page-2"

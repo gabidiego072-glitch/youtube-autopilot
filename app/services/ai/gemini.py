@@ -87,7 +87,8 @@ class GeminiProvider:
                 "Gemini's free daily quota is used up on every available model. Nothing was charged; "
                 "resume the run tomorrow (it continues from this step)."
             )
-        raise ProviderError(f"Every Gemini model is busy right now; try again later. Last error: {last.message}")
+        detail = last.message if last is not None else "no compatible fallback model was discovered"
+        raise ProviderError(f"No available Gemini model could complete this request. Last error: {detail}")
 
     def _generate(self, body: dict, schema: dict, prompt: str, model: str) -> dict:
         try:
@@ -128,21 +129,38 @@ class GeminiProvider:
                 self._fallback_cache = self._configured_fallbacks
             else:
                 try:
+                    # Discover every model exposed to this API key. Do not cache a transient
+                    # discovery failure: the next generation may be able to fetch the list.
                     self._fallback_cache = pick_fallbacks(self.list_models(), self.model)
-                except ProviderError:
-                    self._fallback_cache = []
+                    logger.info("Gemini fallback models available: %s", self._fallback_cache)
+                except ProviderError as exc:
+                    logger.warning("Could not discover Gemini fallback models: %s", exc.message)
+                    return []
         return self._fallback_cache
 
     def list_models(self) -> list[str]:
         """Models this key can call with generateContent (used by `autopilot.py ai-check`)."""
-        response = self._request("GET", f"{API_ROOT}/models", params={"pageSize": 200})
-        if response.status_code != 200:
-            raise ProviderError(f"Gemini API error: {_error(response)}")
-        return sorted(
-            m["name"].removeprefix("models/")
-            for m in response.json().get("models", [])
-            if "generateContent" in m.get("supportedGenerationMethods", [])
-        )
+        # The API paginates this endpoint. Fetch all pages so a key with many enabled
+        # models does not silently miss alternatives beyond the first page.
+        found: set[str] = set()
+        page_token: str | None = None
+        for _ in range(10):  # defensive cap; 1,000 models is far beyond the current catalog
+            params: dict[str, Any] = {"pageSize": 100}
+            if page_token:
+                params["pageToken"] = page_token
+            response = self._request("GET", f"{API_ROOT}/models", params=params)
+            if response.status_code != 200:
+                raise ProviderError(f"Gemini API error: {_error(response)}")
+            payload = response.json()
+            found.update(
+                m["name"].removeprefix("models/")
+                for m in payload.get("models", [])
+                if "generateContent" in m.get("supportedGenerationMethods", [])
+            )
+            page_token = payload.get("nextPageToken")
+            if not page_token:
+                break
+        return sorted(found)
 
     # --- internals ----------------------------------------------------------------------
     def _request(self, method: str, url: str, **kwargs) -> httpx.Response:
@@ -175,9 +193,10 @@ class GeminiProvider:
             if response.status_code == 400 and "schema" in detail.lower():
                 raise _SchemaRejected(detail)
             if response.status_code == 404:
-                # Not available to this key: another free model may be. Counts as "exhausted" for the run.
+                # Not available to this key: another model may still work. This is not a
+                # daily-quota error, so do not report it as if the user's quota were exhausted.
                 raise _ModelUnavailable(
-                    f"model '{model}' not found for this key (run ai-check to list the available ones)", daily=True
+                    f"model '{model}' not found for this key (run ai-check to list the available ones)"
                 )
             if response.status_code in (401, 403):
                 raise IntegrationNotConfiguredError(f"Gemini rejected the API key: {detail}")
@@ -251,12 +270,22 @@ SKIP_MODEL_WORDS = (
 )
 
 
-def pick_fallbacks(models: list[str], primary: str, limit: int = 8) -> list[str]:
-    """Other text 'flash' models (free tier): stable before preview, full before lite, newest first."""
-    usable = [m for m in models if "flash" in m and m != primary and not any(word in m for word in SKIP_MODEL_WORDS)]
+def pick_fallbacks(models: list[str], primary: str, limit: int = 12) -> list[str]:
+    """Prefer other text Flash models, then Pro models; stable before preview, newest first."""
+    usable = [
+        m for m in models
+        if m != primary
+        and any(kind in m for kind in ("flash", "pro"))
+        and not any(word in m for word in SKIP_MODEL_WORDS)
+    ]
 
     def rank(name: str):
-        return ("preview" in name or "exp" in name, "lite" in name, [-ord(c) for c in name])
+        # Keep fast/cheap Flash choices ahead of Pro, while allowing Pro to rescue a
+        # request when all Flash variants are overloaded or out of quota.
+        family = 0 if "flash" in name else 1
+        preview = "preview" in name or "exp" in name
+        lite = "lite" in name
+        return (family, preview, lite, [-ord(c) for c in name])
 
     return sorted(usable, key=rank)[:limit]
 
