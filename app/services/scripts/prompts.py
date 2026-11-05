@@ -13,7 +13,7 @@ from app.content.profile import (
 from app.models.enums import ClaimType, VideoFormat
 from render_engines.core.catalog import catalog_text
 
-PROMPT_VERSION = "whatif-script-v4"
+PROMPT_VERSION = "whatif-script-v5"
 HOOK_MAX_WORDS = 8  # ~2 seconds of fast narration
 BEATS = ("hook", "setup", "escalation", "climax", "ending")
 
@@ -106,8 +106,11 @@ Structure every script like this:
 For every scene set 'scale' (street, interior, building, vehicle, crowd = human scale; aerial; global = the
 planet, a map or space), 'human_subject' (who or what of ours is affected: a person, a family, a street, a
 hospital...) and 'consequence' (the physical effect shown, which must be backed by one of the scene's claims).
-At least {MIN_HUMAN_SHARE:.0%} of the duration must be at human scale and at most {MAX_GLOBAL_SCENES} scene may
-be global.
+Hard limits: at least {MIN_HUMAN_SHARE:.0%} of the duration must be at human scale and at most {MAX_GLOBAL_SCENES} scene may
+be global; these limits are enforced by validation. To leave a safety margin and avoid rounding/estimation drift,
+aim for at least 80% human-scale duration and keep global/planet/map/space footage to 10% or less of the total
+duration. Prefer 0% global footage unless it is genuinely needed to explain the premise. If one global scene is
+essential, keep it short enough to remain within 10%; never exceed one global scene.
 
 {SCIENCE_RULES}
 Put every factual statement of a scene in its 'claims' list with its type; 'source' is the source URL from the
