@@ -219,11 +219,14 @@ def test_fallback_ranking():
         "gemini-4-flash-preview",
         "gemini-3.8-flash-image",
         "gemini-3.8-pro",
+        "gemini-3.7-pro-preview",
     ]
     assert pick_fallbacks(models, "gemini-3.8-flash") == [
         "gemini-3.5-flash",
         "gemini-3.8-flash-lite",
         "gemini-4-flash-preview",
+        "gemini-3.8-pro",
+        "gemini-3.7-pro-preview",
     ]
 
 
