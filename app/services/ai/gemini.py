@@ -270,12 +270,22 @@ SKIP_MODEL_WORDS = (
 )
 
 
-def pick_fallbacks(models: list[str], primary: str, limit: int = 8) -> list[str]:
-    """Other text 'flash' models (free tier): stable before preview, full before lite, newest first."""
-    usable = [m for m in models if "flash" in m and m != primary and not any(word in m for word in SKIP_MODEL_WORDS)]
+def pick_fallbacks(models: list[str], primary: str, limit: int = 12) -> list[str]:
+    """Prefer other text Flash models, then Pro models; stable before preview, newest first."""
+    usable = [
+        m for m in models
+        if m != primary
+        and any(kind in m for kind in ("flash", "pro"))
+        and not any(word in m for word in SKIP_MODEL_WORDS)
+    ]
 
     def rank(name: str):
-        return ("preview" in name or "exp" in name, "lite" in name, [-ord(c) for c in name])
+        # Keep fast/cheap Flash choices ahead of Pro, while allowing Pro to rescue a
+        # request when all Flash variants are overloaded or out of quota.
+        family = 0 if "flash" in name else 1
+        preview = "preview" in name or "exp" in name
+        lite = "lite" in name
+        return (family, preview, lite, [-ord(c) for c in name])
 
     return sorted(usable, key=rank)[:limit]
 
