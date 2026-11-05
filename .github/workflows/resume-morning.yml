@@ -1,0 +1,74 @@
+name: Resume morning video (private)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/resume-morning.yml"
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: resume-morning-6e9f487f
+  cancel-in-progress: false
+
+jobs:
+  resume-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      ENVIRONMENT: staging
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      AI_PROVIDER: ${{ vars.AI_PROVIDER || 'gemini' }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      GEMINI_MODEL: gemini-3.5-flash-lite
+      GEMINI_FALLBACK_MODELS: ${{ vars.GEMINI_FALLBACK_MODELS }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+      YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+      YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+      YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+      YOUTUBE_PUBLISHING_ENABLED: "true"
+      YOUTUBE_ALLOW_PUBLIC: "false"
+      YOUTUBE_DEFAULT_PRIVACY: private
+      MEDIA_ROOT: ${{ github.workspace }}/media
+      CHANNEL_NAME: ${{ vars.CHANNEL_NAME || 'Qué Pasaría Si' }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Restore the morning video's saved work
+        env:
+          RUN_ID: 6e9f487f-aab3-453f-9602-0d42b3cc02c8
+        run: |
+          set -euo pipefail
+          mkdir -p "media/autopilot/$RUN_ID"
+          ARTIFACT_ID=$(curl -sSfL \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/artifacts?name=work-$RUN_ID&per_page=1" \
+            | python -c "import json,sys; a=json.load(sys.stdin)['artifacts']; print(a[0]['id'] if a and not a[0]['expired'] else '')")
+          test -n "$ARTIFACT_ID"
+          curl -sSfL -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID/zip" \
+            -o morning-work.zip
+          unzip -oq morning-work.zip -d "media/autopilot/$RUN_ID"
+          rm morning-work.zip
+          find "media/autopilot/$RUN_ID" -maxdepth 3 -type f -print
+      - name: Resume, finish and upload as private
+        run: |
+          set -euo pipefail
+          alembic upgrade head
+          python scripts/autopilot.py resume 6e9f487f-aab3-453f-9602-0d42b3cc02c8 --reuse-renders
+      - name: Save final video and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: morning-video-private-upload-result
+          path: |
+            media/autopilot/6e9f487f-aab3-453f-9602-0d42b3cc02c8/
+          retention-days: 5
+          if-no-files-found: ignore
