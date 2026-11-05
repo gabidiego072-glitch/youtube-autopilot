@@ -580,7 +580,13 @@ def step_thumbnail(db, run, services, ai) -> dict:
     report = json.loads(output.with_suffix(".report.json").read_text())
     index, at = best_moment(report)
     clip = _work_dir(services, run) / run.render_mode / "clips" / f"scene_{index:02d}.mp4"
-    text = project.metadata_versions[-1].thumbnail_text or script.hook
+    metadata = db.scalar(
+        select(VideoMetadata)
+        .where(VideoMetadata.project_id == project.id)
+        .order_by(VideoMetadata.version.desc())
+        .limit(1)
+    )
+    text = (metadata.thumbnail_text if metadata else None) or script.hook
     paths = generate_thumbnails(
         services.ffmpeg, clip if clip.is_file() else output, at, text, _work_dir(services, run) / "thumbnails"
     )
