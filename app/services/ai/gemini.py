@@ -273,7 +273,8 @@ SKIP_MODEL_WORDS = (
 def pick_fallbacks(models: list[str], primary: str, limit: int = 12) -> list[str]:
     """Prefer other text Flash models, then Pro models; stable before preview, newest first."""
     usable = [
-        m for m in models
+        m
+        for m in models
         if m != primary
         and any(kind in m for kind in ("flash", "pro"))
         and not any(word in m for word in SKIP_MODEL_WORDS)
