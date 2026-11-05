@@ -60,7 +60,8 @@ env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
   AI_PROVIDER: ${{ vars.AI_PROVIDER || 'gemini' }}
   GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-  GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-3.8-flash' }}
+  # Last verified working with this API key on 2026-11-05 after the newer Flash quotas were exhausted.
+  GEMINI_MODEL: gemini-3.5-flash-lite
   GEMINI_FALLBACK_MODELS: ${{ vars.GEMINI_FALLBACK_MODELS }}
   ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
   CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL || 'claude-opus-5-5' }}
