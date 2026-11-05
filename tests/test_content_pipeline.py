@@ -214,3 +214,7 @@ def test_prompts_carry_the_human_impact_rule():
     for prompt in (IDEAS, SCRIPT, STORYBOARD):
         assert "Human-impact rule" in prompt
     assert "human_impact" in IDEAS and "'scale'" in SCRIPT
+    # Keep a margin below the hard 70% / 15% validator limits so model timing drift does not reject a valid story.
+    assert "at least 80% human-scale duration" in SCRIPT
+    assert "10% or less of the total" in SCRIPT
+    assert "Hard limits" in SCRIPT
