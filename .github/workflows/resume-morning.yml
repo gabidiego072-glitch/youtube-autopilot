@@ -61,10 +61,7 @@ jobs:
           # Restore the complete saved render from the earlier successful resume attempt.
           # Its result artifact contains the rendered scene clips; work-$RUN_ID only contains
           # the production metadata and voice files, which is not enough to assemble the MP4.
-          curl -sSfL -H "Authorization: Bearer $GH_TOKEN" \\
-            -H "Accept: application/vnd.github+json" \\
-            "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/13441692178/zip" \\
-            -o morning-render.zip
+          curl -sSfL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/13441692178/zip" -o morning-render.zip
           unzip -oq morning-render.zip -d "media/autopilot/$RUN_ID"
           rm morning-render.zip
           find "media/autopilot/$RUN_ID" -maxdepth 5 -type f -print
