@@ -57,6 +57,24 @@ def summary(run: PipelineRun) -> dict:
         "error": run.error,
         "project_id": str(run.project_id) if run.project_id else None,
         "usage": run.usage,
+        # Expose the YouTube ID returned by the already-completed publish step.
+        # This is read-only status output; it never retries or uploads anything.
+        "youtube_video_id": next(
+            (
+                step.get("detail", {}).get("youtube_video_id")
+                for step in run.steps
+                if step.get("name") == "publish" and isinstance(step.get("detail"), dict)
+            ),
+            None,
+        ),
+        "youtube_privacy": next(
+            (
+                step.get("detail", {}).get("privacy")
+                for step in run.steps
+                if step.get("name") == "publish" and isinstance(step.get("detail"), dict)
+            ),
+            None,
+        ),
         "steps": [{k: s.get(k) for k in ("name", "status", "attempts", "error")} for s in run.steps],
     }
 
