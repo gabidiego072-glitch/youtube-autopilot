@@ -22,6 +22,10 @@ on:
     # Daily at 06:17 UTC: 07:17 in Spain in winter and 08:17 in summer,
     # always inside the requested 07:17-09:17 local window. Cloud runners only.
     - cron: "17 6 * * *"
+  # Temporary one-shot trigger: this commit launches exactly one manual production.
+  push:
+    paths:
+      - ".github/workflows/autopilot.yml"
   workflow_dispatch:
     inputs:
       command:
@@ -66,7 +70,7 @@ env:
   YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
   YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
   YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-  YOUTUBE_PUBLISHING_ENABLED: ${{ github.event_name == 'schedule' && 'true' || vars.YOUTUBE_PUBLISHING_ENABLED || 'false' }}
+  YOUTUBE_PUBLISHING_ENABLED: ${{ (github.event_name == 'schedule' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[one-shot-video]'))) && 'true' || vars.YOUTUBE_PUBLISHING_ENABLED || 'false' }}
   YOUTUBE_ALLOW_PUBLIC: ${{ vars.YOUTUBE_ALLOW_PUBLIC || 'false' }}
   YOUTUBE_DEFAULT_PRIVACY: ${{ vars.YOUTUBE_DEFAULT_PRIVACY || 'private' }}
   MEDIA_ROOT: ${{ github.workspace }}/media
@@ -75,7 +79,7 @@ env:
 
 jobs:
   prepare:
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[one-shot-video]'))
     runs-on: ubuntu-latest
     timeout-minutes: 60
     outputs:
@@ -101,10 +105,10 @@ jobs:
           MODE="${{ github.event.inputs.mode }}"; MODE="$(echo "${MODE:-${{ vars.RENDER_MODE || 'hd' }}}" | tr -d '[:space:]')"
           SHARDS="${{ vars.RENDER_SHARDS || '4' }}"
           # Scheduled daily video: light quality, split across four GitHub-hosted machines.
-          if [ "${{ github.event_name }}" = "schedule" ]; then MODE=lite; SHARDS=4; fi
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event_name }}" = "push" ]; then MODE=lite; SHARDS=4; fi
           echo "shards=$(python -c "print(list(range(max(1, min(8, int('$SHARDS'))))))")" >> "$GITHUB_OUTPUT"
           # Scheduled runs publish automatically after QA. Privacy remains PRIVATE by default.
-          AUTO=""; if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ vars.AUTO_PUBLISH }}" = "true" ]; then AUTO="--auto-publish"; fi
+          AUTO=""; if [ "${{ github.event_name }}" = "schedule" ] || { [ "${{ github.event_name }}" = "push" ] && [ "${{ contains(github.event.head_commit.message, '[one-shot-video]') }}" = "true" ]; } || [ "${{ vars.AUTO_PUBLISH }}" = "true" ]; then AUTO="--auto-publish"; fi
           if [ "$CMD" = "run" ]; then
             python scripts/autopilot.py preflight
             python scripts/autopilot.py run --channel "$CHANNEL_NAME" \
