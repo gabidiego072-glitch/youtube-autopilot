@@ -171,8 +171,13 @@ class FFmpeg:
         crf: int = 18,
     ) -> ProbeResult:
         """PNG sequence (frame_0001.png ...) -> H.264 MP4, with optional audio and burned-in subtitles."""
-        if not any(frames_dir.glob("frame_*.png")):
+        frame_files = sorted(frames_dir.glob("frame_*.png"))
+        if not frame_files:
             raise RenderError(f"No frames found in {frames_dir}")
+        # The image sequence defines the authoritative video duration.
+        # Trim/pad audio to that exact duration instead of relying on -shortest,
+        # whose packet-boundary buffering can extend the MP4 container duration.
+        video_duration = len(frame_files) / fps
         output_path.parent.mkdir(parents=True, exist_ok=True)
         args = [
             self.ffmpeg_binary,
@@ -194,7 +199,10 @@ class FFmpeg:
         args += ["-map", "0:v"]
         if audio_path is not None:
             # Pad short audio with silence and cut long audio at the end of the video.
-            args += ["-map", "1:a", "-c:a", "aac", "-b:a", "192k", "-af", "apad", "-shortest"]
+            args += [
+                "-map", "1:a", "-c:a", "aac", "-b:a", "192k",
+                "-af", f"apad,atrim=duration={video_duration:.6f}",
+            ]
         args += [
             "-c:v",
             "libx264",
@@ -206,6 +214,8 @@ class FFmpeg:
             "yuv420p",
             "-r",
             str(fps),
+            "-t",
+            f"{video_duration:.6f}",
             "-movflags",
             "+faststart",
             str(output_path),
