@@ -4,11 +4,11 @@
 #     -> render x N shards (each renders some scenes in Blender, in parallel)
 #       -> finish (edit, QA, metadata, thumbnail; stops for approval, or publishes if authorised)
 #
-# Disabled until you set the repository variable AUTOPILOT_ENABLED=true and the secrets in
-# docs/AUTOMATION.md. Manual runs: Actions -> Autopilot -> Run workflow.
+# Runs daily on GitHub-hosted runners. Publishing requires valid YouTube OAuth secrets.
+# Manual runs: Actions -> Autopilot -> Run workflow.
 #
 # Variables (Settings -> Secrets and variables -> Actions -> Variables):
-#   AUTOPILOT_ENABLED  true to run the daily schedule
+#   (daily schedule is enabled in this workflow)
 #   AUTO_PUBLISH       true to publish without human approval (also needs YOUTUBE_PUBLISHING_ENABLED=true;
 #                      public videos also need YOUTUBE_ALLOW_PUBLIC=true and YOUTUBE_DEFAULT_PRIVACY=public)
 #   RENDER_MODE        draft | lite | hd | final     (default hd; lite for slow PCs)
@@ -21,6 +21,7 @@ on:
   schedule:
     # Daily at 06:17 UTC: 07:17 in Spain in winter and 08:17 in summer,
     # always inside the requested 07:17-09:17 local window. Cloud runners only.
+    - cron: "17 6 * * *"
   workflow_dispatch:
     inputs:
       command:
