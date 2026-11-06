@@ -98,6 +98,7 @@ jobs:
       - name: Plan
         id: plan
         run: |
+          set -euo pipefail
           CMD="${{ github.event.inputs.command || 'run' }}"
           RUN_ID_IN="$(echo "${{ github.event.inputs.run_id }}" | tr -d '[:space:]')"
           # Scheduled runs have no inputs: they use the RENDER_MODE variable.
@@ -116,11 +117,13 @@ jobs:
             STATUS=$(python -c "import json;print(json.load(open('run.json'))['status'])")
             echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
             # A failed step (e.g. a script that needs human review) stops here: no render, no extra AI calls.
-            if [ "$STATUS" != "failed" ]; then
-              echo "ready=true" >> "$GITHUB_OUTPUT"
-              # Preview fragments are rendered by 'finish'; whole videos in parallel shards.
-              if [ "$MODE" != "preview" ]; then echo "render=true" >> "$GITHUB_OUTPUT"; fi
+            if [ "$STATUS" = "failed" ]; then
+              echo "::error::Autopilot failed during prepare (run $RUN_ID). See the run status/logs; no render or upload was attempted."
+              exit 1
             fi
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            # Preview fragments are rendered by 'finish'; whole videos in parallel shards.
+            if [ "$MODE" != "preview" ]; then echo "render=true" >> "$GITHUB_OUTPUT"; fi
           elif [ "$CMD" = "publish-file" ]; then
             # Started by hand = authorised upload of that folder (privacy comes from its metadata.json).
             YOUTUBE_PUBLISHING_ENABLED=true python scripts/autopilot.py publish-file "${RUN_ID_IN:-productions/what_if_earth_stops_v2/publish}"
