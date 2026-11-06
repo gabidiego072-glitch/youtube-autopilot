@@ -2,6 +2,7 @@
 
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 from app.core.errors import IntegrationNotConfiguredError, RenderError
@@ -83,12 +84,20 @@ class Blender:
             for stale in frames_dir.glob("frame_*.png"):
                 stale.unlink()
         cmd = self.build_command(spec_path, frames_dir, **options)
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=self.timeout_seconds, check=False)
         if log_path is not None:
-            log_path.write_text(proc.stdout + proc.stderr, encoding="utf-8")
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            cmd[1:1] = ["--log-file", str(log_path.resolve())]
+        # Inherit stdout/stderr: Blender prints a flushed progress line after every rendered frame.
+        try:
+            proc = subprocess.run(cmd, stdout=sys.stdout, stderr=sys.stderr, timeout=self.timeout_seconds, check=False)
+        except subprocess.TimeoutExpired as exc:
+            raise RenderError(
+                f"Blender exceeded its {self.timeout_seconds}s render timeout; partial frames were retained."
+            ) from exc
         # Blender's placeholder files for unfinished frames are empty: never treat them as frames.
         frames = sorted(f for f in frames_dir.glob("frame_*.png") if f.stat().st_size > 0)
         if proc.returncode != 0 or not frames:
-            tail = "\n".join((proc.stdout + proc.stderr).strip().splitlines()[-15:])
-            raise RenderError(f"Blender render failed (exit {proc.returncode}): {tail}")
+            raise RenderError(
+                f"Blender render failed (exit {proc.returncode}); inspect {log_path or 'the Actions log'}."
+            )
         return frames
