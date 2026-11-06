@@ -333,7 +333,20 @@ def _merge_stream(lines) -> dict:
             continue
         chunk = json.loads(line[5:].strip())
         if "error" in chunk:
-            raise ProviderError(f"Gemini API error: {chunk['error'].get('message', chunk['error'])}")
+            error = chunk["error"]
+            message = str(error.get("message", error))
+            status = str(error.get("status", "")).upper()
+            code = error.get("code")
+            lower = message.lower()
+            daily = "per day" in lower or "perday" in lower
+            overloaded = (
+                code in (429, 500, 503)
+                or status in ("RESOURCE_EXHAUSTED", "UNAVAILABLE", "INTERNAL")
+                or any(term in lower for term in ("high demand", "overloaded", "temporarily unavailable"))
+            )
+            if overloaded:
+                raise _ModelUnavailable(message, daily=daily)
+            raise ProviderError(f"Gemini API error: {message}")
         for key in ("promptFeedback", "usageMetadata", "modelVersion"):
             if key in chunk:
                 merged[key] = chunk[key]
