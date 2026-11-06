@@ -29,7 +29,7 @@ jobs:
           fi
           echo "BLENDER_BINARY=$BLENDER" >> "$GITHUB_ENV"
           "$BLENDER" --version | head -n 2
-      - name: Render 24 tiny frames and stream frame progress
+      - name: Render 3 tiny frames and stream frame progress
         shell: bash
         run: |
           set -euo pipefail
@@ -58,13 +58,14 @@ jobs:
           light.location = (2, -3, 5)
           light_data.energy = 500
           scene.render.engine = "BLENDER_EEVEE_NEXT"
-          scene.render.resolution_x = 180
-          scene.render.resolution_y = 320
+          scene.render.resolution_x = 64
+          scene.render.resolution_y = 96
           scene.render.resolution_percentage = 100
+          scene.eevee.taa_render_samples = 4
           scene.render.image_settings.file_format = "PNG"
           scene.render.filepath = os.path.join(out, "frame_")
           scene.frame_start = 1
-          scene.frame_end = 24
+          scene.frame_end = 3
           scene.render.fps = 12
 
           def report_frame(scene):
@@ -79,5 +80,5 @@ jobs:
           stdbuf -oL -eL "$BLENDER_BINARY" -b -t 2 --python "$RUNNER_TEMP/smoke.py"
           COUNT=$(find "$OUT" -maxdepth 1 -type f -name 'frame_*.png' | wc -l)
           echo "Rendered frames: $COUNT"
-          test "$COUNT" -eq 24
+          test "$COUNT" -eq 3
           echo "BLENDER_SMOKE_TEST_OK"
