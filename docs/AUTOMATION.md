@@ -210,15 +210,16 @@ públicos.
 
 | Variable | Valor recomendado | Para qué |
 | --- | --- | --- |
-| `AUTOPILOT_ENABLED` | `true` cuando quieras la ejecución diaria | Activa el horario 05:17 UTC |
-| `RENDER_MODE` | `hd` | `draft` (barato, 540p), `hd` (publicable), `final` (1080p nativo, 2,2× más caro) |
+| Programación diaria | Activada en el workflow | 06:17 UTC (07:17 invierno / 08:17 verano en España peninsular) |
+| `AUTO_PUBLISH` | `true` para ejecuciones manuales | Permite publicar sin aprobación humana; el horario diario ya lo activa automáticamente |
+| `RENDER_MODE` | `hd` para ejecuciones manuales | El horario diario usa `lite`; `draft` (540p), `hd` (publicable), `final` (1080p nativo, 2,2× más caro) |
 | `RENDER_SHARDS` | `4` | Trabajos de render en paralelo (1–8) |
-| `RUNS_ON` | vacío, o `["self-hosted","linux","x64"]` | Dónde se ejecuta |
+| `RUNS_ON` | No se utiliza en el workflow diario | Los trabajos del Autopilot se fuerzan a `ubuntu-latest` para no depender del PC |
 | `AI_PROVIDER` | `gemini` | IA de texto (`gemini` gratis, `claude` de pago) |
 | `GEMINI_MODEL` | `gemini-3.8-flash` | Modelo de Gemini (ver `ai-check`) |
 | `WIKIPEDIA_USER_AGENT` | `YouTubeAutopilot/1.0 (tu-correo)` | Wikimedia pide un contacto |
 | `CHANNEL_NAME` | el nombre de tu canal | |
-| `YOUTUBE_PUBLISHING_ENABLED` | `false` hasta la primera prueba | Interruptor de subida |
+| `YOUTUBE_PUBLISHING_ENABLED` | `false` por defecto; el horario diario lo activa solo para esa ejecución | Interruptor de subida; requiere los tres secretos OAuth de YouTube |
 | `YOUTUBE_ALLOW_PUBLIC` | `false` hasta que lo autorices | Interruptor de vídeos públicos o programados |
 | `YOUTUBE_DEFAULT_PRIVACY` | `private` | Privacidad de cada subida |
 
