@@ -22,10 +22,6 @@ on:
     # Daily at 06:17 UTC: 07:17 in Spain in winter and 08:17 in summer,
     # always inside the requested 07:17-09:17 local window. Cloud runners only.
     - cron: "17 6 * * *"
-  # Temporary one-shot trigger: this commit launches exactly one manual production.
-  push:
-    paths:
-      - ".github/workflows/autopilot.yml"
   workflow_dispatch:
     inputs:
       command:
