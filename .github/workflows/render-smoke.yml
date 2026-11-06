@@ -1,0 +1,83 @@
+name: Blender render smoke test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: blender-render-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    # Uses the owner's always-on Ubuntu runner; never starts production or uploads to YouTube.
+    runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check and install Blender
+        shell: bash
+        run: |
+          set -euo pipefail
+          BLENDER_DIR="$HOME/.autopilot-tools/blender"
+          BLENDER="$BLENDER_DIR/blender-4.5.15-linux-x64/blender"
+          if [ ! -x "$BLENDER" ]; then
+            mkdir -p "$BLENDER_DIR"
+            scripts/install_blender.sh "$BLENDER_DIR"
+          fi
+          echo "BLENDER_BINARY=$BLENDER" >> "$GITHUB_ENV"
+          "$BLENDER" --version | head -n 2
+      - name: Render 24 tiny frames and stream frame progress
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/blender-smoke"
+          mkdir -p "$OUT"
+          cat > "$RUNNER_TEMP/smoke.py" <<'PY'
+          import bpy
+          import os
+
+          out = os.environ["SMOKE_OUT"]
+          scene = bpy.context.scene
+          bpy.ops.object.select_all(action="SELECT")
+          bpy.ops.object.delete(use_global=False)
+          bpy.ops.mesh.primitive_cube_add()
+          cube = bpy.context.object
+          cube.name = "SmokeTestCube"
+          camera_data = bpy.data.cameras.new("SmokeCamera")
+          camera = bpy.data.objects.new("SmokeCamera", camera_data)
+          scene.collection.objects.link(camera)
+          camera.location = (4, -6, 4)
+          camera.rotation_euler = (0.9, 0, 0.55)
+          scene.camera = camera
+          light_data = bpy.data.lights.new("SmokeLight", type="AREA")
+          light = bpy.data.objects.new("SmokeLight", light_data)
+          scene.collection.objects.link(light)
+          light.location = (2, -3, 5)
+          light_data.energy = 500
+          scene.render.engine = "BLENDER_EEVEE_NEXT"
+          scene.render.resolution_x = 180
+          scene.render.resolution_y = 320
+          scene.render.resolution_percentage = 100
+          scene.render.image_settings.file_format = "PNG"
+          scene.render.filepath = os.path.join(out, "frame_")
+          scene.frame_start = 1
+          scene.frame_end = 24
+          scene.render.fps = 12
+
+          def report_frame(scene):
+              print(f"FRAME_PROGRESS {scene.frame_current}/{scene.frame_end}", flush=True)
+
+          bpy.app.handlers.render_pre.append(lambda scene: print("BLENDER_RENDER_STARTED", flush=True))
+          bpy.app.handlers.render_post.append(lambda scene: print("BLENDER_RENDER_FINISHED", flush=True))
+          bpy.app.handlers.frame_change_pre.append(report_frame)
+          bpy.ops.render.render(animation=True)
+          PY
+          export SMOKE_OUT="$OUT"
+          stdbuf -oL -eL "$BLENDER_BINARY" -b -t 2 --python "$RUNNER_TEMP/smoke.py"
+          COUNT=$(find "$OUT" -maxdepth 1 -type f -name 'frame_*.png' | wc -l)
+          echo "Rendered frames: $COUNT"
+          test "$COUNT" -eq 24
+          echo "BLENDER_SMOKE_TEST_OK"
