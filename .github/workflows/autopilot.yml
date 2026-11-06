@@ -144,7 +144,7 @@ jobs:
   render:
     needs: prepare
     if: needs.prepare.outputs.render == 'true'
-    runs-on: ${{ fromJSON(github.event.schedule == '47 6 * * *' && '"ubuntu-latest"' || vars.RUNS_ON || '"ubuntu-latest"') }}
+    runs-on: ubuntu-latest
     timeout-minutes: 350  # GitHub-hosted jobs stop at 6 h
     strategy:
       fail-fast: false
@@ -170,7 +170,7 @@ jobs:
   finish:
     needs: [prepare, render]
     if: always() && needs.prepare.result == 'success' && needs.prepare.outputs.ready == 'true' && needs.render.result != 'failure' && needs.render.result != 'cancelled'
-    runs-on: ${{ fromJSON(github.event.schedule == '47 6 * * *' && '"ubuntu-latest"' || vars.RUNS_ON || '"ubuntu-latest"') }}
+    runs-on: ubuntu-latest
     timeout-minutes: 350
     env:
       RUN_ID: ${{ needs.prepare.outputs.run_id }}
