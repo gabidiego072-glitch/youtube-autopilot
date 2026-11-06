@@ -19,13 +19,8 @@ name: Autopilot
 
 on:
   schedule:
-    # Daily at 14:17 UTC (15:17 in Spain in winter, 16:17 in summer): the afternoon, when the owner's PC
-    # renders (RUNS_ON = ["self-hosted","linux","x64"]). On GitHub's own machines the 2,000 free
-    # minutes cover about 6 videos a month; after that GitHub pauses the runs (it never charges).
-    - cron: "17 14 * * *"
-    # Second daily video at 06:47 UTC on GitHub's machines (lite, 4 parallel jobs) with the free
-    # minutes (~18-20 videos a month); when the minutes run out GitHub skips it, never charges.
-    - cron: "47 6 * * *"
+    # Daily at 06:17 UTC: 07:17 in Spain in winter and 08:17 in summer,
+    # always inside the requested 07:17-09:17 local window. Cloud runners only.
   workflow_dispatch:
     inputs:
       command:
@@ -70,7 +65,7 @@ env:
   YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
   YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
   YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-  YOUTUBE_PUBLISHING_ENABLED: ${{ vars.YOUTUBE_PUBLISHING_ENABLED || 'false' }}
+  YOUTUBE_PUBLISHING_ENABLED: ${{ github.event_name == 'schedule' && 'true' || vars.YOUTUBE_PUBLISHING_ENABLED || 'false' }}
   YOUTUBE_ALLOW_PUBLIC: ${{ vars.YOUTUBE_ALLOW_PUBLIC || 'false' }}
   YOUTUBE_DEFAULT_PRIVACY: ${{ vars.YOUTUBE_DEFAULT_PRIVACY || 'private' }}
   MEDIA_ROOT: ${{ github.workspace }}/media
@@ -79,8 +74,8 @@ env:
 
 jobs:
   prepare:
-    if: github.event_name == 'workflow_dispatch' || vars.AUTOPILOT_ENABLED == 'true'
-    runs-on: ${{ fromJSON(github.event.schedule == '47 6 * * *' && '"ubuntu-latest"' || vars.RUNS_ON || '"ubuntu-latest"') }}
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     outputs:
       run_id: ${{ steps.plan.outputs.run_id }}
@@ -104,11 +99,11 @@ jobs:
           # Scheduled runs have no inputs: they use the RENDER_MODE variable.
           MODE="${{ github.event.inputs.mode }}"; MODE="$(echo "${MODE:-${{ vars.RENDER_MODE || 'hd' }}}" | tr -d '[:space:]')"
           SHARDS="${{ vars.RENDER_SHARDS || '4' }}"
-          # The morning video renders in the cloud: light quality, split across 4 machines.
-          if [ "${{ github.event.schedule }}" = "47 6 * * *" ]; then MODE=lite; SHARDS=4; fi
+          # Scheduled daily video: light quality, split across four GitHub-hosted machines.
+          if [ "${{ github.event_name }}" = "schedule" ]; then MODE=lite; SHARDS=4; fi
           echo "shards=$(python -c "print(list(range(max(1, min(8, int('$SHARDS'))))))")" >> "$GITHUB_OUTPUT"
-          # AUTO_PUBLISH=true: the run publishes by itself after the automatic checks (no human approval).
-          AUTO=""; if [ "${{ vars.AUTO_PUBLISH }}" = "true" ]; then AUTO="--auto-publish"; fi
+          # Scheduled runs publish automatically after QA. Privacy remains PRIVATE by default.
+          AUTO=""; if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ vars.AUTO_PUBLISH }}" = "true" ]; then AUTO="--auto-publish"; fi
           if [ "$CMD" = "run" ]; then
             python scripts/autopilot.py preflight
             python scripts/autopilot.py run --channel "$CHANNEL_NAME" \
