@@ -200,8 +200,14 @@ class FFmpeg:
         if audio_path is not None:
             # Pad short audio with silence and cut long audio at the end of the video.
             args += [
-                "-map", "1:a", "-c:a", "aac", "-b:a", "192k",
-                "-af", f"apad,atrim=duration={video_duration:.6f}",
+                "-map",
+                "1:a",
+                "-c:a",
+                "aac",
+                "-b:a",
+                "192k",
+                "-af",
+                f"apad,atrim=duration={video_duration:.6f}",
             ]
         args += [
             "-c:v",
