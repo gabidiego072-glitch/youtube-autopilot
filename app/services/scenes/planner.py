@@ -15,7 +15,7 @@ from app.services.ai.base import AIProvider
 from render_engines.core.catalog import ACTIONS, ENVIRONMENT_SCALES, ENVIRONMENTS, PROPS, catalog_text
 from render_engines.core.spec import SpecError, validate_spec
 
-PROMPT_VERSION = "storyboard-v1"
+PROMPT_VERSION = "storyboard-v2"
 FPS = 24
 
 _XY = {"type": "array", "items": {"type": "number"}}
@@ -29,7 +29,12 @@ SCENE_SCHEMA = {
             "type": "object",
             "properties": {
                 "type": {"type": "string", "enum": list(ENVIRONMENTS)},
-                "time_of_day": {"type": "string", "enum": ["dawn", "day", "dusk"]},
+                "time_of_day": {"type": "string", "enum": ["dawn", "day", "dusk", "night"]},
+                "room": {"type": "string", "enum": ["living_room", "kitchen", "bedroom", "office", "classroom"]},
+                "style": {"type": "string", "enum": ["old_town", "modern", "suburb", "mixed"]},
+                "physics": {"type": "boolean"},
+                "pedestrians": {"type": "integer"},
+                "parked_cars": {"type": "integer"},
                 "trees": {"type": "integer"},
                 "rocks": {"type": "integer"},
                 "flowers": {"type": "integer"},
@@ -93,6 +98,15 @@ SCENE_SCHEMA = {
                     "hold": _NUMBER,
                     "height": _NUMBER,
                     "facing": _NUMBER,
+                    "location": _XY,
+                    "surface": {"type": "string", "enum": ["wall", "floor"]},
+                    "size": _NUMBER,
+                    "length": _NUMBER,
+                    "x": _NUMBER,
+                    "direction_deg": _NUMBER,
+                    "accel": _NUMBER,
+                    "speed": _NUMBER,
+                    "lift": _NUMBER,
                 },
                 "required": ["type"],
                 "additionalProperties": False,
@@ -147,6 +161,12 @@ Rules:
   only 'global' scenes may use space and planets.
 - One output scene per script scene, in the same order; each lasts exactly the given duration and all times
   are within it.
+- Every scene must SHOW what its narration says, as a visible event that starts in the first second of the
+  scene: fire when it says fire, a crack when it says something cracks, water rising for floods, glass breaking
+  (shatter_windows, physics true), things flying (inertia_shock or fling, physics true), a building falling
+  (collapse), people reacting (cover, fall, look_at, walk away). A scene where nothing moves is a failure.
+- Choose the place the narration describes (the kitchen, a bedroom, an office, a classroom, an old town
+  street, a modern avenue, a suburb) and vary places, camera heights and lenses between scenes.
 - Show the idea of the narration with what exists (scale comparisons with trees and people, planets spinning,
   characters walking, growing, jumping, reacting). Prefer one clear action per scene.
 - Keep continuity: reuse the same character ids and the same environment type across scenes unless the story
