@@ -51,8 +51,8 @@ class RecentVideos:
         times = ", ".join(f"{k} x{v}" for k, v in self.times_of_day.most_common())
         return (
             f"Variety: the last videos used these places: {env}; times of day: {times}. "
-            "Where the script allows it, choose other places, times of day, camera heights and lenses, so this "
-            "video does not look like the previous ones."
+            "Where the script allows it, choose other places (another room type or street style), times of day, "
+            "camera heights and lenses, so this video does not look like the previous ones."
         )
 
 
@@ -72,7 +72,9 @@ def recent_videos(db: Session, channel_id: uuid.UUID, limit: int = RECENT) -> Re
             recent.categories.append(project.category.value)
         for spec in (script.scene_specs or []) if script else []:
             env = spec.get("environment", {})
-            recent.environments[env.get("type", "?")] += 1
+            place = env.get("type", "?")
+            detail = env.get("room") or env.get("style")
+            recent.environments[f"{place}/{detail}" if detail else place] += 1
             recent.times_of_day[env.get("time_of_day", "day")] += 1
     return recent
 

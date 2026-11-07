@@ -112,3 +112,40 @@ def test_focus_point_follows_scale():
     timeline.scales["giant"].add(20, (5.0, 0, 0))
     assert timeline.focus_point("giant", 20)[2] == 5.0
     assert timeline.focus_point("giant", 15)[2] == 3.0
+
+
+def test_narration_effects_and_places_are_in_the_catalog_and_validate():
+    from render_engines.core.catalog import ACTIONS, ENVIRONMENTS, catalog_text
+    from render_engines.core.spec import validate_spec
+
+    for action in ("fire", "smoke", "crack", "flood", "collapse"):
+        assert action in ACTIONS
+    text = catalog_text()
+    assert "kitchen" in text and "old_town" in text and "suburb" in text and "classroom" in text
+    assert "interior" in ENVIRONMENTS
+    spec = {
+        "engine": "cinematic",
+        "duration_seconds": 3,
+        "fps": 24,
+        "seed": 1,
+        "environment": {"type": "interior", "room": "kitchen", "physics": True},
+        "characters": [],
+        "props": [],
+        "actions": [
+            {"type": "fire", "location": [-2.8, 0.6, 0.95], "start": 0.2, "end": 3, "size": 1},
+            {"type": "crack", "location": [0, 2.69, 2.2], "surface": "wall", "start": 0.5, "end": 2},
+            {"type": "flood", "start": 0, "end": 3, "height": 0.4},
+        ],
+        "camera": {"shots": [{"time": 0, "location": [0, -2, 1.6], "target": [0, 1, 1], "lens": 24}]},
+        "captions": [],
+    }
+    assert validate_spec(spec) is spec
+
+
+def test_storyboard_schema_lets_the_ai_choose_places_and_physics():
+    from app.services.scenes.planner import SCENE_SCHEMA
+
+    env = SCENE_SCHEMA["properties"]["environment"]["properties"]
+    assert "physics" in env and "kitchen" in env["room"]["enum"] and "modern" in env["style"]["enum"]
+    action = SCENE_SCHEMA["properties"]["actions"]["items"]["properties"]
+    assert {"location", "surface", "size", "direction_deg", "accel"} <= set(action)
