@@ -172,6 +172,8 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
             urban_env.surge(urban, start, end, float(action.get("height", 3.0)), float(action.get("inland", 40.0)))
         elif kind == "lights_on":
             urban_env.lights_on(urban, start, end)
+        elif kind in ("fire", "smoke", "crack", "flood", "collapse"):
+            _effect(kind, action, start, end, ctx, urban, env)
         elif kind == "cover":
             char.cover(start, end)
         elif kind == "fall":
@@ -206,3 +208,45 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
             constraint.target = camera
             constraint.track_axis = "TRACK_Z"
             constraint.up_axis = "UP_Y"
+
+
+def _effect(kind: str, action: dict, start: int, end: int, ctx, urban, env: dict) -> None:
+    """Narration-driven events: fire, smoke, cracks, rising water, a building collapsing."""
+    from mathutils import Vector
+
+    from render_engines.cinematic import effects
+    from render_engines.cinematic import urban as urban_env
+
+    name = f"{kind}_{start}"
+    interior = env.get("type") == "interior"
+    default = (-2.8, 0.6, 0.95) if interior and env.get("room") == "kitchen" else (0.0, 0.0, 0.0)
+    location = tuple((list(action.get("location") or default) + [0.0, 0.0, 0.0])[:3])
+    seed = ctx.seed + start
+    if kind == "fire":
+        effects.fire(name, location, start, end, ctx.fps, float(action.get("size", 1.0)), seed)
+    elif kind == "smoke":
+        effects.puffs(name, location, start, end, ctx.fps, count=max(8, (end - start) // 4), seed=seed)
+    elif kind == "crack":
+        surface = action.get("surface", "wall" if interior else "floor")
+        effects.crack(name, location, start, end, surface, float(action.get("length", 2.0)), seed)
+    elif kind == "flood":
+        if interior:
+            center, size = (0.0, 0.0, 0.0), (6.2, 5.2)
+        else:
+            length = env.get("length", 90.0)
+            center, size = (0.0, 0.0, -urban_env.CURB_H), (length * 2, urban_env.BUILDING_LINE * 2)
+        effects.rising_water(name, center, size, start, end, float(action.get("height", 0.6)))
+    elif kind == "collapse":
+        if urban is None or not urban.buildings:
+            raise ValueError("collapse needs the city or coast environment.")
+        x = float(action.get("x", location[0]))
+        pool = [b for b, _side, hero in urban.buildings if not hero] or [b for b, _s, _h in urban.buildings]
+
+        def centre(b):  # buildings keep their origin at 0: use the geometry's world centre
+            corners = [b.matrix_world @ Vector(c) for c in b.bound_box]
+            return sum(c.x for c in corners) / 8, sum(c.y for c in corners) / 8
+
+        building = min(pool, key=lambda b: abs(centre(b)[0] - x) + (0 if centre(b)[1] > 0 else 5))
+        if building in urban.static:
+            urban.static.remove(building)  # it moves now, physics must not pin it
+        effects.collapse(building, start, end, ctx.fps, seed)
