@@ -13,6 +13,7 @@ from datetime import date
 import httpx
 
 from app.core.config import Settings
+from app.core.errors import ProviderError
 from app.services.youtube.base import VideoMetrics
 from app.services.youtube.oauth import GoogleAPI, credentials_from_settings
 
@@ -48,17 +49,17 @@ class YouTubeAnalyticsCollector:
         return [self._video(video_id, start, end) for video_id in youtube_video_ids]
 
     def _video(self, video_id: str, start: date, end: date) -> VideoMetrics:
-        data = self.api.json(
-            "GET",
-            REPORTS_URL,
-            params={
-                "ids": "channel==MINE",
-                "startDate": start.isoformat(),
-                "endDate": end.isoformat(),
-                "metrics": ",".join(METRICS),
-                "filters": f"video=={video_id}",
-            },
-        )
+        params = {
+            "ids": "channel==MINE",
+            "startDate": start.isoformat(),
+            "endDate": end.isoformat(),
+            "metrics": ",".join((*METRICS, "engagedViews")),
+            "filters": f"video=={video_id}",
+        }
+        try:
+            data = self.api.json("GET", REPORTS_URL, params=params)
+        except ProviderError:  # engagedViews not offered for this video/channel: ask without it
+            data = self.api.json("GET", REPORTS_URL, params={**params, "metrics": ",".join(METRICS)})
         headers = [h["name"] for h in data.get("columnHeaders", [])]
         row = (data.get("rows") or [[0] * len(headers)])[0]
         values = dict(zip(headers, row, strict=False))
@@ -74,6 +75,7 @@ class YouTubeAnalyticsCollector:
             comments=int(values.get("comments", 0) or 0),
             shares=int(values.get("shares", 0) or 0),
             subscribers_gained=int(values.get("subscribersGained", 0) or 0),
+            engaged_views=None if values.get("engagedViews") is None else int(values["engagedViews"]),
         )
 
 
