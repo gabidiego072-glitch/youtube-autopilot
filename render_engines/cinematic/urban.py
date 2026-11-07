@@ -27,6 +27,25 @@ CURB_H = 0.15
 BUILDING_LINE = ROAD_HALF + SIDEWALK + 0.4
 
 FACADE_COLORS = ("#d9c7a7", "#c98f6b", "#b9b4aa", "#e8e2d4", "#9fa9b3", "#c7a27c", "#a7795c")
+# Street styles: building widths, floors (near the camera, far away), facade colours, awning chance.
+CITY_STYLES = {
+    "mixed": ((8.0, 10.4, 13.0, 15.6), (4, 7), (3, 10), FACADE_COLORS, 0.5),
+    "old_town": (
+        (6.0, 7.2, 8.4),
+        (2, 4),
+        (2, 5),
+        ("#d9a35e", "#c7643f", "#e8c98f", "#b9583a", "#efe0b8", "#c98f6b", "#9c6b4a"),
+        0.75,
+    ),
+    "modern": (
+        (14.0, 16.0, 18.0),
+        (7, 12),
+        (10, 22),
+        ("#9fa9b3", "#7d8a96", "#b9c4cc", "#5f6b75", "#d4d9dc", "#8696a0"),
+        0.15,
+    ),
+    "suburb": ((9.0, 10.5, 12.0), (1, 2), (1, 2), ("#f2e6d0", "#d6e4ea", "#e9d6d0", "#dfe8d2", "#f4efe2"), 0.1),
+}
 CAR_COLORS = ("#b3261e", "#1f4e8c", "#e8e8e8", "#202226", "#7a7f86", "#d9a400", "#2e7d4f")
 
 SKY_PRESETS = {
@@ -312,6 +331,8 @@ class Urban:
         self.lamp_heads: list = []
         self.sky_refs: dict = {}
         self.water = None
+        self.buildings: list = []  # (object, side, is_hero) for collapses
+        self.style = None
 
 
 def _sky(env: dict, scene) -> dict:
@@ -399,6 +420,9 @@ def build_city(env: dict, ctx, scene, seed: int) -> Urban:
     col = objects.collection("City")
     length = env.get("length", 90.0)
     coast = env.get("type") == "coast"
+    style = env.get("style") if env.get("style") in CITY_STYLES else rng.choice(tuple(CITY_STYLES))
+    widths, near_floors, far_floors, palette, awning_chance = CITY_STYLES[style]
+    urban.style = style
 
     asphalt = materials.noise_ground("asphalt", "#2a2b2e", "#3a3b3f", scale=2.0, roughness=0.9, bump=0.1)
     concrete = materials.noise_ground("sidewalk", "#9c9a94", "#b3b0a8", scale=1.2, roughness=0.85, bump=0.1)
@@ -432,10 +456,10 @@ def build_city(env: dict, ctx, scene, seed: int) -> Urban:
         x = -length
         index = 0
         while x < length:
-            width = rng.choice((8.0, 10.4, 13.0, 15.6))
-            floors = rng.randint(3, 10) if abs(x) > 20 else rng.randint(4, 7)
+            width = rng.choice(widths)
+            floors = rng.randint(*far_floors) if abs(x) > 20 else rng.randint(*near_floors)
             depth = rng.uniform(10, 16)
-            wall = rng.choice(FACADE_COLORS)
+            wall = rng.choice(palette)
             is_hero = side == 1 and x <= hero_x0 < x + width
             mat = facade_material(f"facade_{side}_{index}", wall, seed + index)
             height = floors * 3.0 + 0.6
@@ -448,7 +472,19 @@ def build_city(env: dict, ctx, scene, seed: int) -> Urban:
             )
             urban.facades.append(mat)
             urban.static.append(building)
-            if rng.random() < 0.5:
+            urban.buildings.append((building, side, is_hero))
+            if style == "suburb":  # pitched roof
+                roof = objects.mesh_object(
+                    f"roof_{side}_{index}",
+                    objects.cone(width * 0.62, 0.0, 2.2, 4, base_at_origin=True),
+                    _mat(f"roof_{index % 3}", ("#8a3b2a", "#4a4f57", "#6b4a2e")[index % 3], 0.8),
+                    location=(x + width / 2, y, height),
+                    rotation=(0, 0, math.radians(45)),
+                    scale=(1.0, depth / width, 1.0),
+                    col=col,
+                )
+                urban.static.append(roof)
+            if rng.random() < awning_chance:
                 awning(
                     f"awning_{side}_{index}",
                     (x + width / 2, side * BUILDING_LINE - side * 0.02, 3.1),
@@ -603,14 +639,30 @@ def lights_on(urban: Urban, start: int, end: int, windows: float = 0.45) -> None
 
 
 # --- interior -------------------------------------------------------------------------------
+ROOMS = ("living_room", "kitchen", "bedroom", "office", "classroom")
+ROOM_FLOORS = {  # floor colours (dark, light), scale
+    "living_room": (("#8a5a36", "#a8714a"), ("#6e4a2f", "#8c6240"), ("#a68a64", "#c2a37a")),
+    "kitchen": (("#b9b4aa", "#d8d3c8"), ("#6f6a63", "#8d877e"), ("#2d2f33", "#d9d5cc")),
+    "bedroom": (("#8a5a36", "#a8714a"), ("#7d7468", "#948a7c"), ("#5b6470", "#717b88")),
+    "office": (("#5c6066", "#6f747b"), ("#7a7266", "#8f877a")),
+    "classroom": (("#a89a7c", "#c2b494"), ("#7f8a7a", "#97a291")),
+}
+WALL_COLORS = ("#e9e1d3", "#d9e3e8", "#efe6c9", "#e3d2c4", "#cfd8c8", "#f2efe9", "#d6cbe0", "#c9b9a3")
+
+
 def build_interior(env: dict, ctx, scene, seed: int) -> Urban:
     """A living room: wooden floor, painted walls, a window to the street, furniture that physics can move.
     Room spans x in [-3, 3] (east wall at +3), y in [-2.5, 2.5], height 2.7; the camera usually looks north."""
     rng = random.Random(seed)
     urban = Urban()
     col = objects.collection("Interior")
-    floor = materials.noise_ground("parquet", "#8a5a36", "#a8714a", scale=6.0, roughness=0.6, bump=0.15)
-    wall = _mat("wall_paint", env.get("wall_color", "#e9e1d3"), roughness=0.9)
+    room = env.get("room") if env.get("room") in ROOMS else "living_room"
+    dark, light = rng.choice(ROOM_FLOORS[room])
+    tiles = room == "kitchen"
+    floor = materials.noise_ground(
+        f"floor_{room}", dark, light, scale=14.0 if tiles else 6.0, roughness=0.35 if tiles else 0.6, bump=0.15
+    )
+    wall = _mat("wall_paint", env.get("wall_color") or rng.choice(WALL_COLORS), roughness=0.9)
     trim = _mat("trim", "#f4f1ea", roughness=0.6)
     urban.static = [objects.mesh_object("Floor", _box(6.4, 5.4, 0.1, (0, 0, -0.05)), floor, col=col)]
     walls = [
@@ -633,6 +685,18 @@ def build_interior(env: dict, ctx, scene, seed: int) -> Urban:
     glass = materials.principled("window_glass", "#cfe3ee", roughness=0.02, transmission=0.9)
     urban.window = objects.mesh_object("Window", _box(1.8, 0.03, 1.3, (0, 2.75, 1.55)), glass, col=col)
 
+    from render_engines.cinematic.rooms import ROOM_BUILDERS  # rooms reuse this module's helpers
+
+    ROOM_BUILDERS.get(room, _living_room)(urban, rng, col)
+    urban.sky_refs = _sky({"time_of_day": env.get("time_of_day", "day")}, scene)
+    ceiling = lights.area("Ceiling light", (0, 0, 2.6), (0, 0, 0), "#ffe3c0", env.get("room_light", 120), size=1.5)
+    urban.sky_refs["room_light"] = ceiling
+    # Light through the window.
+    lights.area("Window light", (0, 3.6, 1.6), (math.radians(90), 0, 0), "#e9f2ff", 260, size=1.8)
+    return urban
+
+
+def _living_room(urban: Urban, rng, col) -> None:
     fabric = _mat("sofa_fabric", rng.choice(("#3f5e7a", "#7a4a3f", "#5a6b3f")), roughness=0.9)
     wood = _mat("furniture_wood", "#6b4a2e", roughness=0.55)
     white = _mat("furniture_white", "#ecebe6", roughness=0.5)
@@ -714,12 +778,6 @@ def build_interior(env: dict, ctx, scene, seed: int) -> Urban:
             col=col,
         )
         urban.loose.append((book, 0.6))
-    urban.sky_refs = _sky({"time_of_day": env.get("time_of_day", "day")}, scene)
-    ceiling = lights.area("Ceiling light", (0, 0, 2.6), (0, 0, 0), "#ffe3c0", env.get("room_light", 120), size=1.5)
-    urban.sky_refs["room_light"] = ceiling
-    # Light through the window.
-    lights.area("Window light", (0, 3.6, 1.6), (math.radians(90), 0, 0), "#e9f2ff", 260, size=1.8)
-    return urban
 
 
 def enable_physics(urban: Urban, scene, ctx) -> None:
