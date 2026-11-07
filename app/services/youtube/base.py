@@ -45,6 +45,7 @@ class VideoMetrics:
     comments: int
     shares: int
     subscribers_gained: int
+    engaged_views: int | None = None  # views that stayed past the first seconds (Shorts "viewed")
 
 
 class VideoPublisher(Protocol):

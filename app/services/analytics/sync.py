@@ -31,6 +31,7 @@ def sync_youtube_metrics(db: Session, collector, today: date | None = None) -> d
                 project_id=project.id,
                 source=AnalyticsSource.YOUTUBE_ANALYTICS,
                 views=metrics.views,
+                engaged_views=getattr(metrics, "engaged_views", None),
                 impressions=metrics.impressions,
                 impressions_ctr=metrics.impressions_ctr,
                 estimated_minutes_watched=metrics.estimated_minutes_watched,
