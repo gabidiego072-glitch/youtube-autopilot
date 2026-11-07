@@ -20,6 +20,7 @@ import argparse
 import json
 import sys
 import uuid
+from datetime import date, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -46,6 +47,7 @@ from app.services.trends.signals import collect_signals  # noqa: E402
 from app.services.voice.piper import PiperTTS  # noqa: E402
 from app.services.youtube.analytics_api import YouTubeAnalyticsCollector  # noqa: E402
 from app.services.youtube.base import UploadRequest  # noqa: E402
+from app.services.youtube.channel_report import ChannelReport  # noqa: E402
 from app.services.youtube.data_api import YouTubeDataAPIPublisher  # noqa: E402
 
 
@@ -114,10 +116,13 @@ def main() -> int:
     sub.add_parser("sync-analytics")
     sub.add_parser("learning", help="what the system has learnt so far (voices, music, length, hooks)")
     sub.add_parser("trends")
+    report_p = sub.add_parser("channel-report", help="real YouTube data for every upload (views, retention, traffic)")
+    report_p.add_argument("--days", type=int, default=120)
+    report_p.add_argument("--out", type=Path, default=Path("channel_report.json"))
     args = parser.parse_args()
     settings = get_settings()
 
-    if args.command in ("youtube-check", "upload-test", "trends", "publish-file"):
+    if args.command in ("youtube-check", "upload-test", "trends", "publish-file", "channel-report"):
         return youtube_command(args, settings)
     if args.command == "ai-check":
         provider = get_ai_provider(settings)
@@ -224,6 +229,13 @@ def youtube_command(args, settings) -> int:
         print(json.dumps(signals.__dict__, ensure_ascii=False, indent=2))
         return 0
     publisher = YouTubeDataAPIPublisher(settings)
+    if args.command == "channel-report":
+        end = date.today()
+        report = ChannelReport(publisher.api).report(end - timedelta(days=args.days), end)
+        text = json.dumps(report, ensure_ascii=False, indent=1)
+        args.out.write_text(text, encoding="utf-8")
+        print(text)
+        return 0
     if args.command == "youtube-check":
         channel = publisher.channel()  # refreshes the access token, then reads the channel
         print(

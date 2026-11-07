@@ -27,7 +27,7 @@ on:
       command:
         description: "Qué hacer"
         type: choice
-        options: [run, approve, resume, status, sync-analytics, ai-check, publish-file, learning]
+        options: [run, approve, resume, status, sync-analytics, ai-check, publish-file, learning, channel-report]
         default: run
       run_id:
         description: "run id (approve / resume / status) o carpeta (publish-file)"
@@ -123,6 +123,8 @@ jobs:
           elif [ "$CMD" = "publish-file" ]; then
             # Started by hand = authorised upload of that folder (privacy comes from its metadata.json).
             YOUTUBE_PUBLISHING_ENABLED=true python scripts/autopilot.py publish-file "${RUN_ID_IN:-productions/what_if_earth_stops_v2/publish}"
+          elif [ "$CMD" = "channel-report" ]; then
+            python scripts/autopilot.py channel-report
           elif [ "$CMD" = "ai-check" ]; then
             python scripts/autopilot.py ai-check || true
           elif [ "$CMD" = "sync-analytics" ] || [ "$CMD" = "status" ] || [ "$CMD" = "learning" ]; then
@@ -131,6 +133,14 @@ jobs:
             echo "run_id=$RUN_ID_IN" >> "$GITHUB_OUTPUT"
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
+      - name: Keep the channel report
+        if: github.event.inputs.command == 'channel-report'
+        uses: actions/upload-artifact@v4
+        with:
+          name: channel-report
+          path: channel_report.json
+          retention-days: 30
+          if-no-files-found: ignore
       - name: Keep the run's work files for the next jobs
         if: steps.plan.outputs.run_id != '' && github.event.inputs.command != 'approve' && github.event.inputs.command != 'resume'
         uses: actions/upload-artifact@v4

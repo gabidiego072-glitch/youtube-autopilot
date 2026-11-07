@@ -132,7 +132,7 @@ def test_runs_resume_from_the_failed_step(db, tmp_path):
     # The storyboard is rejected (planet environment for a street scene) -> the run stops there.
     bad = copy.deepcopy(STORYBOARD_RESPONSE)
     bad["scenes"][0]["environment"] = {"type": "space"}
-    services = _services(tmp_path, [IDEAS_RESPONSE, CONCEPTS, FACTS, SCRIPT_RESPONSE, FACTCHECK_PASS, bad])
+    services = _services(tmp_path, [IDEAS_RESPONSE, CONCEPTS, FACTS, SCRIPT_RESPONSE, FACTCHECK_PASS, bad, bad])
     run = run_pipeline(db, create_run(db, channel), services)
     assert run.status == RunStatus.FAILED and _status(run)["storyboard"] == "failed"
     assert "cannot show a 'street' scene" in run.error

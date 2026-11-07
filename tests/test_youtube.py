@@ -313,8 +313,9 @@ def test_analytics_sync_feeds_the_learning_loop(db_session_factory):
         snap = db.query(AnalyticsSnapshot).one()
         assert snap.source == AnalyticsSource.YOUTUBE_ANALYTICS and snap.views == 1500
         assert snap.average_view_percentage == 74.2 and snap.impressions is None
+        assert snap.engaged_views is None  # not in the answer -> left empty, never guessed
     assert seen[0]["filters"] == "video==vid123" and seen[0]["startDate"] == "2026-10-01"
-    assert seen[0]["ids"] == "channel==MINE"
+    assert seen[0]["ids"] == "channel==MINE" and "engagedViews" in seen[0]["metrics"]
 
 
 def test_analytics_without_credentials_is_not_faked():
@@ -376,3 +377,36 @@ def test_competitor_videos_reach_the_prompt():
     )
     assert [v["views"] for v in signals.competitor_videos] == [120000, 90000]
     assert "do NOT copy" in signals.prompt_text() and "120,000 views" in signals.prompt_text()
+
+
+def test_learning_score_rewards_viewers_who_stay(db_session_factory):
+    from app.services.experiments import _scores
+
+    with db_session_factory() as db:
+        channel = Channel(name="c", niche="n", language="es")
+        db.add(channel)
+        db.flush()
+        for vid, engaged in (("a", 900), ("b", 300)):
+            project = VideoProject(
+                channel_id=channel.id,
+                working_title=vid,
+                topic="t",
+                format=VideoFormat.SHORT,
+                target_duration_seconds=40,
+                youtube_video_id=vid,
+                features={"voice": vid},
+            )
+            db.add(project)
+            db.flush()
+            db.add(
+                AnalyticsSnapshot(
+                    project_id=project.id,
+                    source=AnalyticsSource.YOUTUBE_ANALYTICS,
+                    views=1000,
+                    engaged_views=engaged,
+                    average_view_duration_seconds=20,
+                )
+            )
+        db.commit()
+        scores = {features["voice"]: score for features, score in _scores(db, channel.id)}
+    assert scores["a"] > scores["b"]

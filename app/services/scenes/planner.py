@@ -6,6 +6,9 @@ validated by the engine's own validator before it is stored.
 
 from __future__ import annotations
 
+import json
+import re
+
 from app.content.profile import CHANNEL_CONCEPT, HUMAN_IMPACT_RULES, VISUAL_STYLE, scale_problems
 from app.core.errors import ProviderError
 from app.services.ai.base import AIProvider
@@ -169,6 +172,53 @@ def environment_scale_problem(spec: dict, scale: str) -> str | None:
     return None
 
 
+_POINT = re.compile(r"^\s*[\[(]?\s*-?\d+(\.\d+)?(\s*,\s*-?\d+(\.\d+)?){1,2}\s*[\])]?\s*$")
+
+
+def _as_point(value) -> list[float] | None:
+    """'[0, 3, 1]' or '0,3,1' -> [0.0, 3.0, 1.0]; anything else -> None."""
+    if not isinstance(value, str) or not _POINT.match(value):
+        return None
+    numbers = [float(n) for n in json.loads("[" + value.strip().strip("[]()") + "]")]
+    return (numbers + [0.0])[:3] if len(numbers) == 2 else numbers
+
+
+def repair_references(spec: dict) -> None:
+    """Fix the reference mistakes the AI makes most often, so one slip does not reject a whole storyboard.
+
+    - an id with different case or spacing ('Car 1' for 'car_1') is mapped to the real id;
+    - a camera target written as text ('[0, 3, 1]') becomes a point;
+    - an action pointing at a coordinate instead of an id is dropped (actions need a real object).
+    Unknown names that are not coordinates are left alone: the validator reports them.
+    """
+    ids = [item.get("id") for key in ("characters", "props") for item in spec.get(key, [])]
+    by_key = {re.sub(r"[\s_-]+", "", str(i).lower()): i for i in ids if isinstance(i, str)}
+    known = set(ids) | {"camera"}
+
+    def fix(value):
+        if not isinstance(value, str) or value in known:
+            return value
+        return by_key.get(re.sub(r"[\s_-]+", "", value.lower()), value)
+
+    for shot in spec.get("camera", {}).get("shots", []):
+        target = fix(shot.get("target"))
+        point = _as_point(target)
+        shot["target"] = point if point else target
+        if isinstance(shot["target"], str) and shot["target"] not in known:
+            shot["target"] = [0, 0, 1]
+    kept = []
+    for action in spec.get("actions", []):
+        broken = False
+        for ref in ("character", "prop", "target", "towards"):
+            if ref in action:
+                action[ref] = fix(action[ref])
+                if action[ref] not in known and _as_point(action[ref]) is not None:
+                    broken = True
+        if not broken:
+            kept.append(action)
+    spec["actions"] = kept
+
+
 def finalize(raw: dict, *, duration: float, seed: int, palette: dict | None) -> dict:
     """Engine spec from one planned scene: fixed fields, palette continuity, camera targets."""
     spec = {
@@ -197,6 +247,7 @@ def finalize(raw: dict, *, duration: float, seed: int, palette: dict | None) -> 
         shot["time"] = max(0.0, min(duration, shot["time"]))
         shot.setdefault("target", [0, 0, 1])
     spec["camera"]["shots"].sort(key=lambda shot: shot["time"])
+    repair_references(spec)
     for action in spec["actions"]:
         for key in ("start", "end", "at"):
             if key in action:
@@ -223,10 +274,24 @@ def plan_scenes(
     )
     if variety_note:
         prompt += f"\n\n{variety_note}"
-    result = provider.generate_json(system=SYSTEM_PROMPT, prompt=prompt, schema=STORYBOARD_SCHEMA)
-    planned = result.data.get("scenes", [])
+    problems: list[str] = []
+    for _attempt in range(2):  # one retry, telling the AI exactly what was wrong
+        ask = prompt
+        if problems:
+            ask += (
+                "\n\nYour previous storyboard was rejected for these reasons; fix them and keep everything else:\n- "
+                + "\n- ".join(problems)
+            )
+        result = provider.generate_json(system=SYSTEM_PROMPT, prompt=ask, schema=STORYBOARD_SCHEMA)
+        specs, problems = _check(result.data.get("scenes", []), scenes, durations, seed, palette)
+        if not problems:
+            return specs
+    raise ProviderError("Storyboard rejected: " + "; ".join(problems))
+
+
+def _check(planned, scenes, durations, seed, palette) -> tuple[list[dict], list[str]]:
     if len(planned) != len(scenes):
-        raise ProviderError(f"Storyboard has {len(planned)} scenes; the script has {len(scenes)}.")
+        return [], [f"Storyboard has {len(planned)} scenes; the script has {len(scenes)}."]
     specs, problems = [], []
     for index, (raw, duration) in enumerate(zip(planned, durations, strict=True)):
         try:
@@ -239,6 +304,4 @@ def plan_scenes(
         except (SpecError, KeyError, TypeError, IndexError) as exc:
             problems.append(f"scene {index}: {exc}")
     problems += scale_problems([(s.get("scale", "street"), d) for s, d in zip(scenes, durations, strict=True)])
-    if problems:
-        raise ProviderError("Storyboard rejected: " + "; ".join(problems))
-    return specs
+    return specs, problems

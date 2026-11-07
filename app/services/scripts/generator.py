@@ -79,6 +79,20 @@ def estimate_speech_seconds(text: str) -> float:
     return round(len(text.split()) / WORDS_PER_SECOND, 1)
 
 
+def repair_ending(draft: ScriptDraft) -> None:
+    """A question ending that only lacks its '?' is fixed instead of rejected."""
+    line = draft.ending_line.rstrip()
+    if draft.ending_type == "question" and not line.endswith("?"):
+        if "¿" in line:
+            fixed = line.rstrip(".!") + "?"
+            last = draft.scenes[-1]
+            if last.narration.rstrip().endswith(line):
+                last.narration = last.narration.rstrip()[: -len(line)] + fixed
+            draft.ending_line = fixed
+        else:
+            draft.ending_type = "surprising_conclusion"
+
+
 def structure_problems(draft: ScriptDraft, video_format: VideoFormat) -> list[str]:
     """Checks the 'What would happen if' structure. Empty list = OK."""
     problems = []
@@ -136,13 +150,24 @@ def generate_script(
         notes=notes,
         research=research,
     )
-    result = provider.generate_json(system=SYSTEM_PROMPT, prompt=prompt, schema=SCRIPT_SCHEMA)
-    try:
-        draft = ScriptDraft(**result.data, provider=result.provider, model=result.model)
-    except ValidationError as exc:
-        raise ProviderError(f"Generated script failed validation: {exc.error_count()} error(s).") from exc
-
-    problems = structure_problems(draft, spec.format)
+    problems: list[str] = []
+    for _attempt in range(2):  # one retry, telling the AI exactly what was wrong
+        ask = prompt
+        if problems:
+            ask += (
+                "\n\nYour previous script was rejected for these reasons; fix them and keep the same premise:\n- "
+                + "\n- ".join(problems)
+            )
+        result = provider.generate_json(system=SYSTEM_PROMPT, prompt=ask, schema=SCRIPT_SCHEMA)
+        try:
+            draft = ScriptDraft(**result.data, provider=result.provider, model=result.model)
+        except ValidationError as exc:
+            problems = [f"The JSON failed validation ({exc.error_count()} error(s)); follow the schema exactly."]
+            continue
+        repair_ending(draft)
+        problems = structure_problems(draft, spec.format)
+        if not problems:
+            break
     if problems:
         raise ProviderError("Generated script rejected: " + " ".join(problems))
     if (

@@ -6,8 +6,10 @@ category weights). For each dimension the choice is epsilon-greedy:
 - options with fewer than MIN_TRIES results are tried first (systematic exploration);
 - afterwards, most videos (1 - EPSILON) use the best-scoring option so far and the rest explore.
 
-A video's score mixes retention (how much of it people watch) and reach (its views ranked against the
-channel's other videos), both 0..1. YouTube Analytics data arrives with a delay of ~2-3 days, so a
+A video's score mixes retention (how much of it people watch), the stayed-to-watch ratio (engaged views /
+views: who did not swipe away in the first seconds) and reach (its views ranked against the channel's other
+videos), all 0..1. Without engaged views the score is retention and reach only.
+YouTube Analytics data arrives with a delay of ~2-3 days, so a
 video only counts once it has a snapshot.
 """
 
@@ -69,11 +71,13 @@ DIMENSIONS: dict[str, tuple[str, ...]] = {
 
 def _scores(db: Session, channel_id: uuid.UUID) -> list[tuple[dict, float]]:
     """(features, score) for every video of the channel that has analytics."""
-    rows = [
-        (project, derive(snapshot, project.target_duration_seconds))
-        for project, snapshot in latest_snapshots(db, channel_id)
-        if project.features
-    ]
+    latest = [(p, s) for p, s in latest_snapshots(db, channel_id) if p.features]
+    rows = [(project, derive(snapshot, project.target_duration_seconds)) for project, snapshot in latest]
+    engaged = {
+        p.id: min(1.0, s.engaged_views / s.views)
+        for p, s in latest
+        if getattr(s, "engaged_views", None) is not None and s.views
+    }
     if not rows:
         return []
     views_sorted = sorted(m.views for _, m in rows)
@@ -81,7 +85,10 @@ def _scores(db: Session, channel_id: uuid.UUID) -> list[tuple[dict, float]]:
     for project, metrics in rows:
         reach = (views_sorted.index(metrics.views) + 1) / len(views_sorted) if len(rows) > 1 else 0.5
         retention = min(1.0, metrics.retention_ratio) if metrics.retention_ratio is not None else 0.5
-        out.append((project.features, round(0.5 * retention + 0.5 * reach, 4)))
+        stayed = engaged.get(project.id)
+        with_stayed = 0.35 * retention + 0.35 * (stayed or 0) + 0.3 * reach
+        score = 0.5 * retention + 0.5 * reach if stayed is None else with_stayed
+        out.append((project.features, round(score, 4)))
     return out
 
 
