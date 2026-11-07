@@ -87,16 +87,36 @@ def test_plan_scenes_validates_against_engine():
     bad["scenes"][2]["actions"][0]["character"] = "ghost"
     with pytest.raises(ProviderError, match="scene 2"):
         plan_scenes(
-            StubAIProvider([bad]), scenes=SCRIPT_RESPONSE["scenes"], durations=durations, visual_bible=None, seed=3
+            StubAIProvider([bad, bad]), scenes=SCRIPT_RESPONSE["scenes"], durations=durations, visual_bible=None, seed=3
         )
     with pytest.raises(ProviderError, match="Storyboard has 1 scenes"):
         plan_scenes(
-            StubAIProvider([{"scenes": bad["scenes"][:1]}]),
+            StubAIProvider([{"scenes": bad["scenes"][:1]}] * 2),
             scenes=SCRIPT_RESPONSE["scenes"],
             durations=durations,
             visual_bible=None,
             seed=3,
         )
+
+
+def test_plan_scenes_repairs_references_and_retries_once():
+    durations = [2.0] * len(SCRIPT_RESPONSE["scenes"])
+    # Coordinate written as an id (seen in a real run): the action is dropped, the storyboard survives.
+    slip = copy.deepcopy(STORYBOARD_RESPONSE)
+    slip["scenes"][2]["actions"][0]["character"] = "[0, 3, 1]"
+    slip["scenes"][1]["camera"]["shots"][0]["target"] = "[0, 5, 1]"
+    specs = plan_scenes(
+        StubAIProvider([slip]), scenes=SCRIPT_RESPONSE["scenes"], durations=durations, visual_bible=None, seed=3
+    )
+    assert specs[1]["camera"]["shots"][0]["target"] == [0.0, 5.0, 1.0]
+    assert len(specs[2]["actions"]) == len(STORYBOARD_RESPONSE["scenes"][2]["actions"]) - 1
+
+    # A real mistake gets one retry with the reasons in the prompt.
+    bad = copy.deepcopy(STORYBOARD_RESPONSE)
+    bad["scenes"][2]["actions"][0]["character"] = "ghost"
+    stub = StubAIProvider([bad, STORYBOARD_RESPONSE])
+    plan_scenes(stub, scenes=SCRIPT_RESPONSE["scenes"], durations=durations, visual_bible=None, seed=3)
+    assert len(stub.calls) == 2 and "ghost" in stub.calls[1]["prompt"]
 
 
 def test_piper_not_configured(tmp_path):
