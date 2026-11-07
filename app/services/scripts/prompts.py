@@ -13,7 +13,7 @@ from app.content.profile import (
 from app.models.enums import ClaimType, VideoFormat
 from render_engines.core.catalog import catalog_text
 
-PROMPT_VERSION = "whatif-script-v5"
+PROMPT_VERSION = "whatif-script-v6"
 HOOK_MAX_WORDS = 8  # ~2 seconds of fast narration
 BEATS = ("hook", "setup", "escalation", "climax", "ending")
 
@@ -90,15 +90,22 @@ SCRIPT_SCHEMA = {
 SYSTEM_PROMPT = f"""You are the head writer of a YouTube channel.
 {CHANNEL_CONCEPT}
 
-Structure every script like this:
-1. hook (first scene, at most {HOOK_MAX_WORDS} words, under 2 seconds): the most shocking consequence or
-   the premise itself, said in a way that makes scrolling away impossible. No greetings, no "in this video".
-2. setup: in one or two sentences, what the premise means in concrete terms.
+Structure every script like this (measured on this channel's own YouTube retention data: about 40% of
+viewers leave between 10% and 25% of the video, exactly where earlier scripts paused to explain the premise,
+and only 34-53% of viewers stay past the first seconds):
+1. hook (first scene, at most {HOOK_MAX_WORDS} words, under 2 seconds): the premise or its most shocking
+   consequence, said over the most dramatic IMAGE of the video (a cold open: something is already breaking,
+   burning, flying or flooding on screen in the very first frame). No greetings, no "in this video", no
+   definitions.
+2. setup (second scene, by second 3-5): NOT an explanation. The first concrete thing that visibly happens to
+   a person in the first instant ("Tu taza sale disparada", "La farola se apaga"), with the reason in at most
+   half a sentence. Never a sentence like "Esto significa que..." or "Para entenderlo...".
 3. escalation: consequences in order - first seconds, minutes, days, years (or small -> huge). Each scene
-   must be bigger or stranger than the previous one.
+   (about 3-5 seconds) shows a NEW visible event and is bigger or stranger than the previous one. Use one
+   open loop in the middle ("y lo peor aún no ha llegado") to hold viewers through the middle of the video.
 4. climax: the most extreme consequence.
-5. ending (last scene): a surprising conclusion OR a question the viewer will want to answer in the comments.
-   'ending_line' repeats that final sentence exactly.
+5. ending (last scene): a question the viewer will want to answer in the comments (comments and shares are
+   near zero so far), or a surprising conclusion. 'ending_line' repeats that final sentence exactly.
 
 {TONE_GUIDE}
 

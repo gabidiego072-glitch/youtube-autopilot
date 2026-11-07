@@ -24,6 +24,7 @@ class AnalyticsSnapshot(UUIDPrimaryKeyMixin, Base):
     captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False, index=True)
     source: Mapped[AnalyticsSource] = mapped_column(enum_column(AnalyticsSource), nullable=False)
     views: Mapped[int] = mapped_column(BigInteger, default=0, nullable=False)
+    engaged_views: Mapped[int | None] = mapped_column(BigInteger)  # stayed past the first seconds
     impressions: Mapped[int | None] = mapped_column(BigInteger)
     impressions_ctr: Mapped[float | None] = mapped_column(Float)  # 0..1
     estimated_minutes_watched: Mapped[float | None] = mapped_column(Float)

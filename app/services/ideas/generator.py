@@ -20,7 +20,7 @@ from app.core.errors import ProviderError
 from app.models.enums import ContentCategory
 from app.services.ai.base import AIProvider
 
-PROMPT_VERSION = "ideas-v1"
+PROMPT_VERSION = "ideas-v2"
 SCORE_WEIGHTS = {
     "curiosity": 0.30,
     "human_impact": 0.20,  # how strongly it changes daily life, homes and cities (human-impact rule)
@@ -77,7 +77,10 @@ You propose premises for new videos. A strong premise:
 - has consequences that escalate (small surprise -> big surprise -> mind-blowing end),
 - can be answered with real science (physics, biology, astronomy, geology...),
 - produces striking, filmable images,
-- stays interesting for years (no news, no trends, no brands, no celebrities).
+- stays interesting for years (no news, no trends, no brands, no celebrities),
+- passes the first-second test: the viewer instantly FEELS it in their own body or home (everyone falls
+  asleep, the Earth brakes, friction vanishes). Abstract material or physics properties that need explaining
+  before anything visible happens score low on curiosity and human_impact.
 Never propose anything about video games or gaming.
 
 {SCIENCE_RULES}

@@ -39,7 +39,7 @@ def test_script_generation_stores_versions(make_client, channel):
 
 
 def test_long_form_prompt(make_client, channel):
-    ai = StubAIProvider([SCRIPT_RESPONSE])
+    ai = StubAIProvider([SCRIPT_RESPONSE] * 2)  # too few escalations for long form -> one retry
     client = make_client(ai=ai)
     project = create_project(client, channel["id"], format="long")
     client.post(f"/api/v1/projects/{project['id']}/scripts/generate")
@@ -49,7 +49,7 @@ def test_long_form_prompt(make_client, channel):
 def test_overlong_short_is_rejected(make_client, channel):
     too_long = copy.deepcopy(SCRIPT_RESPONSE)
     too_long["scenes"][1]["duration_seconds"] = 400
-    client = make_client(ai=StubAIProvider([too_long]))
+    client = make_client(ai=StubAIProvider([too_long] * 2))
     project = create_project(client, channel["id"])
     response = client.post(f"/api/v1/projects/{project['id']}/scripts/generate")
     assert response.status_code == 502
@@ -57,9 +57,30 @@ def test_overlong_short_is_rejected(make_client, channel):
 
 
 def test_invalid_ai_output_is_rejected(make_client, channel):
-    client = make_client(ai=StubAIProvider([{"hook": "x", "scenes": []}]))
+    client = make_client(ai=StubAIProvider([{"hook": "x", "scenes": []}] * 2))
     project = create_project(client, channel["id"])
     assert client.post(f"/api/v1/projects/{project['id']}/scripts/generate").status_code == 502
+
+
+def test_script_gets_one_retry_with_the_reasons(make_client, channel):
+    bad = copy.deepcopy(SCRIPT_RESPONSE)
+    bad["hook"] = "uno dos tres cuatro cinco seis siete ocho nueve diez"
+    ai = StubAIProvider([bad, SCRIPT_RESPONSE])
+    client = make_client(ai=ai)
+    project = create_project(client, channel["id"])
+    assert client.post(f"/api/v1/projects/{project['id']}/scripts/generate").status_code < 300
+    assert len(ai.calls) == 2 and "Hook is longer" in ai.calls[1]["prompt"]
+
+
+def test_question_ending_missing_its_mark_is_repaired():
+    from app.services.scripts.generator import ScriptDraft, repair_ending
+
+    data = copy.deepcopy(SCRIPT_RESPONSE)
+    data.update(ending_type="question", ending_line="¿Tú qué harías")
+    data["scenes"][-1]["narration"] = "Y ahora... ¿Tú qué harías"
+    draft = ScriptDraft(**data, provider="p", model="m")
+    repair_ending(draft)
+    assert draft.ending_line == "¿Tú qué harías?" and draft.scenes[-1].narration.endswith("harías?")
 
 
 def test_fact_check_flow(make_client, channel):
