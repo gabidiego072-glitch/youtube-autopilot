@@ -86,3 +86,15 @@ def test_daily_check_is_per_channel(db):
     assert cli.daily_done(db, spanish.id) == 0
     assert cli.daily_done(db, english.id) == 1  # the Spanish video does not count for the English channel
     assert cli.find_channel(db, "What If (Around the World)").language == "en"
+
+
+def test_videos_rotate_through_famous_cities():
+    from app.services.styles import CITIES, city_note, next_city
+
+    assert next_city([]) == "new_york"
+    assert next_city(["new_york"]) == "paris"
+    assert next_city(["new_york", "paris", "tokyo"]) == "london"
+    assert "Eiffel Tower" in city_note("paris") and "style paris" in city_note("paris")
+    from render_engines.core.catalog import catalog_text
+
+    assert all(city in catalog_text() for city in CITIES)
