@@ -17,12 +17,30 @@ from datetime import UTC, date, datetime, timedelta
 
 import httpx
 
+from app.services.language import TRENDS, base
+
 logger = logging.getLogger(__name__)
 
 PAGEVIEWS_URL = "https://wikimedia.org/api/rest_v1/metrics/pageviews/top/{project}/all-access/{y}/{m:02d}/{d:02d}"
 SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
 VIDEOS_URL = "https://www.googleapis.com/youtube/v3/videos"
-SKIP_PREFIXES = ("Especial:", "Wikipedia:", "Archivo:", "Categoría:", "Anexo:", "Ayuda:", "Plantilla:", "Portal:")
+SKIP_PREFIXES = (
+    "Especial:",
+    "Wikipedia:",
+    "Archivo:",
+    "Categoría:",
+    "Anexo:",
+    "Ayuda:",
+    "Plantilla:",
+    "Portal:",
+    "Special:",
+    "File:",
+    "Category:",
+    "Help:",
+    "Template:",
+    "Talk:",
+    "Main_Page",
+)
 SKIP_TITLES = {"Wikipedia:Portada", "Main_Page", "-"}
 DEFAULT_QUERIES = ("qué pasaría si", "qué pasaría si la tierra", "experimento mental ciencia")
 
@@ -30,6 +48,7 @@ DEFAULT_QUERIES = ("qué pasaría si", "qué pasaría si la tierra", "experiment
 @dataclass
 class TrendSignals:
     curiosity_topics: list[str] = field(default_factory=list)  # Wikipedia, most read first
+    audience: str = "Spanish-speaking"
     competitor_videos: list[dict] = field(default_factory=list)  # {"title", "views", "channel"}
     notes: list[str] = field(default_factory=list)  # what was skipped and why
 
@@ -37,7 +56,7 @@ class TrendSignals:
         parts = []
         if self.curiosity_topics:
             parts.append(
-                "What Spanish-speaking readers are curious about this week (most-read Wikipedia articles; use one "
+                f"What {self.audience} readers are curious about this week (most-read Wikipedia articles; use one "
                 "only if it inspires a genuine, rigorous hypothetical with consequences for people):\n"
                 + "\n".join(f"- {t}" for t in self.curiosity_topics)
             )
@@ -82,6 +101,7 @@ def youtube_competitors(
     *,
     queries: tuple[str, ...] = DEFAULT_QUERIES,
     region: str = "ES",
+    language: str = "es",
     days: int = 30,
     limit: int = 15,
 ) -> list[dict]:
@@ -96,7 +116,7 @@ def youtube_competitors(
                 "type": "video",
                 "order": "viewCount",
                 "publishedAfter": since,
-                "relevanceLanguage": "es",
+                "relevanceLanguage": language,
                 "regionCode": region,
                 "maxResults": 15,
                 "key": api_key,
@@ -122,7 +142,8 @@ def youtube_competitors(
 
 def collect_signals(settings, http: httpx.Client | None = None) -> TrendSignals:
     http = http or httpx.Client(timeout=15.0)
-    signals = TrendSignals()
+    wiki_language, _, queries = TRENDS[base(settings.wikipedia_language)]
+    signals = TrendSignals(audience="English-speaking" if wiki_language == "en" else "Spanish-speaking")
     try:
         signals.curiosity_topics = wikipedia_top(http, settings.wikipedia_user_agent, settings.wikipedia_language)
     except (httpx.HTTPError, KeyError, ValueError, IndexError) as exc:
@@ -130,7 +151,11 @@ def collect_signals(settings, http: httpx.Client | None = None) -> TrendSignals:
     if settings.youtube_api_key_configured:
         try:
             signals.competitor_videos = youtube_competitors(
-                http, settings.youtube_api_key.get_secret_value(), region=settings.youtube_region_code
+                http,
+                settings.youtube_api_key.get_secret_value(),
+                queries=queries,
+                region=settings.youtube_region_code,
+                language=wiki_language,
             )
         except (httpx.HTTPError, KeyError, ValueError) as exc:
             # Never echo the request URL: it contains the API key.

@@ -93,7 +93,7 @@ jobs:
       - name: Learn from published videos (best effort)
         if: env.YOUTUBE_REFRESH_TOKEN != ''
         continue-on-error: true
-        run: python scripts/autopilot.py sync-analytics
+        run: python scripts/autopilot.py sync-analytics --channel "$CHANNEL_NAME"
       - name: Plan
         id: plan
         run: |
@@ -112,7 +112,7 @@ jobs:
           # Scheduled and hand-started runs publish automatically after QA (the owner authorised
           # autonomous uploads). Privacy remains PRIVATE by default.
           AUTO=""; if [ "${{ github.event_name }}" = "schedule" ] || { [ "${{ github.event_name }}" = "push" ] && [ "${{ contains(github.event.head_commit.message, '[one-shot-video]') }}" = "true" ]; } || [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ vars.AUTO_PUBLISH }}" = "true" ]; then AUTO="--auto-publish"; fi
-          if [ "$CMD" = "run" ] && [ "${{ github.event_name }}" = "schedule" ] && python scripts/autopilot.py daily-done; then
+          if [ "$CMD" = "run" ] && [ "${{ github.event_name }}" = "schedule" ] && python scripts/autopilot.py daily-done --channel "$CHANNEL_NAME"; then
             echo "Today's video already exists or is being made: nothing to do."
           elif [ "$CMD" = "run" ]; then
             python scripts/autopilot.py preflight
@@ -136,7 +136,9 @@ jobs:
             python scripts/autopilot.py channel-report
           elif [ "$CMD" = "ai-check" ]; then
             python scripts/autopilot.py ai-check || true
-          elif [ "$CMD" = "sync-analytics" ] || [ "$CMD" = "status" ] || [ "$CMD" = "learning" ]; then
+          elif [ "$CMD" = "sync-analytics" ] || [ "$CMD" = "learning" ]; then
+            python scripts/autopilot.py "$CMD" --channel "$CHANNEL_NAME"
+          elif [ "$CMD" = "status" ]; then
             python scripts/autopilot.py "$CMD" $RUN_ID_IN
           else
             echo "run_id=$RUN_ID_IN" >> "$GITHUB_OUTPUT"

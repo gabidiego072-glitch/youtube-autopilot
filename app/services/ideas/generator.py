@@ -19,6 +19,7 @@ from app.content.profile import (
 from app.core.errors import ProviderError
 from app.models.enums import ContentCategory
 from app.services.ai.base import AIProvider
+from app.services.language import EXAMPLE_PREMISES_EN, base, title_guide
 
 PROMPT_VERSION = "ideas-v3"
 SCORE_WEIGHTS = {
@@ -148,7 +149,9 @@ def build_prompt(
 ) -> str:
     parts = [
         f"Propose {count} new premises. Write premise, hook, angle and science_basis in '{language}'.",
-        "Format examples (do NOT repeat them):\n" + "\n".join(f"- {p}" for p in EXAMPLE_PREMISES),
+        title_guide(language),
+        "Format examples (do NOT repeat them):\n"
+        + "\n".join(f"- {p}" for p in (EXAMPLE_PREMISES_EN if base(language) == "en" else EXAMPLE_PREMISES)),
         "Categories:\n" + category_list(),
     ]
     if focus:

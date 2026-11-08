@@ -20,6 +20,9 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
     from render_engines.core.blender.scene import add_glow, configure_render
 
     configure_render(scene, ctx, frames_dir, motion_blur=spec.get("motion_blur", True))
+    from render_engines.cinematic import texts
+
+    texts.LANG = spec.get("language", "es")  # billboards, TV and menu texts
     from render_engines.cinematic import urban as urban_env
     from render_engines.cinematic.environment import sun_path
     from render_engines.cinematic.explainers import start_wind

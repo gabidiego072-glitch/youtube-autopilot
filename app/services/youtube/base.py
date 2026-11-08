@@ -20,6 +20,7 @@ class UploadRequest:
     thumbnail_path: Path | None = None
     made_for_kids: bool = False
     comment: str | None = None  # posted after the upload when YOUTUBE_POST_COMMENT=true
+    language: str = "es"  # title/description and audio language shown by YouTube
 
 
 @dataclass(frozen=True)
