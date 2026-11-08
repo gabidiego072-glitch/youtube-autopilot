@@ -248,6 +248,7 @@ def cafe(urban: Urban, rng, col) -> None:
     from mathutils import Matrix
 
     from render_engines.cinematic import ads
+    from render_engines.cinematic.texts import tr
     from render_engines.core.blender import lights, objects
 
     def at(bm, loc):
@@ -274,7 +275,7 @@ def cafe(urban: Urban, rng, col) -> None:
     urban.static.append(counter)
     menu = objects.mesh_object("cafe_menu", _box(1.5, 0.05, 0.9, (-1.95, 2.66, 1.95)), black, col=col)
     holder = objects.empty("cafe_menu_text", location=(-1.95, 2.62, 1.95), col=col)
-    ads.text("cafe_menu_t", "CAFÉ  2$\nLATTE  3$\nBAGEL  2$", (0, 0, 0), 0.13, "#fff3d6", holder, col, 1.5)
+    ads.text("cafe_menu_t", tr("menu"), (0, 0, 0), 0.13, "#fff3d6", holder, col, 1.5)
     del menu
     ads.billboard("cafe_tv", (1.85, 2.63, 1.85), 1.35, 0.78, 1, ads.breaking, col)  # the TV with the news
     for i, x in enumerate((-1.3, 0.0, 1.3)):  # hanging lamps

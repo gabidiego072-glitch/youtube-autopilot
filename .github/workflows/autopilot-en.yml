@@ -1,0 +1,242 @@
+# English channel «What If (Around the World)»: the same pipeline as autopilot.yml (the Spanish channel),
+# with its own YouTube token (secret YOUTUBE_REFRESH_TOKEN_EN), language, narrators, trends and schedule.
+# Each channel has its own ideas, videos and learning in the database (separate Channel rows).
+name: Autopilot (English)
+
+on:
+  schedule:
+    # Daily at 13:41 UTC (8:41 New York in winter): the video is ready around midday in the US.
+    - cron: "41 13 * * *"
+    # Safety retries: they only make a video if today's has not been made yet (e.g. Gemini failed).
+    - cron: "11 16 * * *"
+    - cron: "41 18 * * *"
+  workflow_dispatch:
+    inputs:
+      command:
+        description: "Qué hacer"
+        type: choice
+        options: [run, approve, resume, status, sync-analytics, ai-check, learning, channel-report]
+        default: run
+      run_id:
+        description: "run id (approve / resume / status) o carpeta (publish-file)"
+        default: ""
+      mode:
+        description: "Calidad (preview = fragmento, draft = barato, hd = publicable, final = máxima)"
+        type: choice
+        options: [draft, preview, lite, hd, final]
+        default: draft
+      format:
+        description: "Formato"
+        type: choice
+        options: [short, long]
+        default: short
+
+concurrency:
+  group: autopilot-en
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read  # download the work files of an earlier run (approve/resume)
+
+env:
+  ENVIRONMENT: staging
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  AI_PROVIDER: ${{ vars.AI_PROVIDER || 'gemini' }}
+  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  # Last verified working with this API key on 2026-11-05 after the newer Flash quotas were exhausted.
+  GEMINI_MODEL: gemini-3.5-flash-lite
+  GEMINI_FALLBACK_MODELS: ${{ vars.GEMINI_FALLBACK_MODELS }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL || 'claude-opus-5-5' }}
+  WIKIPEDIA_USER_AGENT: ${{ vars.WIKIPEDIA_USER_AGENT }}
+  YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+  YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+  YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN_EN }}
+  YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+  YOUTUBE_PUBLISHING_ENABLED: ${{ github.event_name == 'schedule' && 'true' || vars.YOUTUBE_PUBLISHING_ENABLED || 'false' }}
+  YOUTUBE_ALLOW_PUBLIC: ${{ vars.YOUTUBE_ALLOW_PUBLIC || 'false' }}
+  YOUTUBE_DEFAULT_PRIVACY: ${{ vars.YOUTUBE_DEFAULT_PRIVACY || 'private' }}
+  MEDIA_ROOT: ${{ github.workspace }}/media
+  CHANNEL_NAME: ${{ vars.CHANNEL_NAME_EN || 'What If (Around the World)' }}
+  CHANNEL_LANGUAGE: en
+  WIKIPEDIA_LANGUAGE: en
+  YOUTUBE_REGION_CODE: US
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  prepare:
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    outputs:
+      run_id: ${{ steps.plan.outputs.run_id }}
+      shards: ${{ steps.plan.outputs.shards }}
+      render: ${{ steps.plan.outputs.render }}
+      ready: ${{ steps.plan.outputs.ready }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          voice: en_US-norman-medium
+      - run: alembic upgrade head
+      - name: Learn from published videos (best effort)
+        if: env.YOUTUBE_REFRESH_TOKEN != ''
+        continue-on-error: true
+        run: python scripts/autopilot.py sync-analytics --channel "$CHANNEL_NAME"
+      - name: Plan
+        id: plan
+        run: |
+          set -euo pipefail
+          CMD="${{ github.event.inputs.command || 'run' }}"
+          RUN_ID_IN="$(echo "${{ github.event.inputs.run_id }}" | tr -d '[:space:]')"
+          # Scheduled runs have no inputs: they use the RENDER_MODE variable.
+          MODE="${{ github.event.inputs.mode }}"; MODE="$(echo "${MODE:-${{ vars.RENDER_MODE || 'hd' }}}" | tr -d '[:space:]')"
+          SHARDS="${{ vars.RENDER_SHARDS || '4' }}"
+          # Cloud machines are free and parallel: never fewer than 4 (an old RENDER_SHARDS=1 from the
+          # home-PC setup made hand-started videos render on one machine for hours).
+          SHARDS=$(( SHARDS < 4 ? 4 : SHARDS ))
+          # Scheduled daily video: light quality, split across four GitHub-hosted machines.
+          if [ "${{ github.event_name }}" = "schedule" ]; then MODE=lite; SHARDS=4; fi
+          echo "shards=$(python -c "print(list(range(max(1, min(8, int('$SHARDS'))))))")" >> "$GITHUB_OUTPUT"
+          # Scheduled and hand-started runs publish automatically after QA (the owner authorised
+          # autonomous uploads). Privacy remains PRIVATE by default.
+          AUTO=""; if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ vars.AUTO_PUBLISH }}" = "true" ]; then AUTO="--auto-publish"; fi
+          if [ "$CMD" = "run" ] && [ "${{ github.event_name }}" = "schedule" ] && python scripts/autopilot.py daily-done --channel "$CHANNEL_NAME"; then
+            echo "Today's video already exists or is being made: nothing to do."
+          elif [ "$CMD" = "run" ]; then
+            python scripts/autopilot.py preflight
+            python scripts/autopilot.py run --channel "$CHANNEL_NAME" \
+              --language "$CHANNEL_LANGUAGE" \
+              --format "${{ github.event.inputs.format || 'short' }}" --mode "$MODE" --until storyboard $AUTO | tee run.json
+            RUN_ID=$(python -c "import json;print(json.load(open('run.json'))['run_id'])")
+            STATUS=$(python -c "import json;print(json.load(open('run.json'))['status'])")
+            echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+            # A failed step (e.g. a script that needs human review) stops here: no render, no extra AI calls.
+            if [ "$STATUS" = "failed" ]; then
+              echo "::error::Autopilot failed during prepare (run $RUN_ID). See the run status/logs; no render or upload was attempted."
+              exit 1
+            fi
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            # Preview fragments are rendered by 'finish'; whole videos in parallel shards.
+            if [ "$MODE" != "preview" ]; then echo "render=true" >> "$GITHUB_OUTPUT"; fi
+          elif [ "$CMD" = "channel-report" ]; then
+            python scripts/autopilot.py channel-report
+          elif [ "$CMD" = "ai-check" ]; then
+            python scripts/autopilot.py ai-check || true
+          elif [ "$CMD" = "sync-analytics" ] || [ "$CMD" = "learning" ]; then
+            python scripts/autopilot.py "$CMD" --channel "$CHANNEL_NAME"
+          elif [ "$CMD" = "status" ]; then
+            python scripts/autopilot.py "$CMD" $RUN_ID_IN
+          else
+            echo "run_id=$RUN_ID_IN" >> "$GITHUB_OUTPUT"
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Keep the channel report
+        if: github.event.inputs.command == 'channel-report'
+        uses: actions/upload-artifact@v4
+        with:
+          name: channel-report
+          path: channel_report.json
+          retention-days: 30
+          if-no-files-found: ignore
+      - name: Keep the run's work files for the next jobs
+        if: steps.plan.outputs.run_id != '' && github.event.inputs.command != 'approve' && github.event.inputs.command != 'resume'
+        uses: actions/upload-artifact@v4
+        with:
+          name: work-${{ steps.plan.outputs.run_id }}
+          path: |
+            media/autopilot/${{ steps.plan.outputs.run_id }}/production.json
+            media/autopilot/${{ steps.plan.outputs.run_id }}/voice/
+          retention-days: 2
+          if-no-files-found: ignore
+
+  render:
+    needs: prepare
+    if: needs.prepare.outputs.render == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 350  # GitHub-hosted jobs stop at 6 h
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.prepare.outputs.shards) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          voice: en_US-norman-medium
+      - uses: actions/download-artifact@v4
+        with:
+          name: work-${{ needs.prepare.outputs.run_id }}
+          path: media/autopilot/${{ needs.prepare.outputs.run_id }}
+      - name: Render this shard's scenes
+        run: |
+          python scripts/autopilot.py render-shard "${{ needs.prepare.outputs.run_id }}" \
+            --shard ${{ matrix.shard }} --shards ${{ strategy.job-total }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clips-${{ needs.prepare.outputs.run_id }}-${{ matrix.shard }}
+          path: media/autopilot/${{ needs.prepare.outputs.run_id }}/*/clips/
+          retention-days: 2
+
+  finish:
+    needs: [prepare, render]
+    if: always() && needs.prepare.result == 'success' && needs.prepare.outputs.ready == 'true' && needs.render.result != 'failure' && needs.render.result != 'cancelled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      RUN_ID: ${{ needs.prepare.outputs.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          voice: en_US-norman-medium
+      - run: alembic upgrade head
+      - name: Get the work files of this run
+        run: |
+          mkdir -p "media/autopilot/$RUN_ID"
+          # Newest artifacts of this run id (this workflow run, or an earlier one for approve/resume),
+          # including rendered clips, so a resumed run never renders again. Plain curl: the GitHub CLI
+          # is not installed on self-hosted PCs.
+          api() {
+            curl -sSfL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/$1"
+          }
+          for NAME in "work-$RUN_ID" "review-$RUN_ID" $(for i in 0 1 2 3 4 5 6 7; do echo "clips-$RUN_ID-$i"; done); do
+            ID=$(api "actions/artifacts?name=$NAME&per_page=1" | python3 -c "import json,sys; a=json.load(sys.stdin)['artifacts']; print(a[0]['id'] if a and not a[0]['expired'] else '')")
+            if [ -n "$ID" ]; then
+              api "actions/artifacts/$ID/zip" > "$NAME.zip"
+              unzip -oq "$NAME.zip" -d "media/autopilot/$RUN_ID" && rm "$NAME.zip"
+              echo "restored $NAME"
+            fi
+          done
+      - uses: actions/download-artifact@v4
+        if: needs.render.result == 'success'
+        with:
+          pattern: clips-${{ needs.prepare.outputs.run_id }}-*
+          path: media/autopilot/${{ needs.prepare.outputs.run_id }}
+          merge-multiple: true
+      - name: Edit, QA, metadata, thumbnail (and publish if approved)
+        run: |
+          CMD="${{ github.event.inputs.command || 'run' }}"
+          if [ "$CMD" = "approve" ]; then
+            python scripts/autopilot.py approve "$RUN_ID"
+          else
+            # Resuming keeps the clips already rendered (hours of work), even from an older code version.
+            python scripts/autopilot.py resume "$RUN_ID" --reuse-renders
+          fi
+      - name: Keep the video, thumbnails and QA sheet for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: review-${{ env.RUN_ID }}
+          path: |
+            media/autopilot/${{ env.RUN_ID }}/production.json
+            media/autopilot/${{ env.RUN_ID }}/voice/
+            media/autopilot/${{ env.RUN_ID }}/*.mp4
+            media/autopilot/${{ env.RUN_ID }}/*.report.json
+            media/autopilot/${{ env.RUN_ID }}/*_frames.png
+            media/autopilot/${{ env.RUN_ID }}/thumbnails/
+            media/autopilot/${{ env.RUN_ID }}/*/clips/
+          retention-days: 5
+          if-no-files-found: ignore
