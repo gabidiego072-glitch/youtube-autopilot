@@ -8,16 +8,5 @@
     "science_basis": "Epidemiology (SIR models, R0), rabies and the Ophiocordyceps fungus as real 'zombifying' agents, how cities fail without maintenance (power grid, water pumping), human survival needs (water 3 days, food 3 weeks).",
     "city_style": "new_york",
     "notes": "SETTING: New York City. Name real places (Times Square, a Manhattan apartment, the subway, Brooklyn Bridge, Central Park, the Hudson river) and move through them as the days pass. Times Square's giant screens show emergency messages. Use the city street with style new_york for every outdoor street scene, the interior environment for the apartment, coast for the river and meadow for Central Park."
-  },
-  {
-    "premise": "What if everyone became a zombie except you?",
-    "style": "pov",
-    "category": "human_body",
-    "hook": "You wake up as the last human.",
-    "angle": "First-person survival journey hour by hour and day by day: waking up at home, the street full of zombies, getting supplies, the city going dark, where you would actually be safe. Each step explained with real science: how fast an infection spreads (epidemic models, R0), how long city water and power last without workers, why cold, water and height matter.",
-    "science_basis": "Epidemiology (SIR models, R0), rabies and the Ophiocordyceps fungus as real 'zombifying' agents, how cities fail without maintenance (power grid, water pumping), human survival needs (water 3 days, food 3 weeks).",
-    "city_style": "new_york",
-    "notes": "SETTING: New York City. Name real places (Times Square, a Manhattan apartment, the subway, Brooklyn Bridge, Central Park, the Hudson river) and move through them as the days pass. Times Square's giant screens show emergency messages. Use the city street with style new_york for every outdoor street scene, the interior environment for the apartment, coast for the river and meadow for Central Park.",
-    "language": "en"
   }
 ]
