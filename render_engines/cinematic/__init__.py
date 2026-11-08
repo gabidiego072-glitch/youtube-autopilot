@@ -33,6 +33,11 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
     elif env_type in ("city", "coast"):
         urban = urban_env.build_city(env, ctx, scene, ctx.seed)
         env_refs = urban.sky_refs
+    elif env_type == "theater":
+        from render_engines.cinematic.theater import build_theater
+
+        urban = build_theater(env, ctx, scene, ctx.seed)
+        env_refs = urban.sky_refs
     elif env_type == "interior":
         urban = urban_env.build_interior(env, ctx, scene, ctx.seed)
         env_refs = urban.sky_refs
@@ -50,7 +55,7 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
     timeline = Timeline()
     characters, props = {}, {}
     for c in spec.get("characters", []):
-        start = tuple(c.get("start", (0, 0))[:2]) + (0.0,)
+        start = tuple(c.get("start", (0, 0))[:2]) + (float(c.get("elevation", 0.0)),)  # e.g. on a stage
         char = build_character(
             c["id"],
             c.get("palette"),
@@ -99,6 +104,47 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
                 rng.uniform(1.6, 2.0),
             )
             characters.setdefault(f"ped_{i}", walker)
+
+    if urban is not None and (env.get("crowd") or env.get("panic")) and env_type in ("city", "coast"):
+        from render_engines.cinematic import crowd
+
+        lane = env.get("keep_clear_y")  # e.g. the camera's running line
+        clear = (lambda _x, y: lane is not None and abs(y - lane) < 0.9) if lane is not None else None
+        n = int(env.get("crowd", 0))
+        span = (-60.0, 60.0)
+        side_walk = (urban_env.ROAD_HALF + 0.4, urban_env.BUILDING_LINE - 0.4)
+        crowd.walkers(n // 2, (span, side_walk), 0, (0.9, 1.6), ctx.frame_start, ctx.frame_end, ctx.fps, ctx.seed + 1)
+        crowd.walkers(
+            n // 2,
+            (span, (-side_walk[1], -side_walk[0])),
+            180,
+            (0.9, 1.6),
+            ctx.frame_start,
+            ctx.frame_end,
+            ctx.fps,
+            ctx.seed + 2,
+        )
+        if env.get("panic"):  # people running for their lives down the road
+            crowd.walkers(
+                int(env["panic"]),
+                (span, (-urban_env.ROAD_HALF + 0.5, urban_env.ROAD_HALF - 0.5)),
+                env.get("panic_direction", 0),
+                (2.6, 4.2),
+                ctx.frame_start,
+                ctx.frame_end,
+                ctx.fps,
+                ctx.seed + 3,
+                keep_clear=clear,
+            )
+        if env.get("onlookers"):  # people standing on the sidewalk staring at the screens
+            crowd.standers(
+                int(env["onlookers"]),
+                ((span[0] / 2, span[1] / 2), side_walk),
+                ctx.frame_start,
+                ctx.frame_end,
+                ctx.fps,
+                ctx.seed + 4,
+            )
 
     if env.get("zombies"):  # a horde shambling towards the scene centre from the distance
         import random as _random

@@ -74,6 +74,8 @@ SKY_PRESETS = {
     # elevation, azimuth, sun colour, sun strength, sky strength, fill colour, fill power
     "dawn": (6, 70, "#ffb070", 2.5, 0.45, "#8fa8ff", 160),
     "day": (42, 140, "#fff2dc", 3.2, 0.35, "#cfe0ff", 120),
+    # Late-afternoon light: warm, low, still bright on the streets (the Times Square look).
+    "golden": (24, 265, "#ffcf8f", 3.4, 0.5, "#ffc9a0", 700),
     "dusk": (3, 250, "#ff8a40", 1.8, 0.25, "#6a7cff", 200),
     "night": (-4, 250, "#ff8a40", 0.0, 0.3, "#6a7cff", 220),
 }
@@ -495,6 +497,8 @@ def build_city(env: dict, ctx, scene, seed: int) -> Urban:
             urban.facades.append(mat)
             urban.static.append(building)
             urban.buildings.append((building, side, is_hero))
+            if abs(x + width / 2) < 50 and not is_hero:  # relief only where the camera can see it
+                _facade_relief(f"relief_{side}_{index}", x, width, side, floors, wall, style, rng, col)
             if style == "new_york":
                 _billboards(urban, f"bb_{side}_{index}", x, width, side, height, rng, col)
             if style == "suburb":  # pitched roof
@@ -540,6 +544,8 @@ def build_city(env: dict, ctx, scene, seed: int) -> Urban:
             bn = bin_(f"bin_{side}_{x}", (x + 2.5, side * (ROAD_HALF + 0.9), 0.0), col)
             urban.loose.append((bn, 15.0))
     urban.lamp_heads = list({id(h): h for h in heads}.values())
+    if style in ("new_york", "old_town", "mixed", "modern") and env.get("street_details", True):
+        _street_details(urban, env, length, style, rng, col, coast)
     traffic_light("traffic_light_n", (13.5, ROAD_HALF + 0.5, 0.0), col)
     if not coast:
         traffic_light("traffic_light_s", (6.5, -ROAD_HALF - 0.5, 0.0), col)
@@ -570,28 +576,137 @@ def build_city(env: dict, ctx, scene, seed: int) -> Urban:
     return urban
 
 
-def _billboards(urban: Urban, name: str, x0: float, width: float, side: int, height: float, rng, col) -> None:
-    """Times Square: glowing screens with bold words on the street side of a tall building."""
-    face_y = side * (BUILDING_LINE - 0.06)
-    level = 4.5
-    for k in range(rng.randint(1, 3)):
-        h = rng.uniform(3.0, 6.0)
-        if level + h > min(height - 1.0, 26.0):
-            break
-        w = rng.uniform(0.6, 0.92) * (width - 1.0)
-        cx = x0 + width / 2 + rng.uniform(-0.5, 0.5)
-        color = rng.choice(BILLBOARD_COLORS)
-        screen = _mat(f"{name}_{k}_screen", color, roughness=0.4, emission=color, strength=1.4)
-        objects.mesh_object(f"{name}_{k}", _box(w, 0.12, h, (cx, face_y, level + h / 2)), screen, col=col)
-        _sign_text(
-            f"{name}_{k}_txt",
-            rng.choice(BILLBOARD_TEXTS),
-            (cx, face_y - side * 0.1, level + h / 2),
-            side,
-            min(h * 0.35, w / 7),
-            col,
+def _facade_relief(name, x0, width, side, floors, wall, style, rng, col) -> None:
+    """Ledges on every floor, a heavy cornice on top, pilasters at the edges and, on older buildings, a
+    zig-zag fire escape: the facade stops looking like a flat painted box."""
+    from mathutils import Matrix
+
+    face = side * BUILDING_LINE
+    out = -side  # towards the street
+    trim = _mat(f"trim_{wall}", wall, 0.7)
+    stone = _mat("ledge_stone", "#d8d0c2", 0.8)
+    metal = _mat("fire_escape", "#1e1f22", 0.5, metallic=0.6)
+    w = width - 0.3
+    cx = x0 + width / 2
+    shown = min(floors, 14)
+    parts = [(_box(w, 0.22, 0.14, (cx, face + out * 0.11, f * 3.0)), stone) for f in range(1, shown + 1)]
+    top = floors * 3.0 + 0.6
+    parts.append((_box(w + 0.3, 0.6, 0.5, (cx, face + out * 0.3, top - 0.25)), trim))  # cornice
+    pil_h = min(top, shown * 3.0 + 3)
+    for ex in (x0 + 0.35, x0 + width - 0.65):  # pilasters
+        parts.append((_box(0.35, 0.18, pil_h, (ex, face + out * 0.09, pil_h / 2)), trim))
+    if style in ("new_york", "old_town") and rng.random() < 0.55 and floors >= 3:
+        fx = cx + rng.uniform(-w * 0.2, w * 0.2)
+        for f in range(1, min(floors, 9)):
+            z = f * 3.0 + 0.1
+            parts.append((_box(2.6, 1.0, 0.06, (fx, face + out * 0.55, z)), metal))  # platform
+            parts.append((_box(2.6, 0.05, 0.9, (fx, face + out * 1.05, z + 0.45)), metal))  # railing
+            lean = 1 if f % 2 else -1  # stairs zig-zag between platforms
+            stair = objects.transform(objects.box(0.6, 0.06, 3.4), Matrix.Rotation(0.75 * lean, 4, "Y"))
+            parts.append(
+                (objects.transform(stair, Matrix.Translation((fx + 0.6 * lean, face + out * 0.7, z + 1.5))), metal)
+            )
+    compound(name, parts, col=col)
+
+
+def _street_details(urban, env, length, style, rng, col, coast) -> None:
+    """Life at street level: pigeons, fire hydrants, newspaper boxes, hot-dog carts, the red Times Square steps."""
+    from mathutils import Matrix
+
+    from render_engines.core.blender.animation import fcurves
+
+    def at(bm, loc):
+        return objects.transform(bm, Matrix.Translation(loc))
+
+    grey, white = _mat("pigeon_grey", "#7d808a", 0.8), _mat("pigeon_white", "#d8d8dc", 0.8)
+    beak = _mat("pigeon_beak", "#e3a33b", 0.5)
+    red = _mat("hydrant_red", "#b3171f", 0.5)
+    metal = _mat("cart_metal", "#c8ccd2", 0.3, metallic=0.8)
+    wheel = _mat("wheel", "#151515", 0.6)
+    for i in range(int(env.get("pigeons", 26))):  # small flocks pecking on the sidewalks
+        side = 1 if i % 2 else -1
+        if coast and side < 0:
+            continue
+        x = rng.uniform(-length * 0.5, length * 0.5)
+        y = side * rng.uniform(ROAD_HALF + 0.3, BUILDING_LINE - 0.5)
+        body_bm = objects.transform(objects.sphere(0.1, 10, 6), Matrix.Diagonal((1.4, 0.8, 0.8, 1)))
+        body = compound(
+            f"pigeon_{i}",
+            [
+                (body_bm, rng.choice((grey, white))),
+                (at(objects.sphere(0.05, 8, 6), (0.13, 0, 0.07)), grey),
+                (at(objects.sphere(0.015, 6, 4), (0.18, 0, 0.07)), beak),
+            ],
+            (x, y, 0.09),
+            (0, 0, rng.uniform(0, 6.3)),
+            col=col,
         )
-        level += h + rng.uniform(0.6, 2.0)
+        period = rng.randint(10, 22)
+        for f, tilt in ((1, 0.0), (period // 2, 0.5), (period, 0.0)):  # pecking
+            body.rotation_euler[1] = tilt
+            body.keyframe_insert("rotation_euler", index=1, frame=f)
+        for curve in fcurves(body):
+            curve.modifiers.new("CYCLES")
+    for i, x in enumerate(range(-int(length) + 11, int(length), 23)):  # hydrants along both curbs
+        for side in (1, -1):
+            if coast and side < 0:
+                continue
+            compound(
+                f"hydrant_{i}_{side}",
+                [
+                    (objects.cone(0.13, 0.13, 0.6, 12, base_at_origin=True), red),
+                    (at(objects.sphere(0.14, 12, 6), (0, 0, 0.6)), red),
+                    (at(objects.box(0.42, 0.1, 0.1), (0, 0, 0.42)), red),
+                ],
+                (x, side * (ROAD_HALF + 0.45), 0),
+                col=col,
+            )
+    box_colors = ("#1f4e8c", "#d9a400", "#b3261e", "#2e7d4f")
+    for i, x in enumerate(range(-int(length) + 6, int(length), 17)):  # newspaper boxes
+        mat = _mat(f"nb_{i % 4}", box_colors[i % 4], 0.5)
+        b = compound(f"news_box_{i}", [(_box(0.45, 0.4, 1.0, (0, 0, 0.5)), mat)], (x, ROAD_HALF + 1.0, 0), col=col)
+        urban.loose.append((b, 20.0))
+    if style != "new_york":
+        return
+    umbrella_cols = ("#e0201c", "#f2b705", "#1f77d0")
+    for i, x in enumerate((-32.0, -9.0, 14.0, 37.0)):  # hot-dog carts with umbrellas
+        side = -1 if i % 2 else 1
+        if coast and side < 0:
+            continue
+        umb = _mat(f"umbrella_{i}", umbrella_cols[i % 3], 0.6)
+        cart = compound(
+            f"hotdog_cart_{i}",
+            [
+                (_box(1.6, 0.8, 0.95, (0, 0, 0.6)), metal),
+                (at(objects.cone(0.04, 0.04, 1.4, 8, base_at_origin=True), (0, 0, 1.0)), metal),
+                (at(objects.cone(1.1, 0.05, 0.45, 16, base_at_origin=True), (0, 0, 2.3)), umb),
+                (at(objects.sphere(0.12, 8, 6), (-0.6, 0.45, 0.25)), wheel),
+                (at(objects.sphere(0.12, 8, 6), (0.6, 0.45, 0.25)), wheel),
+            ],
+            (x, side * (ROAD_HALF + 2.2), 0),
+            col=col,
+        )
+        urban.loose.append((cart, 80.0))
+    if env.get("red_steps", True):  # red TKTS-style steps across the far end of the avenue
+        steps = _mat("red_steps", "#c4161c", 0.4, emission="#ff2a2a", strength=0.6)
+        parts = [(_box(1.2, 9.0, 0.45 * (k + 1), (k * 1.2, 0, 0.225 * (k + 1))), steps) for k in range(8)]
+        compound("red_steps", parts, (length * 0.62, 0.0, 0), col=col)
+
+
+def _billboards(urban: Urban, name: str, x0: float, width: float, side: int, height: float, rng, col) -> None:
+    """Times Square: stacked glowing billboards with modelled icons and bold text on the street side."""
+    from render_engines.cinematic import ads
+
+    face_y = side * (BUILDING_LINE - 0.08)
+    level = 4.0
+    for k in range(rng.randint(1, 3)):
+        h = rng.uniform(3.5, 6.5)
+        if level + h > min(height - 1.0, 28.0):
+            break
+        w = rng.uniform(0.7, 0.92) * (width - 1.0)
+        cx = x0 + width / 2 + rng.uniform(-0.4, 0.4)
+        ads.billboard(f"{name}_{k}", (cx, face_y, level + h / 2), w, h, side, rng.choice(ads.DESIGNS), col)
+        level += h + rng.uniform(0.5, 1.5)
 
 
 def _sign_text(name: str, text: str, center, side: int, size: float, col) -> None:
@@ -705,13 +820,14 @@ def lights_on(urban: Urban, start: int, end: int, windows: float = 0.45) -> None
 
 
 # --- interior -------------------------------------------------------------------------------
-ROOMS = ("living_room", "kitchen", "bedroom", "office", "classroom")
+ROOMS = ("living_room", "kitchen", "bedroom", "office", "classroom", "cafe")
 ROOM_FLOORS = {  # floor colours (dark, light), scale
     "living_room": (("#8a5a36", "#a8714a"), ("#6e4a2f", "#8c6240"), ("#a68a64", "#c2a37a")),
     "kitchen": (("#b9b4aa", "#d8d3c8"), ("#6f6a63", "#8d877e"), ("#2d2f33", "#d9d5cc")),
     "bedroom": (("#8a5a36", "#a8714a"), ("#7d7468", "#948a7c"), ("#5b6470", "#717b88")),
     "office": (("#5c6066", "#6f747b"), ("#7a7266", "#8f877a")),
     "classroom": (("#a89a7c", "#c2b494"), ("#7f8a7a", "#97a291")),
+    "cafe": (("#2a2420", "#3a312a"), ("#5a4632", "#6e573f")),
 }
 WALL_COLORS = ("#e9e1d3", "#d9e3e8", "#efe6c9", "#e3d2c4", "#cfd8c8", "#f2efe9", "#d6cbe0", "#c9b9a3")
 
