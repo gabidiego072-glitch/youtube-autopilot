@@ -18,7 +18,7 @@ from render_engines.core.spec import SpecError, validate_spec
 PROMPT_VERSION = "storyboard-v2"
 FPS = 24
 
-_XY = {"type": "array", "items": {"type": "number"}}
+_XY = {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 3}
 _NUMBER = {"type": "number"}
 _STRING = {"type": "string"}
 
@@ -49,6 +49,7 @@ SCENE_SCHEMA = {
         },
         "characters": {
             "type": "array",
+            "maxItems": 4,
             "items": {
                 "type": "object",
                 "properties": {"id": _STRING, "start": _XY, "facing": _NUMBER, "scale": _NUMBER},
@@ -58,6 +59,7 @@ SCENE_SCHEMA = {
         },
         "props": {
             "type": "array",
+            "maxItems": 6,
             "items": {
                 "type": "object",
                 "properties": {
@@ -76,6 +78,7 @@ SCENE_SCHEMA = {
         },
         "actions": {
             "type": "array",
+            "maxItems": 6,
             "items": {
                 "type": "object",
                 "properties": {
@@ -119,6 +122,7 @@ SCENE_SCHEMA = {
                 "handheld": _NUMBER,
                 "shots": {
                     "type": "array",
+                    "maxItems": 4,
                     "items": {
                         "type": "object",
                         "properties": {
@@ -143,7 +147,7 @@ SCENE_SCHEMA = {
 
 STORYBOARD_SCHEMA = {
     "type": "object",
-    "properties": {"scenes": {"type": "array", "items": SCENE_SCHEMA}},
+    "properties": {"scenes": {"type": "array", "items": SCENE_SCHEMA, "maxItems": 16}},
     "required": ["scenes"],
     "additionalProperties": False,
 }
@@ -302,7 +306,16 @@ def plan_scenes(
                 "\n\nYour previous storyboard was rejected for these reasons; fix them and keep everything else:\n- "
                 + "\n- ".join(problems)
             )
-        result = provider.generate_json(system=SYSTEM_PROMPT, prompt=ask, schema=STORYBOARD_SCHEMA)
+        try:
+            result = provider.generate_json(system=SYSTEM_PROMPT, prompt=ask, schema=STORYBOARD_SCHEMA)
+        except ProviderError as exc:
+            if "truncated" not in str(exc):
+                raise
+            problems = [
+                "Your previous answer was far too long and was cut off. Be compact: at most 3 actions and 3 "
+                "camera shots per scene, only the fields you need, no repeated items."
+            ]
+            continue
         specs, problems = _check(result.data.get("scenes", []), scenes, durations, seed, palette)
         if not problems:
             return specs
