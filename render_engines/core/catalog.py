@@ -17,7 +17,10 @@ ENVIRONMENTS = {
     "separate buildings of very different heights (brick walk-ups with fire escapes and water towers, "
     "limestone towers with setbacks, glass towers), giant billboards, vertical neon signs, yellow taxis, a wet "
     "street, steam from manholes, a cross street at x 6-14, a skyline in the haze; with plaza true the avenue is "
-    "the paved Times Square plaza with the red steps | mixed). Keep the same "
+    "the paved Times Square plaza with the red steps | paris = cream stone Haussmann blocks with iron "
+    "balconies, café terraces, the Eiffel Tower at the end of the avenue | tokyo = narrow buildings covered in "
+    "vertical neon signs, power lines, vending machines, Tokyo Tower | london = brick terraces, red double-decker "
+    "buses, black cabs, red phone boxes, Big Ben | mixed). Keep the same "
     "style in every scene of a video.",
     "coast": "Seafront street: like 'city' but the south side is a promenade with a railing, a beach and the sea "
     "(water starts around y=-35). Use 'surge' to bring the sea into the street.",

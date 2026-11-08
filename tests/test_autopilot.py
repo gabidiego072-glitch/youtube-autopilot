@@ -321,7 +321,10 @@ def test_run_records_variants_and_applies_them(db, tmp_path):
     assert run.status == RunStatus.WAITING_APPROVAL, run.error
     project = db.get(VideoProject, run.project_id)
     features = project.features
-    assert set(features) == {"voice", "music", "length", "hook", "style"} and features["style"] == "classic"
+    assert (
+        set(features) == {"voice", "music", "length", "hook", "style", "city_style"} and features["style"] == "classic"
+    )
+    assert features["city_style"] in ("new_york", "paris", "tokyo", "london")
     assert project.target_duration_seconds == int(features["length"])
     assert used_voices and set(used_voices) == {features["voice"]}
     script_prompt = next(c["prompt"] for c in services.ai.calls if "Hook style for this video" in c["prompt"])

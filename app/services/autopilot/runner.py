@@ -65,7 +65,7 @@ from app.services.reporting.builder import performances
 from app.services.research.briefing import build_brief
 from app.services.scenes.planner import plan_scenes
 from app.services.scripts.generator import generate_script
-from app.services.styles import POV_STORYBOARD_NOTE, next_planned_topic, pov_script_note
+from app.services.styles import POV_STORYBOARD_NOTE, city_note, next_city, next_planned_topic, pov_script_note
 from app.services.thumbnails.generator import best_moment, generate_thumbnails
 from app.services.variety import RECENT, RecentVideos, pick_idea, recent_videos
 from app.services.youtube.base import UploadRequest
@@ -269,6 +269,16 @@ def step_topic(db, run, services, ai) -> dict:
         features["city_style"] = planned["city_style"]
     if planned and planned.get("notes"):
         project.notes = planned["notes"]
+    if not features.get("city_style"):  # rotate through famous cities (New York, Paris, Tokyo, London)
+        others = db.scalars(
+            select(VideoProject.features)
+            .where(VideoProject.channel_id == channel.id, VideoProject.id != project.id)
+            .order_by(VideoProject.created_at.desc())
+            .limit(8)
+        )
+        recent = [(f or {}).get("city_style", "") for f in others]
+        features["city_style"] = next_city(recent)
+        project.notes = "\n".join(n for n in (project.notes, city_note(features["city_style"])) if n)
     project.features = features
     idea.status, idea.project_id = IdeaStatus.USED, project.id
     run.project_id = project.id

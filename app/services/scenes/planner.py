@@ -34,7 +34,10 @@ SCENE_SCHEMA = {
                     "type": "string",
                     "enum": ["living_room", "kitchen", "bedroom", "office", "classroom", "cafe"],
                 },
-                "style": {"type": "string", "enum": ["old_town", "modern", "suburb", "mixed", "new_york"]},
+                "style": {
+                    "type": "string",
+                    "enum": ["old_town", "modern", "suburb", "mixed", "new_york", "paris", "tokyo", "london"],
+                },
                 "physics": {"type": "boolean"},
                 "pedestrians": {"type": "integer"},
                 "parked_cars": {"type": "integer"},

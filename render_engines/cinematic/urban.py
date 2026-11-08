@@ -53,7 +53,12 @@ CITY_STYLES = {
         ("#6f6a64", "#8a7f72", "#4f5560", "#9a8f80", "#5d4a3c", "#7b8794", "#a8603f"),
         0.6,
     ),
+    # Famous cities with their own buildings, street life and landmark (render_engines/cinematic/cities.py).
+    "paris": ((12.0, 14.0, 16.0), (6, 6), (6, 6), ("#e8dcc4",), 0.4),
+    "tokyo": ((6.0, 7.5, 9.0), (5, 14), (5, 14), ("#c9c5bd",), 0.0),
+    "london": ((6.5, 7.5, 8.5), (3, 5), (3, 5), ("#8a4433",), 0.4),
 }
+FAMOUS_CITIES = ("paris", "tokyo", "london")
 BILLBOARD_COLORS = ("#ff2d55", "#ffcc00", "#00c2ff", "#7a5cff", "#ff7a00", "#2ee59d", "#ff4fd8")
 BILLBOARD_TEXTS = (
     "BREAKING NEWS",
@@ -514,6 +519,16 @@ def build_city(env: dict, ctx, scene, seed: int) -> Urban:
                 x += width
                 index += 1
                 continue
+            if style in FAMOUS_CITIES:
+                from render_engines.cinematic import cities
+
+                width = rng.choice(widths) + rng.uniform(-0.5, 0.5)
+                cities.building(
+                    urban, style, f"building_{side}_{index}", x, width, side, seed + index * 7 + side, rng, col
+                )
+                x += width
+                index += 1
+                continue
             width = rng.choice(widths)
             floors = rng.randint(*far_floors) if abs(x) > 20 else rng.randint(*near_floors)
             depth = rng.uniform(10, 16)
@@ -590,15 +605,30 @@ def build_city(env: dict, ctx, scene, seed: int) -> Urban:
         if 6 < x < 14:
             continue
         side = 1 if i % 2 else -1
-        c = car(
-            f"parked_{i}",
-            (x, side * (ROAD_HALF - 1.1), -CURB_H),
-            0 if side > 0 else 180,
-            TAXI_YELLOW if style == "new_york" and rng.random() < 0.65 else rng.choice(CAR_COLORS),
-            col,
-        )
+        if style in FAMOUS_CITIES:
+            from render_engines.cinematic import cities
+
+            heading = 0 if side > 0 else 180
+            c = cities.vehicle(
+                style, f"parked_{i}", (x, side * (ROAD_HALF - 1.1), -CURB_H), heading, rng, col, bus=False
+            )
+        else:
+            c = car(
+                f"parked_{i}",
+                (x, side * (ROAD_HALF - 1.1), -CURB_H),
+                0 if side > 0 else 180,
+                TAXI_YELLOW if style == "new_york" and rng.random() < 0.65 else rng.choice(CAR_COLORS),
+                col,
+            )
         urban.loose.append((c, 1200.0))
 
+    if style in FAMOUS_CITIES:
+        from render_engines.cinematic import cities
+
+        cities.street_life(urban, style, length, rng, col, coast)
+        cities.landmark(style, length, col)
+        if style == "tokyo":  # Tokyo is dense: towers behind the low streets
+            ny_skyline(length, rng, col)
     if style == "new_york":
         granite = _mat("curb_granite", "#9a968e", 0.5)
         for side in (1, -1):  # granite curbs along the sidewalks
