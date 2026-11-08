@@ -13,6 +13,7 @@ import os
 import bpy
 from mathutils import Matrix
 
+from render_engines.cinematic.texts import tr
 from render_engines.core.blender import materials, objects
 
 FONTS = (
@@ -100,8 +101,8 @@ def musical(name, w, h, parent, col):
         for z in (h * 0.42, -h * 0.42):
             parts.append((_ellipsoid(0.08, 1, 1, 1, (-w * 0.45 + t * w * 0.9, -0.1, z)), gold))
     _icon(f"{name}_bulbs", parts, parent, col)
-    text(f"{name}_t1", "EL GRAN ACTO", (0, -0.12, h * 0.12), h * 0.16, "#ffd36b", parent, col, 3.0)
-    text(f"{name}_t2", "DE DESAPARICIÓN", (0, -0.12, -h * 0.12), h * 0.1, "#ffffff", parent, col)
+    text(f"{name}_t1", tr("magic_1"), (0, -0.12, h * 0.12), h * 0.16, "#ffd36b", parent, col, 3.0)
+    text(f"{name}_t2", tr("magic_2"), (0, -0.12, -h * 0.12), h * 0.1, "#ffffff", parent, col)
     return "#3b1a5a"
 
 
@@ -116,8 +117,8 @@ def alert(name, w, h, parent, col):
         parent,
         col,
     )
-    text(f"{name}_t1", "ALERTA", (0, -0.12, h * 0.08), h * 0.3, "#ffffff", parent, col, 3.0)
-    text(f"{name}_t2", "QUÉDATE EN CASA", (0, -0.12, -h * 0.22), h * 0.1, "#ffe14d", parent, col)
+    text(f"{name}_t1", tr("alert_1"), (0, -0.12, h * 0.08), h * 0.3, "#ffffff", parent, col, 3.0)
+    text(f"{name}_t2", tr("alert_2"), (0, -0.12, -h * 0.22), h * 0.1, "#ffe14d", parent, col)
     return "#c4161c"
 
 
@@ -137,8 +138,8 @@ def news(name, w, h, parent, col):
         parent,
         col,
     )
-    text(f"{name}_t1", "EN DIRECTO", (-w * 0.3, -0.13, h * 0.05), h * 0.08, "#ffffff", parent, col)
-    text(f"{name}_t2", "ÚLTIMA HORA: BROTE EN NUEVA YORK", (0, -0.12, -h * 0.25), h * 0.07, "#111111", parent, col, 0.3)
+    text(f"{name}_t1", tr("live"), (-w * 0.3, -0.13, h * 0.05), h * 0.08, "#ffffff", parent, col)
+    text(f"{name}_t2", tr("news_bar"), (0, -0.12, -h * 0.25), h * 0.07, "#111111", parent, col, 0.3)
     return "#123a75"
 
 
@@ -160,7 +161,7 @@ def face(name, w, h, parent, col):
         parent,
         col,
     )
-    text(f"{name}_t1", "SONRÍE,\nESTÁS EN\nNUEVA YORK", (w * 0.2, -0.12, 0), h * 0.12, "#ffffff", parent, col)
+    text(f"{name}_t1", tr("smile"), (w * 0.2, -0.12, 0), h * 0.12, "#ffffff", parent, col)
     return "#0f8b8d"
 
 
@@ -187,8 +188,8 @@ def soda(name, w, h, parent, col):
         parent,
         col,
     )
-    text(f"{name}_t1", "FRESCA", (w * 0.15, -0.12, h * 0.1), h * 0.22, "#ffffff", parent, col, 3.0)
-    text(f"{name}_t2", "SABOR NYC", (w * 0.15, -0.12, -h * 0.2), h * 0.1, "#ffe14d", parent, col)
+    text(f"{name}_t1", tr("soda_1"), (w * 0.15, -0.12, h * 0.1), h * 0.22, "#ffffff", parent, col, 3.0)
+    text(f"{name}_t2", tr("soda_2"), (w * 0.15, -0.12, -h * 0.2), h * 0.1, "#ffe14d", parent, col)
     return "#b3123a"
 
 
@@ -201,8 +202,8 @@ def breaking(name, w, h, parent, col):
         parent,
         col,
     )
-    text(f"{name}_t1", "ÚLTIMA HORA", (0, -0.13, h * 0.27), h * 0.2, "#ffffff", parent, col, 3.0)
-    text(f"{name}_t2", "BROTE EN\nNUEVA YORK", (0, -0.12, -h * 0.17), h * 0.17, "#ffe14d", parent, col, 2.5)
+    text(f"{name}_t1", tr("breaking_1"), (0, -0.13, h * 0.27), h * 0.2, "#ffffff", parent, col, 3.0)
+    text(f"{name}_t2", tr("breaking_2"), (0, -0.12, -h * 0.17), h * 0.17, "#ffe14d", parent, col, 2.5)
     return "#0b1d3a"
 
 

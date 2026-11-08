@@ -6,6 +6,7 @@ from app.content.profile import CHANNEL_CONCEPT, is_off_topic
 from app.core.errors import ProviderError
 from app.models.enums import VideoFormat
 from app.services.ai.base import AIProvider
+from app.services.language import GENERAL_TAGS, base, title_guide
 from app.services.metadata.rules import fit_tags, normalize_tags, validate_metadata
 
 METADATA_SCHEMA = {
@@ -70,7 +71,11 @@ def generate_metadata(
         if video_format == VideoFormat.SHORT
         else "This is a long-form video; the description may include a summary and chapters."
     )
-    prompt = f"{format_hint}\nLanguage: {language}\nWorking title: {working_title}\n\nScript:\n{script_text}"
+    prompt = (
+        f"{format_hint}\nLanguage: write every field in '{language}'. {title_guide(language)}\n"
+        f"General tags in this language: {GENERAL_TAGS[base(language)]}.\n"
+        f"Working title: {working_title}\n\nScript:\n{script_text}"
+    )
     result = provider.generate_json(system=SYSTEM_PROMPT, prompt=prompt, schema=METADATA_SCHEMA)
     try:
         draft = MetadataDraft(**result.data, provider=result.provider, model=result.model)

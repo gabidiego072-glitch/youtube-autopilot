@@ -88,6 +88,7 @@ def main() -> int:
     sub.add_parser("preflight")
     run_p = sub.add_parser("run")
     run_p.add_argument("--channel", required=True, help="channel name (created if missing) or id")
+    run_p.add_argument("--language", default="es", help="language of a NEW channel (es, en)")
     run_p.add_argument("--niche", default="curiosidades, ciencia y situaciones hipotéticas")
     run_p.add_argument("--format", choices=[f.value for f in VideoFormat], default="short")
     run_p.add_argument("--mode", choices=["preview", "draft", "lite", "hd", "final"], default="draft")
@@ -114,10 +115,14 @@ def main() -> int:
     upload_p.add_argument("video", type=Path)
     upload_p.add_argument("--title", default="Prueba privada YouTube-Autopilot")
     upload_p.add_argument("--thumbnail", type=Path)
-    sub.add_parser("sync-analytics")
-    sub.add_parser("learning", help="what the system has learnt so far (voices, music, length, hooks)")
+    for name, help_text in (
+        ("sync-analytics", "store YouTube Analytics snapshots of the channel's videos"),
+        ("learning", "what the system has learnt so far (voices, music, length, hooks)"),
+        ("daily-done", "exit 0 if today's video is already made or being made (for retries)"),
+    ):
+        channel_p = sub.add_parser(name, help=help_text)
+        channel_p.add_argument("--channel", help="channel name or id (default: the first channel)")
     sub.add_parser("trends")
-    sub.add_parser("daily-done", help="exit 0 if today's video is already made or being made (for retries)")
     report_p = sub.add_parser("channel-report", help="real YouTube data for every upload (views, retention, traffic)")
     report_p.add_argument("--days", type=int, default=120)
     report_p.add_argument("--out", type=Path, default=Path("channel_report.json"))
@@ -162,16 +167,25 @@ def main() -> int:
             print(json.dumps([summary(r) for r in runs if r], ensure_ascii=False, indent=2, default=str))
             return 0
         if args.command == "daily-done":
-            return daily_done(db)
+            channel = find_channel(db, args.channel)
+            if args.channel and channel is None:
+                print(f"Channel {args.channel!r} has no videos yet: make one.")
+                return 1
+            return daily_done(db, channel.id if channel else None)
         if args.command == "learning":
-            channel = db.scalar(select(Channel).order_by(Channel.created_at))
+            channel = find_channel(db, args.channel)
             if channel is None:
                 print("No channel yet.")
                 return 0
-            print(json.dumps(channel_standings(db, channel.id), ensure_ascii=False, indent=2))
+            print(json.dumps(channel_standings(db, channel.id, channel.language), ensure_ascii=False, indent=2))
             return 0
         if args.command == "sync-analytics":
-            print(json.dumps(sync_youtube_metrics(db, YouTubeAnalyticsCollector(settings)), indent=2))
+            channel = find_channel(db, args.channel)
+            if args.channel and channel is None:
+                print(json.dumps({"videos": 0, "note": f"channel {args.channel!r} has no videos yet"}))
+                return 0
+            collector = YouTubeAnalyticsCollector(settings)
+            print(json.dumps(sync_youtube_metrics(db, collector, channel_id=channel.id if channel else None), indent=2))
             return 0
         if args.command == "render-shard":
             return render_shard(db, args, settings)
@@ -182,13 +196,9 @@ def main() -> int:
         # Progress goes to stderr so stdout stays one clean JSON document (the workflow parses it).
         services = real_services(settings, log=lambda *a: print(*a, file=sys.stderr, flush=True))
         if args.command == "run":
-            channel = None
-            try:
-                channel = db.get(Channel, uuid.UUID(args.channel))
-            except ValueError:
-                channel = db.scalar(select(Channel).where(Channel.name == args.channel))
+            channel = find_channel(db, args.channel)
             if channel is None:
-                channel = Channel(name=args.channel, niche=args.niche, language="es")
+                channel = Channel(name=args.channel, niche=args.niche, language=args.language)
                 db.add(channel)
                 db.commit()
             run = create_run(db, channel, VideoFormat(args.format), args.mode, args.auto_publish)
@@ -203,11 +213,25 @@ def main() -> int:
         return 0 if run.status.value in ("published", "waiting_approval") or args.command == "run" and args.until else 1
 
 
-def daily_done(db) -> int:
-    """0 = today (UTC) already has a published / waiting video, or one started in the last 3 hours; 1 = make one."""
+def find_channel(db, name_or_id: str | None):
+    """A channel by id or name; without one, the oldest channel (the original Spanish one)."""
+    if not name_or_id:
+        return db.scalar(select(Channel).order_by(Channel.created_at))
+    try:
+        return db.get(Channel, uuid.UUID(name_or_id))
+    except ValueError:
+        return db.scalar(select(Channel).where(Channel.name == name_or_id))
+
+
+def daily_done(db, channel_id=None) -> int:
+    """0 = today (UTC) already has a published / waiting video, or one started in the last 3 hours; 1 = make one.
+    With channel_id, only that channel's runs count (each channel makes its own daily video)."""
     now = datetime.now(UTC)
     start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    runs = list(db.scalars(select(PipelineRun).where(PipelineRun.created_at >= start)))
+    query = select(PipelineRun).where(PipelineRun.created_at >= start)
+    if channel_id is not None:
+        query = query.where(PipelineRun.channel_id == channel_id)
+    runs = list(db.scalars(query))
     for run in runs:
         created = run.created_at if run.created_at.tzinfo else run.created_at.replace(tzinfo=UTC)
         if run.status in (RunStatus.PUBLISHED, RunStatus.WAITING_APPROVAL):

@@ -15,9 +15,14 @@ from app.models import AnalyticsSnapshot, VideoProject
 from app.models.enums import AnalyticsSource
 
 
-def sync_youtube_metrics(db: Session, collector, today: date | None = None) -> dict:
+def sync_youtube_metrics(db: Session, collector, today: date | None = None, channel_id=None) -> dict:
+    """Snapshot every uploaded video; with channel_id, only that channel's (the OAuth token only sees one
+    YouTube channel: asking about another channel's videos would store zeros)."""
     today = today or date.today()
-    projects = list(db.scalars(select(VideoProject).where(VideoProject.youtube_video_id.is_not(None))))
+    query = select(VideoProject).where(VideoProject.youtube_video_id.is_not(None))
+    if channel_id is not None:
+        query = query.where(VideoProject.channel_id == channel_id)
+    projects = list(db.scalars(query))
     synced, errors = 0, []
     for project in projects:
         start = project.published_at.date() if project.published_at else today - timedelta(days=28)

@@ -80,11 +80,29 @@ def estimate_speech_seconds(text: str) -> float:
     return round(len(text.split()) / WORDS_PER_SECOND, 1)
 
 
+QUESTION_WORDS = (  # English question endings (Spanish ones carry '¿')
+    "and ",
+    "so ",
+    "what ",
+    "would ",
+    "could ",
+    "how ",
+    "why ",
+    "which ",
+    "who ",
+    "where ",
+    "do ",
+    "did ",
+    "will ",
+    "can ",
+)
+
+
 def repair_ending(draft: ScriptDraft) -> None:
     """A question ending that only lacks its '?' is fixed instead of rejected."""
     line = draft.ending_line.rstrip()
     if draft.ending_type == "question" and not line.endswith("?"):
-        if "¿" in line:
+        if "¿" in line or line.lower().startswith(QUESTION_WORDS):
             fixed = line.rstrip(".!") + "?"
             last = draft.scenes[-1]
             if last.narration.rstrip().endswith(line):
