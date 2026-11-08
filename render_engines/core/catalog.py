@@ -13,8 +13,11 @@ ENVIRONMENTS = {
     "walking on the sidewalks), panic (people running down the road), onlookers (people standing and staring), "
     "parked_cars, physics (true to let "
     "things be thrown; REQUIRED for inertia_shock and shatter_windows), style (old_town = narrow warm low "
-    "houses | modern = tall grey/glass towers | suburb = 1-2 floor houses with roofs | new_york = Manhattan/Times "
-    "Square towers with giant glowing billboards and yellow taxis | mixed). Keep the same "
+    "houses | modern = tall grey/glass towers | suburb = 1-2 floor houses with roofs | new_york = Manhattan: "
+    "separate buildings of very different heights (brick walk-ups with fire escapes and water towers, "
+    "limestone towers with setbacks, glass towers), giant billboards, vertical neon signs, yellow taxis, a wet "
+    "street, steam from manholes, a cross street at x 6-14, a skyline in the haze; with plaza true the avenue is "
+    "the paved Times Square plaza with the red steps | mixed). Keep the same "
     "style in every scene of a video.",
     "coast": "Seafront street: like 'city' but the south side is a promenade with a railing, a beach and the sea "
     "(water starts around y=-35). Use 'surge' to bring the sea into the street.",

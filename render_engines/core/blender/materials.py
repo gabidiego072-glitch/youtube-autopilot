@@ -75,6 +75,74 @@ def noise_ground(
     return mat
 
 
+def paver_ground(
+    name: str,
+    colors=("#4a4744", "#5c5853", "#3d3b39"),
+    mortar: str = "#262422",
+    size: float = 0.6,
+    roughness: float = 0.3,
+) -> bpy.types.Material:
+    """Wet stone paving: slabs in a brick pattern with dark joints, each slab a slightly different shade,
+    grooved joints (bump) and damp patches that shine more (roughness varies). Generated, no images."""
+    mat = bpy.data.materials.new(name)
+    bsdf = _principled(mat)
+    nodes, links = mat.node_tree.nodes, mat.node_tree.links
+    coord = nodes.new("ShaderNodeTexCoord")
+    brick = nodes.new("ShaderNodeTexBrick")
+    brick.offset = 0.5
+    brick.inputs["Scale"].default_value = 1.0 / size
+    brick.inputs["Mortar Size"].default_value = 0.025
+    brick.inputs["Brick Width"].default_value = 1.0
+    brick.inputs["Row Height"].default_value = 0.5
+    brick.inputs["Color1"].default_value = hex_to_linear(colors[0])
+    brick.inputs["Color2"].default_value = hex_to_linear(colors[1])
+    brick.inputs["Mortar"].default_value = hex_to_linear(mortar)
+    links.new(coord.outputs["Object"], brick.inputs["Vector"])
+    # Grime and damp patches: a large noise darkens some areas and makes them glossier.
+    grime = nodes.new("ShaderNodeTexNoise")
+    grime.inputs["Scale"].default_value = 0.35
+    grime.inputs["Detail"].default_value = 4.0
+    links.new(coord.outputs["Object"], grime.inputs["Vector"])
+    dark = nodes.new("ShaderNodeMix")
+    dark.data_type = "RGBA"
+    dark.blend_type = "MULTIPLY"
+    dark.inputs["Factor"].default_value = 0.45
+    links.new(brick.outputs["Color"], dark.inputs["A"])
+    links.new(grime.outputs["Color"], dark.inputs["B"])
+    links.new(dark.outputs["Result"], bsdf.inputs["Base Color"])
+    wet = nodes.new("ShaderNodeMapRange")
+    wet.inputs["To Min"].default_value = roughness * 0.4
+    wet.inputs["To Max"].default_value = min(1.0, roughness * 1.8)
+    links.new(grime.outputs["Fac"], wet.inputs["Value"])
+    links.new(wet.outputs["Result"], bsdf.inputs["Roughness"])
+    bump_node = nodes.new("ShaderNodeBump")
+    bump_node.inputs["Strength"].default_value = 0.35
+    bump_node.inputs["Distance"].default_value = 0.02
+    links.new(brick.outputs["Fac"], bump_node.inputs["Height"])
+    links.new(bump_node.outputs["Normal"], bsdf.inputs["Normal"])
+    return mat
+
+
+def wet_asphalt(name: str, roughness: float = 0.28) -> bpy.types.Material:
+    """Dark asphalt after rain: fine grain, lighter worn patches and shiny wet areas that mirror the lights."""
+    mat = noise_ground(name, "#1f2023", "#33343a", scale=1.2, roughness=roughness, bump=0.06)
+    nodes, links = mat.node_tree.nodes, mat.node_tree.links
+    bsdf = nodes["Principled BSDF"]
+    coord = next(n for n in nodes if n.type == "TEX_COORD")
+    puddles = nodes.new("ShaderNodeTexNoise")
+    puddles.inputs["Scale"].default_value = 0.25
+    puddles.inputs["Detail"].default_value = 3.0
+    links.new(coord.outputs["Object"], puddles.inputs["Vector"])
+    shine = nodes.new("ShaderNodeMapRange")
+    shine.inputs["From Min"].default_value = 0.45
+    shine.inputs["From Max"].default_value = 0.6
+    shine.inputs["To Min"].default_value = roughness * 1.6
+    shine.inputs["To Max"].default_value = 0.04  # puddles: almost a mirror
+    links.new(puddles.outputs["Fac"], shine.inputs["Value"])
+    links.new(shine.outputs["Result"], bsdf.inputs["Roughness"])
+    return mat
+
+
 def vertex_color_material(
     name: str,
     attribute: str = "Col",
