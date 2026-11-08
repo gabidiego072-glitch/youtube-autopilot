@@ -46,8 +46,15 @@ def build_camera(scene: bpy.types.Scene, ctx: RenderContext, camera_spec: dict, 
         add_noise(cam, "location", strength=camera_spec["handheld"], scale=40)
     if camera_spec.get("shakes"):
         _add_shakes(cam, ctx, camera_spec["shakes"])
-    if rig is not None and (camera_spec.get("pov_run") or camera_spec.get("pov_pushes")):
-        _pov_motion(cam, rig, ctx, bool(camera_spec.get("pov_run")), camera_spec.get("pov_pushes", []))
+    if rig is not None and (camera_spec.get("pov_run") or camera_spec.get("pov_pushes") or camera_spec.get("pov_sips")):
+        _pov_motion(
+            cam,
+            rig,
+            ctx,
+            bool(camera_spec.get("pov_run")),
+            camera_spec.get("pov_pushes", []),
+            camera_spec.get("pov_sips", []),
+        )
     return cam
 
 
@@ -144,6 +151,30 @@ def _pov_rig(cam, item: str | None = None) -> None:
         objects.mesh_object(
             "pov_phone_screen", objects.box(0.068, 0.14, 0.002), screen, location=(0, 0, 0.005), parent=phone
         )
+    elif item == "cup":
+        china = materials.principled("pov_cup", "#f4f1ea", roughness=0.25)
+        coffee = materials.principled("pov_coffee", "#3b2416", roughness=0.15)
+        cup = objects.mesh_object(
+            "pov_cup",
+            objects.cone(0.036, 0.031, 0.075, 24, base_at_origin=True),
+            china,
+            True,
+            location=(0.06, -0.165, -0.5),  # resting on top of the fist, in view
+            rotation=(math.radians(-80), 0, 0),  # upright in the camera's view
+            parent=holder,
+        )
+        objects.mesh_object(
+            "pov_coffee_top", objects.cone(0.033, 0.033, 0.004, 24), coffee, True, location=(0, 0, 0.069), parent=cup
+        )
+        objects.mesh_object(
+            "pov_cup_handle",
+            objects.transform(objects.sphere(0.018, 10, 6), Matrix.Diagonal((0.4, 1, 1.2, 1))),
+            china,
+            True,
+            location=(0.05, 0, 0.05),
+            parent=cup,
+        )
+        holder["cup"] = cup.name
     elif item == "flashlight":
         metal = materials.principled("pov_torch", "#2a2b2f", roughness=0.3, metallic=0.8)
         torch = objects.mesh_object(
@@ -165,7 +196,7 @@ def _pov_rig(cam, item: str | None = None) -> None:
     return {"holder": holder, "arms": arms}
 
 
-def _pov_motion(cam, rig: dict, ctx: RenderContext, running: bool, pushes: list) -> None:
+def _pov_motion(cam, rig: dict, ctx: RenderContext, running: bool, pushes: list, sips: list = ()) -> None:
     """Running: the head bobs with every stride and the arms pump. Pushes: a hand thrusts forward."""
     import math
 
@@ -186,6 +217,16 @@ def _pov_motion(cam, rig: dict, ctx: RenderContext, running: bool, pushes: list)
                 key(arm, "rotation_euler", frame, (math.radians(14) + swing, math.radians(4 * sx), 0))
             f += step
             i += 1
+    for at in sips:  # bring the hand (and the cup) up to the mouth and back
+        holder, frame = rig["holder"], ctx.frame(float(at))
+        key(holder, "location", frame - 6, (0, 0, 0))
+        key(holder, "location", frame, (-0.05, 0.16, 0.12))
+        key(holder, "rotation_euler", frame - 6, (0, 0, 0))
+        key(holder, "rotation_euler", frame, (math.radians(-25), 0, 0))
+        key(holder, "location", frame + 14, (-0.05, 0.16, 0.12))
+        key(holder, "rotation_euler", frame + 14, (math.radians(-25), 0, 0))
+        key(holder, "location", frame + 22, (0, 0, 0))
+        key(holder, "rotation_euler", frame + 22, (0, 0, 0))
     for n, at in enumerate(pushes):
         arm = arms.get(1 if n % 2 == 0 else -1) or next(iter(arms.values()))
         frame = ctx.frame(float(at))
