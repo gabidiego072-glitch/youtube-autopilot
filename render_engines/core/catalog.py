@@ -21,7 +21,8 @@ ENVIRONMENTS = {
     "balconies, café terraces, the Eiffel Tower at the end of the avenue | tokyo = narrow buildings covered in "
     "vertical neon signs, power lines, vending machines, Tokyo Tower | london = brick terraces, red double-decker "
     "buses, black cabs, red phone boxes, Big Ben | mixed). Keep the same "
-    "style in every scene of a video.",
+    "style in every scene of a video. wet (true = wet street and paving after rain, mirroring the lights; "
+    "only when the story has rain, a flood or a dramatic night).",
     "coast": "Seafront street: like 'city' but the south side is a promenade with a railing, a beach and the sea "
     "(water starts around y=-35). Use 'surge' to bring the sea into the street.",
     "interior": "A room (x in [-3,3], y in [-2.5,2.5], height 2.7; east wall at x=+3; window in the north "
