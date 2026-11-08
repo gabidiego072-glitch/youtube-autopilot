@@ -119,5 +119,28 @@ def add_glow(scene: bpy.types.Scene, threshold: float = 1.0, size: int = 7, stre
     tree.links.new(glare.outputs["Image"], out.inputs["Image"])
 
 
+def add_haze(scene: bpy.types.Scene, color: str, start: float = 25.0, depth: float = 260.0, amount: float = 0.55):
+    """Aerial perspective in the compositor: far things fade into the air colour (mist pass, no volumes)."""
+    from render_engines.core.colors import hex_to_linear
+
+    scene.view_layers[0].use_pass_mist = True
+    world = scene.world
+    world.mist_settings.start, world.mist_settings.depth = start, depth
+    world.mist_settings.falloff = "QUADRATIC"
+    tree = scene.node_tree
+    layers = next(n for n in tree.nodes if n.type == "R_LAYERS")
+    out = next(n for n in tree.nodes if n.type == "COMPOSITE")
+    source = out.inputs["Image"].links[0].from_socket
+    scale = tree.nodes.new("CompositorNodeMath")
+    scale.operation = "MULTIPLY"
+    scale.inputs[1].default_value = amount
+    tree.links.new(layers.outputs["Mist"], scale.inputs[0])
+    mix = tree.nodes.new("CompositorNodeMixRGB")
+    mix.inputs[2].default_value = hex_to_linear(color)
+    tree.links.new(scale.outputs[0], mix.inputs[0])
+    tree.links.new(source, mix.inputs[1])
+    tree.links.new(mix.outputs[0], out.inputs["Image"])
+
+
 def render_animation() -> None:
     bpy.ops.render.render(animation=True)

@@ -448,8 +448,15 @@ def build_city(env: dict, ctx, scene, seed: int) -> Urban:
     widths, near_floors, far_floors, palette, awning_chance = CITY_STYLES[style]
     urban.style = style
 
-    asphalt = materials.noise_ground("asphalt", "#2a2b2e", "#3a3b3f", scale=2.0, roughness=0.9, bump=0.1)
-    concrete = materials.noise_ground("sidewalk", "#9c9a94", "#b3b0a8", scale=1.2, roughness=0.85, bump=0.1)
+    wet = style == "new_york"  # wet asphalt and stone paving that mirror the billboards
+    if wet:
+        asphalt = materials.wet_asphalt("asphalt")
+        concrete = materials.paver_ground("sidewalk_pavers")
+    else:
+        asphalt = materials.noise_ground("asphalt", "#2a2b2e", "#3a3b3f", scale=2.0, roughness=0.9, bump=0.1)
+        concrete = materials.noise_ground("sidewalk", "#9c9a94", "#b3b0a8", scale=1.2, roughness=0.85, bump=0.1)
+    if wet and env.get("plaza"):  # Times Square: the avenue is a pedestrian plaza paved like the sidewalks
+        asphalt = materials.paver_ground("plaza_pavers", ("#55504a", "#6a645c", "#4a4642"), size=0.8)
     paint = _mat("road_paint", "#f2f2ee", roughness=0.6)
     # The road sits one curb lower; sidewalks are at z = 0, where people walk.
     ground = objects.mesh_object("Road", _box(length * 2, ROAD_HALF * 2, 0.2, (0, 0, -CURB_H - 0.1)), asphalt, col=col)
@@ -480,6 +487,33 @@ def build_city(env: dict, ctx, scene, seed: int) -> Urban:
         x = -length
         index = 0
         while x < length:
+            if style == "new_york":
+                gap0, gap1 = NY_CROSS_STREET if not coast else (1e9, 1e9)
+                if gap0 <= x < gap1:  # the cross street: no buildings
+                    x = gap1
+                    continue
+                width = round(rng.uniform(6.0, 16.0), 1)
+                if x < gap0 < x + width:
+                    width = gap0 - x
+                    if width < 3.0:  # a sliver: widen the gap instead
+                        x = gap1
+                        continue
+                height, kind, _face = ny_building(
+                    urban,
+                    f"building_{side}_{index}",
+                    x,
+                    width,
+                    side,
+                    seed + index * 7 + side,
+                    rng,
+                    col,
+                    near=abs(x + width / 2) < 55,
+                )
+                if kind != "low" and abs(x + width / 2) < 60:
+                    _billboards(urban, f"bb_{side}_{index}", x, width, side, min(height, 30.0), rng, col)
+                x += width
+                index += 1
+                continue
             width = rng.choice(widths)
             floors = rng.randint(*far_floors) if abs(x) > 20 else rng.randint(*near_floors)
             depth = rng.uniform(10, 16)
@@ -565,6 +599,21 @@ def build_city(env: dict, ctx, scene, seed: int) -> Urban:
         )
         urban.loose.append((c, 1200.0))
 
+    if style == "new_york":
+        granite = _mat("curb_granite", "#9a968e", 0.5)
+        for side in (1, -1):  # granite curbs along the sidewalks
+            if not (coast and side < 0):
+                objects.mesh_object(
+                    f"curb_{side}",
+                    _box(length * 2, 0.25, CURB_H + 0.02, (0, side * (ROAD_HALF + 0.12), -CURB_H / 2 + 0.01)),
+                    granite,
+                    col=col,
+                )
+        if not coast:
+            ny_cross_street(urban, length, col)
+        ny_skyline(length, rng, col)
+        if env.get("steam", True):
+            ny_steam(urban, ctx, rng, col)
     if coast:
         _seafront(urban, env, length, col)
     urban.sky_refs = _sky(env, scene)
@@ -687,7 +736,9 @@ def _street_details(urban, env, length, style, rng, col, coast) -> None:
             col=col,
         )
         urban.loose.append((cart, 80.0))
-    if env.get("red_steps", True):  # red TKTS-style steps across the far end of the avenue
+    if env.get(
+        "red_steps", style != "new_york" or env.get("plaza", False)
+    ):  # red TKTS-style steps across the far end of the avenue
         steps = _mat("red_steps", "#c4161c", 0.4, emission="#ff2a2a", strength=0.6)
         parts = [(_box(1.2, 9.0, 0.45 * (k + 1), (k * 1.2, 0, 0.225 * (k + 1))), steps) for k in range(8)]
         compound("red_steps", parts, (length * 0.62, 0.0, 0), col=col)
@@ -977,3 +1028,219 @@ def enable_physics(urban: Urban, scene, ctx) -> None:
         for shard in shards:
             make_rigid(shard, "ACTIVE", mass=0.4, friction=0.4)
             shard.rigid_body.kinematic = True  # held in its frame until it shatters
+
+
+# --- New York: a real-looking Manhattan block --------------------------------------------------------
+# Separate buildings of very different heights and ages side by side: brick walk-ups with fire escapes and
+# water towers, limestone pre-war towers with setbacks, dark glass towers, low shops; a cross street that
+# opens the view; vertical neon blade signs, traffic-light mast arms, steam from manholes, a skyline behind
+# and haze that gives depth.
+NY_TYPES = (  # kind, weight, floors range, wall colours, window bay (m)
+    ("brick", 0.34, (4, 8), ("#8a3b2a", "#7a4a36", "#9c4f32", "#6b3a2e", "#a5643f"), 2.0),
+    ("prewar", 0.30, (12, 24), ("#b8ab92", "#9a8f80", "#c9bfa9", "#a89c86", "#8c7f6e"), 2.2),
+    ("glass", 0.24, (22, 48), ("#2c3a48", "#3b4d5c", "#25303a", "#46586a"), 1.6),
+    ("low", 0.12, (2, 3), ("#d9cbb0", "#6f6a64", "#b05a3c", "#e2d6c2"), 3.0),
+)
+NY_CROSS_STREET = (6.0, 14.0)  # x range of the cross street (the zebra crossing is at x = 10)
+NY_BLADES = ("THEATRE", "MUSICAL", "HOTEL", "GRILL", "BAGELS", "BROADWAY", "PIZZA", "DELI", "JAZZ", "BAR")
+NY_HAZE = {"day": "#c9d6e4", "golden": "#e8b98f", "dusk": "#8f86ad", "dawn": "#d9b8a8", "night": "#262b40"}
+
+
+def _ny_pick(rng):
+    roll, total = rng.random(), 0.0
+    for kind in NY_TYPES:
+        total += kind[1]
+        if roll <= total:
+            return kind
+    return NY_TYPES[0]
+
+
+def ny_building(urban: Urban, name: str, x0: float, width: float, side: int, seed: int, rng, col, near: bool):
+    """One Manhattan building between x0 and x0 + width on one side of the avenue. Returns its height."""
+    kind, _w, floors_range, walls, bay = _ny_pick(rng)
+    if not near and kind == "low":
+        kind, _w, floors_range, walls, bay = NY_TYPES[1]
+    floors = rng.randint(*floors_range)
+    wall = rng.choice(walls)
+    mat = facade_material(f"{name}_facade", wall, seed, bay=bay, floor_h=3.0)
+    if kind == "glass":  # glossy curtain wall
+        bsdf = mat.node_tree.nodes["Principled BSDF"]
+        bsdf.inputs["Roughness"].default_value = 0.12
+        bsdf.inputs["Metallic"].default_value = 0.5
+    urban.facades.append(mat)
+    depth = rng.uniform(12, 18)
+    inset = 0.0 if kind != "glass" or rng.random() < 0.5 else rng.uniform(0.8, 2.5)  # plazas in front of towers
+    w = width - 0.3
+    cx = x0 + width / 2
+    # Tiers: pre-war and glass towers step back as they rise (wedding-cake setbacks).
+    tiers, z, remaining = [], 0.0, floors
+    shrink_x, shrink_y = 0.0, 0.0
+    while remaining > 0:
+        if kind in ("prewar", "glass") and remaining > 10 and tiers:
+            shrink_x += rng.uniform(0.8, 2.2)
+            shrink_y += rng.uniform(1.0, 3.0)
+        part = remaining if kind in ("brick", "low") or remaining <= 10 else rng.randint(6, min(14, remaining))
+        h = part * 3.0 + (0.6 if part == remaining else 0.0)
+        tiers.append((w - 2 * shrink_x, depth - shrink_y, z, h, shrink_y))
+        z += h
+        remaining -= part
+    face = side * (BUILDING_LINE + inset)
+    main = None
+    for k, (tw, td, tz, th, sy) in enumerate(tiers):
+        if tw < 3 or td < 4:
+            break
+        y = side * (BUILDING_LINE + inset + sy + td / 2)
+        obj = objects.mesh_object(f"{name}_tier{k}", _box(tw, td, th, (cx, y, tz + th / 2)), mat, col=col)
+        urban.static.append(obj)
+        main = main or obj
+    height = z
+    urban.buildings.append((main, side, False))
+    if kind in ("brick", "prewar", "low"):
+        base_floors = max(1, int(tiers[0][3] // 3))
+        relief_style = "new_york" if kind == "brick" else "modern"
+        _facade_relief(f"{name}_relief", x0, width, side, base_floors, wall, relief_style, rng, col)
+    if kind in ("brick", "prewar") and rng.random() < 0.6:  # the wooden water tank on the roof
+        tw, td, tz, th, sy = tiers[-1]
+        top_y = side * (BUILDING_LINE + inset + sy + td / 2)
+        _water_tower(f"{name}_wt", (cx + rng.uniform(-tw * 0.25, tw * 0.25), top_y, tz + th), rng, col)
+    if near and kind != "glass" and rng.random() < 0.55:
+        _blade_sign(f"{name}_blade", (x0 + rng.uniform(0.8, width - 0.8), face, rng.uniform(3.4, 5.0)), side, rng, col)
+    if near and kind in ("brick", "low") and rng.random() < 0.7:
+        awning(
+            f"{name}_awning",
+            (cx, face - side * 0.02, 3.1),
+            w * 0.8,
+            rng.choice(("#b8372d", "#2d6b8a", "#3f7a35", "#d18a1f", "#1d1d22")),
+            col,
+        )
+    return height, kind, face
+
+
+def _water_tower(name, location, rng, col):
+    wood = _mat("water_tower_wood", rng.choice(("#6b4a2e", "#7d5a3a", "#5a3d28")), 0.85)
+    steel = _mat("water_tower_steel", "#2a2b2e", 0.5, metallic=0.7)
+    parts = [
+        (_cyl(1.3, 3.2, (0, 0, 2.6 + 1.6), segments=16), wood),
+        (
+            objects.transform(objects.cone(1.4, 0.05, 1.2, 16, base_at_origin=True), Matrix.Translation((0, 0, 5.8))),
+            wood,
+        ),
+    ]
+    for dx, dy in ((-0.9, -0.9), (0.9, -0.9), (-0.9, 0.9), (0.9, 0.9)):
+        parts.append((_cyl(0.08, 2.6, (dx, dy, 1.3)), steel))
+    parts.append((_box(2.2, 2.2, 0.12, (0, 0, 2.6)), steel))
+    compound(name, parts, location, col=col)
+
+
+def _blade_sign(name, at, side, rng, col):
+    """A vertical neon sign sticking out of the facade, readable when you look down the avenue."""
+    from render_engines.cinematic import ads
+
+    word = rng.choice(NY_BLADES)
+    height = 0.55 * len(word) + 0.6
+    colour = rng.choice(("#ff2d55", "#ffcc00", "#00c2ff", "#ff7a00", "#ff4fd8", "#2ee59d"))
+    x, face, z0 = at
+    holder = objects.empty(f"{name}_holder", location=(x, face - side * 0.8, z0 + height / 2), col=col)
+    panel = objects.mesh_object(
+        f"{name}_panel", _box(0.25, 1.1, height), ads.glow(f"blade_{colour}", colour, 1.6), col=col
+    )
+    panel.parent = holder
+    frame = objects.mesh_object(
+        f"{name}_frame", _box(0.2, 1.25, height + 0.15), _mat("blade_frame", "#18181c", 0.4, metallic=0.6), col=col
+    )
+    frame.parent = holder
+    for sx in (-1, 1):  # letters on both faces, stacked vertically
+        curve = bpy.data.curves.new(f"{name}_t{sx}", "FONT")
+        curve.body = "\n".join(word)
+        curve.size = 0.5
+        curve.space_line = 0.85
+        curve.extrude = 0.01
+        curve.align_x, curve.align_y = "CENTER", "CENTER"
+        font = ads._font()
+        if font:
+            curve.font = font
+        txt = bpy.data.objects.new(f"{name}_t{sx}", curve)
+        txt.location = (sx * 0.14, 0, 0)
+        txt.rotation_euler = (math.radians(90), 0, math.radians(90 * sx))
+        txt.data.materials.append(ads.glow("blade_text", "#ffffff", 4.0))
+        txt.parent = holder
+        objects.link(txt, col)
+
+
+def ny_cross_street(urban, length, col):
+    """The cross street: asphalt, crossings and buildings that recede, plus mast-arm traffic lights."""
+    x0, x1 = NY_CROSS_STREET
+    asphalt = materials.noise_ground("asphalt_cross", "#232427", "#34353a", scale=2.0, roughness=0.35, bump=0.08)
+    for side in (1, -1):
+        objects.mesh_object(
+            f"cross_road_{side}",
+            _box(x1 - x0 - 1.0, 70, 0.1, ((x0 + x1) / 2, side * (BUILDING_LINE + 35), 0.02)),
+            asphalt,
+            col=col,
+        )
+    metal = _mat("mast_metal", "#2b2e33", roughness=0.4, metallic=0.8)
+    red = _mat("tl_red", "#ff2a1a", emission="#ff2a1a", strength=3.0)
+    sign = _mat("street_sign", "#1b6b3a", 0.4, emission="#1b6b3a", strength=0.4)
+    for side, x in ((1, x1 - 0.5), (-1, x0 + 0.5)):
+        y0 = side * (ROAD_HALF + 0.5)
+        arm = 5.5
+        parts = [
+            (_cyl(0.11, 6.6, (0, 0, 3.3)), metal),
+            (_box(0.12, arm, 0.12, (0, -side * arm / 2, 6.3)), metal),
+            (_box(0.9, 0.06, 0.3, (0, -side * 0.6, 4.6)), sign),
+        ]
+        for off in (2.6, 5.0):
+            parts.append((_box(0.32, 0.3, 0.95, (0, -side * off, 5.75)), metal))
+            parts.append((_cyl(0.1, 0.05, (0, -side * off - 0.16, 6.05), "Y", 12), red))
+        compound(f"mast_{side}", parts, (x, y0, 0), col=col)
+        _sign_text(f"street_name_{side}", "W 45 ST", (x, y0 - side * 0.65, 4.6), side, 0.18, col)
+
+
+def ny_skyline(length, rng, col):
+    """Towers far behind the street blocks, so the sky between the buildings is full of skyline."""
+    mats = [
+        facade_material(f"skyline_{i}", c, 900 + i, bay=1.8)
+        for i, c in enumerate(("#4b5866", "#9a8f80", "#2c3a48", "#b8ab92"))
+    ]
+    for i in range(int(length / 3)):
+        side = 1 if i % 2 else -1
+        x = rng.uniform(-length * 1.4, length * 1.4)
+        y = side * rng.uniform(38, 95)
+        w, d = rng.uniform(10, 24), rng.uniform(10, 24)
+        h = rng.uniform(45, 170)
+        objects.mesh_object(f"skyline_tower_{i}", _box(w, d, h, (x, y, h / 2)), rng.choice(mats), col=col)
+        if rng.random() < 0.25:  # a spire
+            objects.mesh_object(
+                f"skyline_spire_{i}",
+                objects.transform(
+                    objects.cone(w * 0.18, 0.05, h * 0.18, 8, base_at_origin=True), Matrix.Translation((x, y, h))
+                ),
+                mats[1],
+                col=col,
+            )
+
+
+def ny_steam(urban, ctx, rng, col):
+    """Steam rising from manholes in the road, the classic New York street look."""
+    from render_engines.cinematic.effects import puffs
+
+    iron = materials.principled("manhole_iron", "#1a1a1c", roughness=0.35, metallic=0.8)
+    for i, (x, y) in enumerate(((-6.0, 2.4), (19.0, -2.6), (34.0, 2.2))):
+        objects.mesh_object(f"manhole_{i}", _cyl(0.42, 0.02, (x, y, -CURB_H + 0.01), segments=20), iron, col=col)
+        puffs(
+            f"steam_{i}",
+            (x, y, -CURB_H + 0.05),
+            ctx.frame_start - 3 * ctx.fps,
+            ctx.frame_end,
+            ctx.fps,
+            color="#f2f0ec",
+            alpha=0.32,
+            count=int((ctx.duration_seconds + 3) * 4),
+            rise=7.0,
+            spread=2.2,
+            size=0.7,
+            life=3.5,
+            seed=40 + i,
+            col=col,
+            soft=True,
+        )
