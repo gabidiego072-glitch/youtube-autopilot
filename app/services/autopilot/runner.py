@@ -42,6 +42,7 @@ from app.models import (
 )
 from app.models.enums import (
     AssetKind,
+    ContentCategory,
     FactCheckStatus,
     IdeaStatus,
     JobStatus,
@@ -64,6 +65,7 @@ from app.services.reporting.builder import performances
 from app.services.research.briefing import build_brief
 from app.services.scenes.planner import plan_scenes
 from app.services.scripts.generator import generate_script
+from app.services.styles import POV_SCRIPT_NOTE, POV_STORYBOARD_NOTE, next_planned_topic
 from app.services.thumbnails.generator import best_moment, generate_thumbnails
 from app.services.variety import RECENT, RecentVideos, pick_idea, recent_videos
 from app.services.youtube.base import UploadRequest
@@ -198,7 +200,25 @@ def step_topic(db, run, services, ai) -> dict:
         )
     )
     generated = 0
-    if len(fresh) < MIN_FRESH_IDEAS:
+    used = set(db.scalars(select(VideoProject.working_title).where(VideoProject.channel_id == channel.id)))
+    planned = next_planned_topic(used) if services.settings.planned_topics_enabled else None
+    if planned:  # a topic chosen by hand goes first, once
+        idea = Idea(
+            channel_id=channel.id,
+            premise=planned["premise"][:300],
+            category=ContentCategory(planned.get("category", ContentCategory.SOCIETY_AND_TECHNOLOGY.value)),
+            hook=planned.get("hook", planned["premise"]),
+            angle=planned.get("angle", ""),
+            science_basis=planned.get("science_basis", ""),
+            scores={},
+            score=100.0,
+            provider="planned",
+            model="planned",
+        )
+        db.add(idea)
+        db.commit()
+        fresh = [idea]
+    elif len(fresh) < MIN_FRESH_IDEAS:
         existing = list(db.scalars(select(Idea.premise).where(Idea.channel_id == channel.id)))
         existing += list(db.scalars(select(VideoProject.working_title).where(VideoProject.channel_id == channel.id)))
         past = performances(db, channel.id)
@@ -225,7 +245,7 @@ def step_topic(db, run, services, ai) -> dict:
         )
     if not fresh:
         raise ProviderError("No usable idea was generated.")
-    idea = pick_idea(fresh, recent_videos(db, channel.id))
+    idea = fresh[0] if planned else pick_idea(fresh, recent_videos(db, channel.id))
     project = VideoProject(
         channel_id=channel.id,
         working_title=idea.premise[:200],
@@ -244,6 +264,7 @@ def step_topic(db, run, services, ai) -> dict:
         project.target_duration_seconds = int(features["length"])
     else:
         features.pop("length")
+    features["style"] = (planned or {}).get("style", "classic")
     project.features = features
     idea.status, idea.project_id = IdeaStatus.USED, project.id
     run.project_id = project.id
@@ -268,6 +289,10 @@ def _music_variant(project) -> int:
     seed = int(project.id.int % 100_000)
     mood = (project.features or {}).get("music")
     return (MUSIC.index(mood) if mood in MUSIC else seed % len(MUSIC)) + len(MUSIC) * (seed % 35)
+
+
+def _style_note(project, pov_note: str) -> str | None:
+    return pov_note if (project.features or {}).get("style") == "pov" else None
 
 
 def _hook_note(project) -> str | None:
@@ -333,7 +358,15 @@ def _write_script(db, project, services, ai, notes: str | None = None) -> Script
                 niche=project.channel.niche,
                 style_guide=project.channel.style_guide,
                 notes="\n".join(
-                    n for n in (project.notes, notes, _hook_note(project), _recent(db, project).script_note()) if n
+                    n
+                    for n in (
+                        project.notes,
+                        notes,
+                        _style_note(project, POV_SCRIPT_NOTE),
+                        _hook_note(project),
+                        _recent(db, project).script_note(),
+                    )
+                    if n
                 )
                 or None,
                 research=_research(project),
@@ -451,8 +484,14 @@ def step_storyboard(db, run, services, ai) -> dict:
         durations=durations,
         visual_bible=script.visual_bible,
         seed=int(project.id.int % 100_000),
-        variety_note=_recent(db, project).storyboard_note(),
+        variety_note="\n\n".join(
+            n for n in (_recent(db, project).storyboard_note(), _style_note(project, POV_STORYBOARD_NOTE)) if n
+        )
+        or None,
     )
+    if (project.features or {}).get("style") == "pov":  # the viewer's eyes in every scene, whatever the AI said
+        for spec in script.scene_specs:
+            spec["camera"]["pov"] = True
     db.commit()
     production = {
         "id": f"run_{run.id.hex[:8]}",

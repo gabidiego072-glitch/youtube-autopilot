@@ -35,6 +35,7 @@ SCENE_SCHEMA = {
                 "physics": {"type": "boolean"},
                 "pedestrians": {"type": "integer"},
                 "parked_cars": {"type": "integer"},
+                "zombies": {"type": "integer"},
                 "trees": {"type": "integer"},
                 "rocks": {"type": "integer"},
                 "flowers": {"type": "integer"},
@@ -51,7 +52,13 @@ SCENE_SCHEMA = {
             "type": "array",
             "items": {
                 "type": "object",
-                "properties": {"id": _STRING, "start": _XY, "facing": _NUMBER, "scale": _NUMBER},
+                "properties": {
+                    "id": _STRING,
+                    "start": _XY,
+                    "facing": _NUMBER,
+                    "scale": _NUMBER,
+                    "zombie": {"type": "boolean"},
+                },
                 "required": ["id", "start"],
                 "additionalProperties": False,
             },
@@ -117,6 +124,8 @@ SCENE_SCHEMA = {
             "properties": {
                 "fstop": _NUMBER,
                 "handheld": _NUMBER,
+                "pov": {"type": "boolean"},
+                "pov_item": {"type": "string", "enum": ["none", "phone", "flashlight"]},
                 "shots": {
                     "type": "array",
                     "items": {

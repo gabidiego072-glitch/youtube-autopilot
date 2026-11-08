@@ -1,0 +1,10 @@
+[
+  {
+    "premise": "¿Qué pasaría si todos fueran zombis menos tú?",
+    "style": "pov",
+    "category": "human_body",
+    "hook": "Te despiertas y eres el último humano.",
+    "angle": "First-person survival journey hour by hour and day by day: waking up at home, the street full of zombies, getting supplies, the city going dark, where you would actually be safe. Each step explained with real science: how fast an infection spreads (epidemic models, R0), how long city water and power last without workers, why cold, water and height matter.",
+    "science_basis": "Epidemiology (SIR models, R0), rabies and the Ophiocordyceps fungus as real 'zombifying' agents, how cities fail without maintenance (power grid, water pumping), human survival needs (water 3 days, food 3 weeks)."
+  }
+]
