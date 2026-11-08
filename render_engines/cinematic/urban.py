@@ -176,6 +176,11 @@ def facade_material(name: str, wall: str, seed: int, bay: float = 2.6, floor_h: 
     return mat
 
 
+def _darken(color: str, factor: float) -> str:
+    r, g, b = (int(color[i : i + 2], 16) for i in (1, 3, 5))
+    return "#{:02x}{:02x}{:02x}".format(*(int(c * factor) for c in (r, g, b)))
+
+
 def _mat(name, color, roughness=0.6, metallic=0.0, emission=None, strength=0.0):
     return materials.principled(
         name, color, roughness=roughness, metallic=metallic, emission=emission, emission_strength=strength
@@ -227,24 +232,53 @@ def _cyl(r, h, at=(0, 0, 0), axis="Z", segments=12):
 
 
 # --- props ---------------------------------------------------------------------------
+def _hull(points):
+    """Convex solid through the given points (car bodies, cabins)."""
+    bm = bmesh.new()
+    for p in points:
+        bm.verts.new(p)
+    bmesh.ops.convex_hull(bm, input=bm.verts)
+    return bm
+
+
 def car(name: str, location, heading_deg: float = 0.0, color: str = "#b3261e", col=None):
-    body = _mat(f"car_{color}", color, roughness=0.25, metallic=0.5)
-    glass = _mat("car_glass", "#121820", roughness=0.05)
+    """A modelled car: sloped hood and boot, a glass cabin with roof pillars, wheels with rims, bumpers,
+    lights; rounded edges (bevel). Yellow cars are New York taxis with the roof sign."""
+    body = _mat(f"car_{color}", color, roughness=0.22, metallic=0.55)
+    glass = _mat("car_glass", "#10161d", roughness=0.04)
     tyre = _mat("tyre", "#151515", roughness=0.9)
+    rim = _mat("rim", "#b9bcc0", roughness=0.25, metallic=0.9)
+    trim = _mat("car_trim", "#1a1b1e", roughness=0.5)
     light_f = _mat("headlight", "#fff6d8", emission="#fff6d8", strength=2.0)
     light_r = _mat("taillight", "#c01818", emission="#ff2020", strength=1.5)
+    lower = [(x, y, z) for x in (-2.15, 2.15) for y in (-0.9, 0.9) for z in (0.32,)]
+    lower += [(2.15, y, 0.78) for y in (-0.86, 0.86)] + [(1.2, y, 0.95) for y in (-0.9, 0.9)]
+    lower += [(-2.15, y, 0.88) for y in (-0.86, 0.86)] + [(-1.5, y, 0.98) for y in (-0.9, 0.9)]
+    cabin = [(x, y, 0.95) for x in (-1.55, 1.15) for y in (-0.86, 0.86)]
+    cabin += [(x, y, 1.47) for x in (-1.2, 0.45) for y in (-0.72, 0.72)]
     parts = [
-        (_box(4.2, 1.8, 0.65, (0, 0, 0.62)), body),
-        (_box(2.2, 1.62, 0.55, (-0.25, 0, 1.2)), glass),
-        (_box(2.0, 1.66, 0.08, (-0.25, 0, 1.5)), body),
+        (_hull(lower), body),
+        (_hull(cabin), glass),
+        (_box(1.62, 1.46, 0.07, (-0.37, 0, 1.48)), body),  # roof
+        (_box(0.12, 1.8, 0.5, (-0.1, 0, 1.2)), body),  # B pillar
+        (_box(0.25, 1.86, 0.22, (2.18, 0, 0.42)), trim),  # bumpers
+        (_box(0.25, 1.86, 0.22, (-2.18, 0, 0.42)), trim),
     ]
     for x in (-1.35, 1.35):
         for y in (-0.82, 0.82):
-            parts.append((_cyl(0.33, 0.24, (x, y, 0.33), "Y", 14), tyre))
+            parts.append((_cyl(0.34, 0.24, (x, y, 0.34), "Y", 18), tyre))
+            parts.append((_cyl(0.2, 0.26, (x, y, 0.34), "Y", 14), rim))
     for y in (-0.6, 0.6):
-        parts.append((_box(0.06, 0.32, 0.14, (2.1, y, 0.72)), light_f))
-        parts.append((_box(0.06, 0.32, 0.14, (-2.1, y, 0.72)), light_r))
-    return compound(name, parts, location, (0, 0, math.radians(heading_deg)), col)
+        parts.append((_box(0.06, 0.34, 0.13, (2.16, y, 0.7)), light_f))
+        parts.append((_box(0.06, 0.34, 0.13, (-2.16, y, 0.78)), light_r))
+    if color == TAXI_YELLOW:  # the lit roof sign of a New York cab
+        sign = _mat("taxi_sign", "#fff7d6", 0.4, emission="#ffe9a8", strength=1.2)
+        parts.append((_box(0.7, 0.28, 0.22, (-0.4, 0, 1.63)), sign))
+    obj = compound(name, parts, location, (0, 0, math.radians(heading_deg)), col)
+    bevel = obj.modifiers.new("round", "BEVEL")
+    bevel.width, bevel.segments, bevel.limit_method = 0.035, 2, "ANGLE"
+    bevel.harden_normals = False
+    return obj
 
 
 def street_lamp(name: str, location, side: int, col=None):
@@ -284,15 +318,34 @@ def bin_(name, location, col=None):
 
 
 def street_tree(name, location, rng, col=None):
+    """A street tree: a trunk that forks into branches and a crown of many leaf clusters in two greens."""
     bark = _mat("bark", "#4a3324", roughness=0.9)
-    leaf = _mat(f"street_leaf_{rng.randint(0, 2)}", rng.choice(("#3d6b2c", "#4c7a33", "#2f5a2a")), roughness=0.8)
-    parts = [(_cyl(0.12, 2.6, (0, 0, 1.3)), bark)]
-    for _ in range(3):
-        blob = objects.icosphere(rng.uniform(0.9, 1.3), 2)
-        objects.transform(
-            blob, Matrix.Translation(Vector((rng.uniform(-0.4, 0.4), rng.uniform(-0.4, 0.4), rng.uniform(3.0, 3.8))))
+    leaves = [
+        _mat(f"street_leaf_{k}", c, roughness=0.8)
+        for k, c in enumerate(rng.sample(("#3d6b2c", "#4c7a33", "#2f5a2a", "#5a8a3a", "#36622b"), 2))
+    ]
+    height = rng.uniform(2.4, 3.0)
+    parts = [(_cyl(0.11, height, (0, 0, height / 2)), bark)]
+    for k in range(3):  # branches
+        angle = k * 2.1 + rng.uniform(-0.3, 0.3)
+        tip = Vector((math.cos(angle) * 0.7, math.sin(angle) * 0.7, height + 0.7))
+        parts.append(
+            (
+                _hull(
+                    [(dx, dy, height - 0.2) for dx in (-0.05, 0.05) for dy in (-0.05, 0.05)]
+                    + [(tip.x + dx, tip.y + dy, tip.z) for dx in (-0.03, 0.03) for dy in (-0.03, 0.03)]
+                ),
+                bark,
+            )
         )
-        parts.append((blob, leaf))
+    for i in range(9):  # crown
+        r = rng.uniform(0.55, 0.85)
+        blob = objects.icosphere(r, 2)
+        theta, lift = rng.uniform(0, 2 * math.pi), rng.uniform(0.0, 1.0)
+        spread = rng.uniform(0.3, 0.9) * (1.0 - 0.4 * lift)
+        at = Vector((math.cos(theta) * spread, math.sin(theta) * spread, height + 0.6 + lift * 1.3))
+        objects.transform(blob, Matrix.Translation(at) @ Matrix.Diagonal((1.0, 1.0, 0.85, 1)))
+        parts.append((blob, leaves[i % 2]))
     return compound(name, parts, location, col=col, smooth=True)
 
 
@@ -453,15 +506,34 @@ def build_city(env: dict, ctx, scene, seed: int) -> Urban:
     widths, near_floors, far_floors, palette, awning_chance = CITY_STYLES[style]
     urban.style = style
 
-    wet = style == "new_york"  # wet asphalt and stone paving that mirror the billboards
+    # Big cities get stone paving on the sidewalks; the street is dry unless the scene asks for wet (rain,
+    # a flood, a dramatic night): wet asphalt and paving mirror the lights.
+    big = style == "new_york" or style in FAMOUS_CITIES
+    wet = bool(env.get("wet", False))
+    paving = {
+        "new_york": ("#8f8b85", "#a09b94", "#7f7b76"),
+        "paris": ("#bcb3a2", "#cbc2b0", "#ada492"),
+        "london": ("#a4a29c", "#b4b2ab", "#94928c"),
+        "tokyo": ("#9b9a96", "#adaca7", "#8c8b87"),
+    }.get(style)
     if wet:
         asphalt = materials.wet_asphalt("asphalt")
-        concrete = materials.paver_ground("sidewalk_pavers")
     else:
-        asphalt = materials.noise_ground("asphalt", "#2a2b2e", "#3a3b3f", scale=2.0, roughness=0.9, bump=0.1)
+        asphalt = materials.noise_ground("asphalt", "#2b2c30", "#3b3c41", scale=1.6, roughness=0.78, bump=0.12)
+    if big:
+        tones = tuple(_darken(c, 0.55) for c in paving) if wet else paving
+        concrete = materials.paver_ground(
+            "sidewalk_pavers",
+            tones,
+            mortar="#5e5a55",
+            size=0.9 if style == "london" else 0.6,
+            roughness=0.3 if wet else 0.8,
+        )
+    else:
         concrete = materials.noise_ground("sidewalk", "#9c9a94", "#b3b0a8", scale=1.2, roughness=0.85, bump=0.1)
-    if wet and env.get("plaza"):  # Times Square: the avenue is a pedestrian plaza paved like the sidewalks
-        asphalt = materials.paver_ground("plaza_pavers", ("#55504a", "#6a645c", "#4a4642"), size=0.8)
+    if big and env.get("plaza"):  # Times Square: the avenue is a pedestrian plaza paved like the sidewalks
+        plaza = ("#55504a", "#6a645c", "#4a4642") if wet else ("#8a837a", "#9a938a", "#7c766e")
+        asphalt = materials.paver_ground("plaza_pavers", plaza, size=0.8, roughness=0.3 if wet else 0.75)
     paint = _mat("road_paint", "#f2f2ee", roughness=0.6)
     # The road sits one curb lower; sidewalks are at z = 0, where people walk.
     ground = objects.mesh_object("Road", _box(length * 2, ROAD_HALF * 2, 0.2, (0, 0, -CURB_H - 0.1)), asphalt, col=col)
