@@ -209,6 +209,24 @@ def breaking(name, w, h, parent, col):
 DESIGNS = (burger, musical, alert, news, face, soda)
 
 
+def switching_billboard(
+    name: str, center, w: float, h: float, side: int, designs, period: int = 60, frames: int = 2400, col=None
+):
+    """A screen that changes what it shows every `period` frames, cycling through `designs`."""
+    holders = [billboard(f"{name}_{i}", center, w, h, side, d, col) for i, d in enumerate(designs)]
+    for f in range(1, frames, period):
+        shown = (f // period) % len(holders)
+        for i, holder in enumerate(holders):
+            s = 1.0 if i == shown else 0.0001
+            holder.scale = (s, s, s)
+            holder.keyframe_insert("scale", frame=f)
+    from render_engines.core.blender.animation import set_interpolation
+
+    for holder in holders:
+        set_interpolation(holder, "CONSTANT", "scale")
+    return holders
+
+
 def billboard(name: str, center, w: float, h: float, side: int, design, col=None):
     """A billboard on a facade: side +1 = building north of the street (faces -Y), -1 = south (faces +Y)."""
     holder = objects.empty(f"{name}_holder", location=center, col=col)
