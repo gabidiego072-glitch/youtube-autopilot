@@ -65,6 +65,7 @@ class EditScene:
     speech: float
     slot: SceneSlot
     sfx: list = field(default_factory=list)  # [(path, kind, at_seconds_in_scene)]
+    hud: str = ""  # counter shown at the top for the whole scene (POV videos)
 
 
 def subtitle_cues(scenes: list[EditScene], words_per_cue: int) -> list[dict]:
@@ -90,6 +91,14 @@ def subtitle_style(portrait: bool) -> str:
         f"FontName=Inter,FontSize={size},Bold=1,PrimaryColour=&H00FFFFFF,OutlineColour=&H00101010,"
         f"BackColour=&H64000000,BorderStyle=1,Outline=2.2,Shadow=1.2,Alignment=2,MarginV={margin},"
         f"MarginL=26,MarginR=26"
+    )
+
+
+def hud_style(portrait: bool) -> str:
+    size, margin = (13, 40) if portrait else (13, 16)
+    return (
+        f"FontName=Inter,FontSize={size},Bold=1,PrimaryColour=&H0040D8FF,OutlineColour=&H00101010,"
+        f"BorderStyle=1,Outline=1.6,Shadow=0.8,Alignment=6,MarginV={margin},Spacing=1.2"
     )
 
 
@@ -128,6 +137,17 @@ def assemble_video(
             f"offset={scene.slot.start:.4f}[x{i}]"
         )
         current = f"x{i}"
+    hud_cues = [
+        {"start": round(s.slot.start, 3), "end": round(s.slot.start + s.slot.duration, 3), "text": s.hud.strip()}
+        for s in scenes
+        if s.hud.strip()
+    ]
+    if hud_cues:  # e.g. "DÍA 2 · 21:10", top of the frame, above everything
+        hud = write_srt(hud_cues, work_dir / "hud.srt")
+        graph.append(
+            f"[{current}]subtitles=filename={escape_filter_value(str(hud))}:force_style='{hud_style(h > w)}'[hud]"
+        )
+        current = "hud"
     if subtitles:
         cues = subtitle_cues(scenes, 4 if h > w else 8)
         srt = write_srt(cues, work_dir / "subtitles.srt")

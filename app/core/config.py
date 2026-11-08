@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     # Empty = pick other free "flash" models automatically from the models your key can use.
     gemini_fallback_models: str = ""
     gemini_max_tokens: int = 32000
+    planned_topics_enabled: bool = True  # app/content/planned_topics.json goes before generated ideas
     gemini_timeout_seconds: float = 300.0
 
     # --- AI provider: Claude (Anthropic), optional and paid -----------------
