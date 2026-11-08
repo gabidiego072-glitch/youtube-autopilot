@@ -30,7 +30,12 @@ class StubAIProvider:
 
 
 def make_settings(**overrides) -> Settings:
-    base = {"environment": "test", "database_url": "sqlite://", "anthropic_api_key": None}
+    base = {
+        "environment": "test",
+        "database_url": "sqlite://",
+        "anthropic_api_key": None,
+        "planned_topics_enabled": False,
+    }
     return Settings(_env_file=None, **{**base, **overrides})
 
 

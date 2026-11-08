@@ -35,6 +35,7 @@ class SceneDraft(BaseModel):
     human_subject: str = ""
     consequence: str = ""
     claims: list[ClaimDraft] = Field(default_factory=list)
+    hud: str = ""  # on-screen counter for POV videos ("DÍA 1 · 07:42")
 
 
 class VisualBible(BaseModel):

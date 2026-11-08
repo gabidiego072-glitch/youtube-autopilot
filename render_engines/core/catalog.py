@@ -89,11 +89,19 @@ ACTIONS = {
     "amount (0-1)",
 }
 
+CHARACTERS = (
+    "characters: {id, start [x,y], facing (deg), scale, zombie (true = grey-green zombie with arms forward and a "
+    "lurching walk; use 'walk' to make it shamble towards someone)}. Environment option zombies (count) adds a "
+    "horde that shambles in from the distance (city, coast, meadow; 2-3 inside a room)."
+)
+
 CAMERA = (
     "camera.shots: list of {time, location [x,y,z], target (id or [x,y,z]), lens (mm, 18-85)} in ascending time; "
     "the camera moves smoothly between shots and always aims at the target. Optional: fstop, handheld (0-0.05), "
     "shakes [{start, end, strength}] for impacts. Scene-level options: transition (cut|fade) into the scene, "
-    "sfx [{type: whoosh|impact|rumble|wind|chime, at}] in scene seconds."
+    "sfx [{type: whoosh|impact|rumble|wind|chime, at}] in scene seconds. First-person view: camera.pov true "
+    "shows the viewer's own arms at the bottom of the frame (the viewer IS the protagonist): put the shots at eye "
+    "height (z 1.6) where the protagonist is, lens 22-28, and optionally pov_item phone|flashlight."
 )
 
 
@@ -106,6 +114,7 @@ def catalog_text() -> str:
             *(f"- {name}: {desc}" for name, desc in PROPS.items()),
             "Characters: stylised person (hat, scarf). Params: id, start [x,y], facing (deg), scale, "
             "palette {body, skin, accent, hair} as #RRGGBB.",
+            CHARACTERS,
             "Actions (times in seconds):",
             *(f"- {name}: {desc}" for name, desc in ACTIONS.items()),
             CAMERA,

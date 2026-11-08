@@ -190,6 +190,7 @@ def produce_short(
                 speech[i],
                 rebased,
                 effects,
+                script["scenes"][i].get("hud", ""),
             )
         )
     total = edit_scenes[-1].slot.start + edit_scenes[-1].slot.duration

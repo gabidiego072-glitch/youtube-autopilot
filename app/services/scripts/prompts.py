@@ -34,6 +34,7 @@ SCRIPT_SCHEMA = {
                     "scale": {"type": "string", "enum": list(SCENE_SCALES)},
                     "human_subject": {"type": "string"},
                     "consequence": {"type": "string"},
+                    "hud": {"type": "string"},
                     "claims": {
                         "type": "array",
                         "items": {

@@ -51,7 +51,9 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
     characters, props = {}, {}
     for c in spec.get("characters", []):
         start = tuple(c.get("start", (0, 0))[:2]) + (0.0,)
-        char = build_character(c["id"], c.get("palette"), start, c.get("facing", 0), c.get("scale", 1.0))
+        char = build_character(
+            c["id"], c.get("palette"), start, c.get("facing", 0), c.get("scale", 1.0), zombie=bool(c.get("zombie"))
+        )
         char.idle(ctx.frame_start, ctx.frame_end, ctx.fps, ctx.seed + len(characters))
         characters[c["id"]] = char
         timeline.register(c["id"], start, focus_height=1.25, scale=char.scale)
@@ -89,6 +91,26 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
                 rng.uniform(1.6, 2.0),
             )
             characters.setdefault(f"ped_{i}", walker)
+
+    if env.get("zombies"):  # a horde shambling towards the scene centre from the distance
+        import random as _random
+
+        rng = _random.Random(ctx.seed + 77)
+        for i in range(int(env["zombies"])):
+            angle = rng.uniform(0, 2 * math.pi)
+            dist = rng.uniform(9, 22)
+            x0, y0 = dist * math.cos(angle), dist * math.sin(angle)
+            if env.get("type") in ("city", "coast"):  # keep them on the street, not inside buildings
+                y0 = max(-6.5, min(6.5, y0))
+            if env.get("type") == "interior":
+                x0, y0 = max(-2.6, min(2.6, x0 / 6)), max(-2.2, min(2.2, y0 / 6))
+            pace = rng.uniform(0.55, 0.9)  # metres per second: slow, unstoppable
+            travel = min(dist - 2.0, pace * ctx.duration_seconds)
+            x1, y1 = x0 - travel * math.cos(angle), y0 - travel * math.sin(angle)
+            z = build_character(f"zombie_{i}", None, (x0, y0, 0.0), 0, rng.uniform(0.9, 1.1), zombie=True)
+            z.idle(ctx.frame_start, ctx.frame_end, ctx.fps, ctx.seed + 90 + i)
+            z.walk(ctx.frame_start, ctx.frame_end, (x0, y0), (x1, y1), ctx.fps, rng.uniform(1.0, 1.3))
+            characters.setdefault(f"zombie_{i}", z)
 
     if env.get("fireflies"):
         fireflies(env["fireflies"], env.get("firefly_center", (0, 2)), 6, ctx, ctx.seed)
