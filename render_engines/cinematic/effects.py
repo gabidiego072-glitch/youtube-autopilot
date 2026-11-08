@@ -18,6 +18,36 @@ from render_engines.core.blender.animation import add_noise, key
 from render_engines.core.colors import hex_to_linear
 
 
+def soft_puff_material(name: str, color: str, alpha: float):
+    """Wispy steam/smoke: see-through, densest in the middle of each puff and fading to nothing at its edges,
+    so overlapping puffs read as one soft cloud instead of solid balls."""
+    mat = bpy.data.materials.new(name)
+    mat.use_nodes = True
+    nodes, links = mat.node_tree.nodes, mat.node_tree.links
+    nodes.clear()
+    out = nodes.new("ShaderNodeOutputMaterial")
+    mix = nodes.new("ShaderNodeMixShader")
+    clear = nodes.new("ShaderNodeBsdfTransparent")
+    body = nodes.new("ShaderNodeBsdfDiffuse")
+    body.inputs["Color"].default_value = hex_to_linear(color)
+    facing = nodes.new("ShaderNodeLayerWeight")
+    facing.inputs["Blend"].default_value = 0.5
+    edge = nodes.new("ShaderNodeMath")
+    edge.operation = "SUBTRACT"
+    edge.inputs[0].default_value = 1.0
+    links.new(facing.outputs["Facing"], edge.inputs[1])
+    dens = nodes.new("ShaderNodeMath")
+    dens.operation = "MULTIPLY"
+    dens.inputs[1].default_value = alpha
+    links.new(edge.outputs[0], dens.inputs[0])
+    links.new(dens.outputs[0], mix.inputs["Fac"])
+    links.new(clear.outputs[0], mix.inputs[1])
+    links.new(body.outputs[0], mix.inputs[2])
+    links.new(mix.outputs[0], out.inputs["Surface"])
+    mat.diffuse_color = hex_to_linear(color)
+    return mat
+
+
 def _puff_material(name: str, color: str, alpha: float):
     mat = bpy.data.materials.new(name)
     mat.use_nodes = True
@@ -50,10 +80,11 @@ def puffs(
     life: float = 2.2,
     seed: int = 0,
     col=None,
+    soft: bool = False,
 ) -> list:
     """Puffs that are born at `origin`, rise, drift and grow, staggered between start and end."""
     rng = random.Random(seed)
-    mat = _puff_material(f"{name}_mat", color, alpha)
+    mat = (soft_puff_material if soft else _puff_material)(f"{name}_mat", color, alpha)
     out = []
     span = max(1, end - start)
     life_f = max(6, int(life * fps))

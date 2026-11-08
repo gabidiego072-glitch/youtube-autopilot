@@ -55,6 +55,11 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
                 paths.append(((x, y), (x + 40 * math.cos(heading), y + 40 * math.sin(heading))))
         env_refs = build_environment(env, ctx, scene, paths)
     add_glow(scene, threshold=env.get("glow_threshold", 1.0))
+    if urban is not None and urban.style == "new_york" and env.get("type") in ("city", "coast"):
+        from render_engines.cinematic.urban import NY_HAZE
+        from render_engines.core.blender.scene import add_haze
+
+        add_haze(scene, NY_HAZE.get(env.get("time_of_day", "day"), NY_HAZE["day"]))
 
     timeline = Timeline()
     characters, props = {}, {}
