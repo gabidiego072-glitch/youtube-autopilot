@@ -111,8 +111,10 @@ def _pov_rig(cam, item: str | None = None) -> None:
             objects.capsule(0.055, 0.42),
             sleeve,
             True,
-            location=(0.12 * sx, -0.3, 0.0),  # vertical frames are narrow: keep the arms near the centre
-            rotation=(math.radians(20), math.radians(9 * sx), 0),
+            # Vertical frames are narrow: a hand holding something sits near the centre; free hands rest
+            # lower, towards the bottom corners, so they frame the view instead of covering it.
+            location=(0.12 * sx, -0.3, 0.0) if item else (0.15 * sx, -0.4, 0.0),
+            rotation=(math.radians(20 if item else 14), math.radians((9 if item else 4) * sx), 0),
             parent=holder,
         )
         objects.mesh_object(
