@@ -18,7 +18,7 @@ from render_engines.core.spec import SpecError, validate_spec
 PROMPT_VERSION = "storyboard-v2"
 FPS = 24
 
-_XY = {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 3}
+_XY = {"type": "array", "items": {"type": "number"}}
 _NUMBER = {"type": "number"}
 _STRING = {"type": "string"}
 
@@ -49,7 +49,6 @@ SCENE_SCHEMA = {
         },
         "characters": {
             "type": "array",
-            "maxItems": 4,
             "items": {
                 "type": "object",
                 "properties": {"id": _STRING, "start": _XY, "facing": _NUMBER, "scale": _NUMBER},
@@ -59,7 +58,6 @@ SCENE_SCHEMA = {
         },
         "props": {
             "type": "array",
-            "maxItems": 6,
             "items": {
                 "type": "object",
                 "properties": {
@@ -78,7 +76,6 @@ SCENE_SCHEMA = {
         },
         "actions": {
             "type": "array",
-            "maxItems": 6,
             "items": {
                 "type": "object",
                 "properties": {
@@ -122,7 +119,6 @@ SCENE_SCHEMA = {
                 "handheld": _NUMBER,
                 "shots": {
                     "type": "array",
-                    "maxItems": 4,
                     "items": {
                         "type": "object",
                         "properties": {
@@ -147,7 +143,7 @@ SCENE_SCHEMA = {
 
 STORYBOARD_SCHEMA = {
     "type": "object",
-    "properties": {"scenes": {"type": "array", "items": SCENE_SCHEMA, "maxItems": 16}},
+    "properties": {"scenes": {"type": "array", "items": SCENE_SCHEMA}},
     "required": ["scenes"],
     "additionalProperties": False,
 }
@@ -176,6 +172,8 @@ Rules:
 - Keep continuity: reuse the same character ids and the same environment type across scenes unless the story
   changes location. Units are metres; a person is 1.7 m tall; keep the camera 3-25 m from the subject
   (for planets, 2.5-6 radii away).
+- Keep every scene compact: at most 3 characters, 5 props, 4 actions and 3 camera shots; coordinates are
+  [x, y] or [x, y, z]. Never repeat items.
 - Each scene needs at least one camera shot at time 0 and one near the end; use smooth moves (push-in, orbit,
   pull-back) that fit the beat (faster for the hook and climax)."""
 
