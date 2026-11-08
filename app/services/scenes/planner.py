@@ -43,6 +43,7 @@ SCENE_SCHEMA = {
                 "parked_cars": {"type": "integer"},
                 "zombies": {"type": "integer"},
                 "plaza": {"type": "boolean"},
+                "wet": {"type": "boolean"},
                 "crowd": {"type": "integer"},
                 "panic": {"type": "integer"},
                 "onlookers": {"type": "integer"},
