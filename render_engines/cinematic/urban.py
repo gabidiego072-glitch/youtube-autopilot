@@ -45,7 +45,29 @@ CITY_STYLES = {
         0.15,
     ),
     "suburb": ((9.0, 10.5, 12.0), (1, 2), (1, 2), ("#f2e6d0", "#d6e4ea", "#e9d6d0", "#dfe8d2", "#f4efe2"), 0.1),
+    # Manhattan / Times Square: tall towers, giant glowing billboards, yellow taxis.
+    "new_york": (
+        (12.0, 14.0, 16.0),
+        (12, 22),
+        (25, 45),
+        ("#6f6a64", "#8a7f72", "#4f5560", "#9a8f80", "#5d4a3c", "#7b8794", "#a8603f"),
+        0.6,
+    ),
 }
+BILLBOARD_COLORS = ("#ff2d55", "#ffcc00", "#00c2ff", "#7a5cff", "#ff7a00", "#2ee59d", "#ff4fd8")
+BILLBOARD_TEXTS = (
+    "BREAKING NEWS",
+    "EMERGENCY",
+    "STAY INSIDE",
+    "EVACUATE",
+    "TIMES SQ",
+    "NYC 24/7",
+    "LIVE",
+    "WARNING",
+    "BROADWAY",
+    "SALE 50%",
+)
+TAXI_YELLOW = "#f2b705"
 CAR_COLORS = ("#b3261e", "#1f4e8c", "#e8e8e8", "#202226", "#7a7f86", "#d9a400", "#2e7d4f")
 
 SKY_PRESETS = {
@@ -473,6 +495,8 @@ def build_city(env: dict, ctx, scene, seed: int) -> Urban:
             urban.facades.append(mat)
             urban.static.append(building)
             urban.buildings.append((building, side, is_hero))
+            if style == "new_york":
+                _billboards(urban, f"bb_{side}_{index}", x, width, side, height, rng, col)
             if style == "suburb":  # pitched roof
                 roof = objects.mesh_object(
                     f"roof_{side}_{index}",
@@ -527,7 +551,11 @@ def build_city(env: dict, ctx, scene, seed: int) -> Urban:
             continue
         side = 1 if i % 2 else -1
         c = car(
-            f"parked_{i}", (x, side * (ROAD_HALF - 1.1), -CURB_H), 0 if side > 0 else 180, rng.choice(CAR_COLORS), col
+            f"parked_{i}",
+            (x, side * (ROAD_HALF - 1.1), -CURB_H),
+            0 if side > 0 else 180,
+            TAXI_YELLOW if style == "new_york" and rng.random() < 0.65 else rng.choice(CAR_COLORS),
+            col,
         )
         urban.loose.append((c, 1200.0))
 
@@ -540,6 +568,44 @@ def build_city(env: dict, ctx, scene, seed: int) -> Urban:
     for head in urban.lamp_heads:
         head.node_tree.nodes["Principled BSDF"].inputs["Emission Strength"].default_value = 6.0 if night else 0.0
     return urban
+
+
+def _billboards(urban: Urban, name: str, x0: float, width: float, side: int, height: float, rng, col) -> None:
+    """Times Square: glowing screens with bold words on the street side of a tall building."""
+    face_y = side * (BUILDING_LINE - 0.06)
+    level = 4.5
+    for k in range(rng.randint(1, 3)):
+        h = rng.uniform(3.0, 6.0)
+        if level + h > min(height - 1.0, 26.0):
+            break
+        w = rng.uniform(0.6, 0.92) * (width - 1.0)
+        cx = x0 + width / 2 + rng.uniform(-0.5, 0.5)
+        color = rng.choice(BILLBOARD_COLORS)
+        screen = _mat(f"{name}_{k}_screen", color, roughness=0.4, emission=color, strength=1.4)
+        objects.mesh_object(f"{name}_{k}", _box(w, 0.12, h, (cx, face_y, level + h / 2)), screen, col=col)
+        _sign_text(
+            f"{name}_{k}_txt",
+            rng.choice(BILLBOARD_TEXTS),
+            (cx, face_y - side * 0.1, level + h / 2),
+            side,
+            min(h * 0.35, w / 7),
+            col,
+        )
+        level += h + rng.uniform(0.6, 2.0)
+
+
+def _sign_text(name: str, text: str, center, side: int, size: float, col) -> None:
+    curve = bpy.data.curves.new(name, "FONT")
+    curve.body = text
+    curve.size = size
+    curve.extrude = 0.02
+    curve.align_x, curve.align_y = "CENTER", "CENTER"
+    obj = bpy.data.objects.new(name, curve)
+    obj.location = center
+    # Text lies in the XY plane facing +Z: stand it up facing the street.
+    obj.rotation_euler = (math.radians(90), 0, 0 if side > 0 else math.pi)
+    obj.data.materials.append(_mat("sign_white", "#ffffff", roughness=0.3, emission="#ffffff", strength=3.0))
+    objects.link(obj, col)
 
 
 def _seafront(urban: Urban, env: dict, length: float, col) -> None:
