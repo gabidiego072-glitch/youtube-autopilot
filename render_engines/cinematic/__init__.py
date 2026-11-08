@@ -55,11 +55,16 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
                 paths.append(((x, y), (x + 40 * math.cos(heading), y + 40 * math.sin(heading))))
         env_refs = build_environment(env, ctx, scene, paths)
     add_glow(scene, threshold=env.get("glow_threshold", 1.0))
-    if urban is not None and urban.style == "new_york" and env.get("type") in ("city", "coast"):
+    if urban is not None and env.get("type") in ("city", "coast"):
+        from render_engines.cinematic import cities
         from render_engines.cinematic.urban import NY_HAZE
         from render_engines.core.blender.scene import add_haze
 
-        add_haze(scene, NY_HAZE.get(env.get("time_of_day", "day"), NY_HAZE["day"]))
+        tod = env.get("time_of_day", "day")
+        if urban.style == "new_york":
+            add_haze(scene, NY_HAZE.get(tod, NY_HAZE["day"]))
+        elif urban.style in cities.FAMOUS:  # the landmark at the end of the avenue fades into the air
+            add_haze(scene, cities.haze_colour(urban.style, tod), start=40.0, depth=900.0, amount=0.55)
 
     timeline = Timeline()
     characters, props = {}, {}
@@ -170,8 +175,15 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
             lane_y = -2.35 if east else 2.1
             v = rng.uniform(7.0, 12.0) * (1 if east else -1)
             x0 = rng.uniform(-70, 40) if east else rng.uniform(-40, 70)
-            color = urban_env.TAXI_YELLOW if rng.random() < 0.6 else rng.choice(urban_env.CAR_COLORS)
-            moving = urban_env.car(f"traffic_{i}", (x0, lane_y, -urban_env.CURB_H), 0 if east else 180, color)
+            place = (x0, lane_y, -urban_env.CURB_H)
+            if urban.style in urban_env.FAMOUS_CITIES:  # London buses and black cabs, Tokyo's small white cars
+                from render_engines.cinematic import cities
+
+                moving = cities.vehicle(urban.style, f"traffic_{i}", place, 0 if east else 180, rng)
+            else:
+                yellow = urban.style in (None, "new_york", "mixed") and rng.random() < 0.6
+                color = urban_env.TAXI_YELLOW if yellow else rng.choice(urban_env.CAR_COLORS)
+                moving = urban_env.car(f"traffic_{i}", place, 0 if east else 180, color)
             key_end = (x0 + v * ctx.duration_seconds, lane_y, -urban_env.CURB_H)
             moving.keyframe_insert("location", frame=ctx.frame_start)
             moving.location = key_end

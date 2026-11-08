@@ -53,3 +53,27 @@ def next_planned_topic(used_premises: set[str], language: str = "es") -> dict | 
         if topic.get("premise") and topic["premise"] not in used_premises:
             return topic
     return None
+
+
+# Famous cities the 3D engine can build (city_style). Videos rotate through them: a recognisable place
+# ("you are in Paris") keeps people watching more than a generic town.
+CITIES = {
+    "new_york": ("New York", "Times Square, Broadway, a Manhattan apartment, the subway, Central Park, the Hudson"),
+    "paris": ("Paris", "the Eiffel Tower, a café terrace, the Champs-Élysées, the Seine, the Louvre, the metro"),
+    "tokyo": ("Tokyo", "Shibuya crossing, Shinjuku's neon streets, Tokyo Tower, a convenience store, the train"),
+    "london": ("London", "Big Ben, a red double-decker bus, the Thames, Piccadilly Circus, the Tube, a pub"),
+}
+
+
+def city_note(city: str) -> str:
+    name, places = CITIES[city]
+    return (
+        f"SETTING: {name}. If the story happens in a city, it happens in {name}: name real places ({places}) "
+        f"and use the city street with style {city} for every outdoor street scene."
+    )
+
+
+def next_city(recent_cities: list[str]) -> str:
+    """The city used least among the channel's recent videos (ties: the first in CITIES)."""
+    counts = {city: recent_cities.count(city) for city in CITIES}
+    return min(CITIES, key=lambda city: counts[city])

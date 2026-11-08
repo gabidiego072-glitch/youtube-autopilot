@@ -12,7 +12,7 @@ from render_engines.core.timeline import Timeline, lerp, smoothstep
 def build_camera(scene: bpy.types.Scene, ctx: RenderContext, camera_spec: dict, timeline: Timeline):
     data = bpy.data.cameras.new("Camera")
     data.sensor_width = 36
-    data.clip_end = 500
+    data.clip_end = 2500  # far landmarks (Eiffel Tower, Big Ben) at the end of the avenue
     cam = link(bpy.data.objects.new("Camera", data))
     scene.camera = cam
 
