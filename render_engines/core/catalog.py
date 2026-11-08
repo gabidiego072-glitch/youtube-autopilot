@@ -87,6 +87,7 @@ ACTIONS = {
     "lights_on": "city: street lamps and random windows switch on: start, end",
     "cover": "character crouches and covers the head: character, start, end",
     "fall": "character falls over: character, start, direction_deg",
+    "vanish": "magic trick: a puff of white smoke and the character disappears: character, start",
     "fire": "flames, flickering light and smoke: location [x,y,z] (default: the kitchen stove), start, end, size "
     "(1 = stove fire, 3 = a burning car)",
     "smoke": "dark smoke rising: location [x,y,z], start, end",
