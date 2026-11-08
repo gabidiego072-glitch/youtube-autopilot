@@ -38,13 +38,16 @@ def build_camera(scene: bpy.types.Scene, ctx: RenderContext, camera_spec: dict, 
 
     _animate_target(target, ctx, shots, timeline)
 
+    rig = None
     if camera_spec.get("pov"):
-        _pov_rig(cam, camera_spec.get("pov_item"))
+        rig = _pov_rig(cam, camera_spec.get("pov_item"))
         camera_spec.setdefault("handheld", 0.02)  # a person's head never holds perfectly still
     if camera_spec.get("handheld", 0) > 0:
         add_noise(cam, "location", strength=camera_spec["handheld"], scale=40)
     if camera_spec.get("shakes"):
         _add_shakes(cam, ctx, camera_spec["shakes"])
+    if rig is not None and (camera_spec.get("pov_run") or camera_spec.get("pov_pushes")):
+        _pov_motion(cam, rig, ctx, bool(camera_spec.get("pov_run")), camera_spec.get("pov_pushes", []))
     return cam
 
 
@@ -103,6 +106,7 @@ def _pov_rig(cam, item: str | None = None) -> None:
     sleeve = materials.principled("pov_sleeve", "#2f3440", roughness=0.85)
     skin = materials.principled("pov_skin", "#d9a27e", roughness=0.55, subsurface=0.15)
     holder = objects.empty("pov_arms", parent=cam)
+    arms = {}
     for sx in (-1, 1):
         if item and sx < 0:
             continue  # the left hand stays out of frame when the right one holds something
@@ -117,6 +121,7 @@ def _pov_rig(cam, item: str | None = None) -> None:
             rotation=(math.radians(20 if item else 14), math.radians((9 if item else 4) * sx), 0),
             parent=holder,
         )
+        arms[sx] = arm
         objects.mesh_object(
             f"pov_hand_{sx}",
             objects.transform(objects.sphere(0.05), Matrix.Diagonal((1.0, 0.75, 1.35, 1))),
@@ -157,3 +162,35 @@ def _pov_rig(cam, item: str | None = None) -> None:
     # Arms sway a little with breathing and steps.
     holder.keyframe_insert("location", frame=1)
     add_noise(holder, "location", strength=0.012, scale=18)
+    return {"holder": holder, "arms": arms}
+
+
+def _pov_motion(cam, rig: dict, ctx: RenderContext, running: bool, pushes: list) -> None:
+    """Running: the head bobs with every stride and the arms pump. Pushes: a hand thrusts forward."""
+    import math
+
+    arms = rig["arms"]
+    if running:
+        bob = empty("pov_bob")
+        if cam.parent is not None:
+            cam.parent.parent = bob
+        else:
+            cam.parent = bob
+        step = ctx.fps / 5.6  # ~2.8 strides per second, one bob per step
+        f, i = float(ctx.frame_start), 0
+        while f <= ctx.frame_end + step:
+            frame = round(f)
+            key(bob, "location", frame, (0.025 * (1 if i % 2 else -1), 0, 0.05 if i % 2 else -0.03))
+            for sx, arm in arms.items():
+                swing = math.radians(18) * (1 if (i % 2 == 0) == (sx > 0) else -1)
+                key(arm, "rotation_euler", frame, (math.radians(14) + swing, math.radians(4 * sx), 0))
+            f += step
+            i += 1
+    for n, at in enumerate(pushes):
+        arm = arms.get(1 if n % 2 == 0 else -1) or next(iter(arms.values()))
+        frame = ctx.frame(float(at))
+        base = tuple(arm.location)
+        key(arm, "location", frame - 3, base)
+        key(arm, "location", frame, (base[0] * 0.4, base[1] + 0.12, base[2] - 0.28))  # thrust into the frame
+        key(arm, "location", frame + 7, base)
+        key(arm, "rotation_euler", frame, (math.radians(28), 0, 0))
