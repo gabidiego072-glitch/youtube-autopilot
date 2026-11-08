@@ -705,7 +705,12 @@ def _billboards(urban: Urban, name: str, x0: float, width: float, side: int, hei
             break
         w = rng.uniform(0.7, 0.92) * (width - 1.0)
         cx = x0 + width / 2 + rng.uniform(-0.4, 0.4)
-        ads.billboard(f"{name}_{k}", (cx, face_y, level + h / 2), w, h, side, rng.choice(ads.DESIGNS), col)
+        center = (cx, face_y, level + h / 2)
+        if rng.random() < 0.4:  # a screen that changes every 2-3 seconds
+            picks = rng.sample(ads.DESIGNS, 3)
+            ads.switching_billboard(f"{name}_{k}", center, w, h, side, picks, rng.randint(48, 76), col=col)
+        else:
+            ads.billboard(f"{name}_{k}", center, w, h, side, rng.choice(ads.DESIGNS), col)
         level += h + rng.uniform(0.5, 1.5)
 
 

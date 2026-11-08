@@ -43,6 +43,8 @@ SCENE_SCHEMA = {
                 "panic": {"type": "integer"},
                 "onlookers": {"type": "integer"},
                 "audience_fill": _NUMBER,
+                "traffic": {"type": "integer"},
+                "chasers": {"type": "integer"},
                 "trees": {"type": "integer"},
                 "rocks": {"type": "integer"},
                 "flowers": {"type": "integer"},

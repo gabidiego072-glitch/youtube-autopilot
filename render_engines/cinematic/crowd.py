@@ -196,12 +196,15 @@ def standers(
     col=None,
     look_up: float = 0.3,
     face_deg: float | None = None,
+    keep_clear=None,
 ) -> list:
     """People standing around (idle sway); some look up at the screens, a few point."""
     rng = random.Random(seed)
     roots = []
     for i in range(count):
         x, y = rng.uniform(*area[0]), rng.uniform(*area[1])
+        if keep_clear and keep_clear(x, y):
+            continue
         heading = math.radians(face_deg if face_deg is not None else rng.uniform(0, 360))
         root, limbs = crowd_person(f"cs_{seed}_{i}", (x, y, 0), heading, rng, rng.uniform(0.92, 1.08), col)
         sway = rng.uniform(0.02, 0.05)

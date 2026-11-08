@@ -15,6 +15,7 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
     from render_engines.cinematic.character import build_character
     from render_engines.cinematic.environment import build_environment, fireflies
     from render_engines.cinematic.props import PROP_BUILDERS
+    from render_engines.core.blender.animation import key
     from render_engines.core.blender.camera import build_camera
     from render_engines.core.blender.scene import add_glow, configure_render
 
@@ -137,6 +138,11 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
                 keep_clear=clear,
             )
         if env.get("onlookers"):  # people standing on the sidewalk staring at the screens
+            zones = env.get("clear_zones", [])  # [[x0, x1, y0, y1], ...] where the camera passes
+
+            def blocked(x, y):
+                return any(z[0] <= x <= z[1] and z[2] <= y <= z[3] for z in zones)
+
             crowd.standers(
                 int(env["onlookers"]),
                 ((span[0] / 2, span[1] / 2), side_walk),
@@ -144,7 +150,43 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
                 ctx.frame_end,
                 ctx.fps,
                 ctx.seed + 4,
+                keep_clear=blocked,
             )
+
+    if urban is not None and env.get("traffic") and env_type in ("city", "coast"):
+        import random as _random
+
+        rng = _random.Random(ctx.seed + 55)
+        for i in range(int(env["traffic"])):  # cars and taxis driving both ways
+            east = i % 2 == 0
+            lane_y = -2.35 if east else 2.1
+            v = rng.uniform(7.0, 12.0) * (1 if east else -1)
+            x0 = rng.uniform(-70, 40) if east else rng.uniform(-40, 70)
+            color = urban_env.TAXI_YELLOW if rng.random() < 0.6 else rng.choice(urban_env.CAR_COLORS)
+            moving = urban_env.car(f"traffic_{i}", (x0, lane_y, -urban_env.CURB_H), 0 if east else 180, color)
+            key_end = (x0 + v * ctx.duration_seconds, lane_y, -urban_env.CURB_H)
+            moving.keyframe_insert("location", frame=ctx.frame_start)
+            moving.location = key_end
+            moving.keyframe_insert("location", frame=ctx.frame_end)
+            from render_engines.core.blender.animation import set_interpolation
+
+            set_interpolation(moving, "LINEAR", "location")
+
+    if urban is not None and env.get("chasers") and env_type in ("city", "coast"):  # a horde running after you
+        from render_engines.cinematic import crowd
+
+        start_x = float(env.get("chasers_from", -60.0))
+        crowd.walkers(
+            int(env["chasers"]),
+            ((start_x - 14, start_x), (-3.0, 2.0)),
+            0,
+            (4.3, 4.8),
+            ctx.frame_start,
+            ctx.frame_end,
+            ctx.fps,
+            ctx.seed + 9,
+            zombie=True,
+        )
 
     if env.get("zombies"):  # a horde shambling towards the scene centre from the distance
         import random as _random
@@ -248,6 +290,27 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
             urban_env.surge(urban, start, end, float(action.get("height", 3.0)), float(action.get("inland", 40.0)))
         elif kind == "lights_on":
             urban_env.lights_on(urban, start, end)
+        elif kind == "vanish":  # a magician's trick: a puff of white smoke and the character is gone
+            from render_engines.cinematic import effects
+
+            key(char.root, "scale", start, (char.scale,) * 3)
+            key(char.root, "scale", start + 3, (0.0001,) * 3)
+            head = timeline.focus_point(action["character"], start)
+            effects.puffs(
+                f"vanish_{start}",
+                (head[0], head[1], head[2] - 0.8),
+                start - 2,
+                start + 10,
+                ctx.fps,
+                color="#bdbdc4",
+                alpha=0.35,
+                count=22,
+                rise=2.2,
+                spread=1.4,
+                size=0.3,
+                life=2.0,
+                seed=start,
+            )
         elif kind in ("fire", "smoke", "crack", "flood", "collapse"):
             _effect(kind, action, start, end, ctx, urban, env)
         elif kind == "cover":
