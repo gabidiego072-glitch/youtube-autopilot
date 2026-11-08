@@ -265,6 +265,10 @@ def step_topic(db, run, services, ai) -> dict:
     else:
         features.pop("length")
     features["style"] = (planned or {}).get("style", "classic")
+    if planned and planned.get("city_style"):
+        features["city_style"] = planned["city_style"]
+    if planned and planned.get("notes"):
+        project.notes = planned["notes"]
     project.features = features
     idea.status, idea.project_id = IdeaStatus.USED, project.id
     run.project_id = project.id
@@ -485,13 +489,22 @@ def step_storyboard(db, run, services, ai) -> dict:
         visual_bible=script.visual_bible,
         seed=int(project.id.int % 100_000),
         variety_note="\n\n".join(
-            n for n in (_recent(db, project).storyboard_note(), _style_note(project, POV_STORYBOARD_NOTE)) if n
+            n
+            for n in (
+                project.notes,
+                _recent(db, project).storyboard_note(),
+                _style_note(project, POV_STORYBOARD_NOTE),
+            )
+            if n
         )
         or None,
     )
-    if (project.features or {}).get("style") == "pov":  # the viewer's eyes in every scene, whatever the AI said
-        for spec in script.scene_specs:
+    features = project.features or {}
+    for spec in script.scene_specs:  # planned choices hold in every scene, whatever the AI wrote
+        if features.get("style") == "pov":
             spec["camera"]["pov"] = True
+        if features.get("city_style") and spec["environment"].get("type") in ("city", "coast"):
+            spec["environment"]["style"] = features["city_style"]
     db.commit()
     production = {
         "id": f"run_{run.id.hex[:8]}",
