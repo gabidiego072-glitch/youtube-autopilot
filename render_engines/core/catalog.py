@@ -9,7 +9,9 @@ ENVIRONMENTS = {
     "city": "Street at eye level: road (east-west, east = +x), sidewalks at z=0 (road is 0.15 m lower), buildings "
     "both sides (north side y > 7.4; a foreground 'hero' building near x=-6 has real glass windows), shops, "
     "awnings, street lamps, traffic lights, benches, bins, trees, parked cars, optional pedestrians. Options: "
-    "time_of_day (dawn|day|dusk|night), sun_azimuth, pedestrians (count), parked_cars, physics (true to let "
+    "time_of_day (dawn|day|golden|dusk|night), sun_azimuth, pedestrians (count), crowd (count of people "
+    "walking on the sidewalks), panic (people running down the road), onlookers (people standing and staring), "
+    "parked_cars, physics (true to let "
     "things be thrown; REQUIRED for inertia_shock and shatter_windows), style (old_town = narrow warm low "
     "houses | modern = tall grey/glass towers | suburb = 1-2 floor houses with roofs | new_york = Manhattan/Times "
     "Square towers with giant glowing billboards and yellow taxis | mixed). Keep the same "
@@ -20,11 +22,16 @@ ENVIRONMENTS = {
     "wall at x in [-0.9,0.9]; keep people in the free centre |x|<1, -1.8<y<0.6). Option room: living_room "
     "(sofa, coffee table, bookshelf, TV) | kitchen (counter and stove on the west wall, stove at [-2.8,0.6,0.95], "
     "fridge, table with plates and cups) | bedroom (bed, wardrobe, desk) | office (desks, monitors, office chairs, "
-    "whiteboard) | classroom (blackboard, pupil desks, backpacks). Pick the room the narration talks about. "
+    "whiteboard) | classroom (blackboard, pupil desks, backpacks) | cafe (counter with espresso machine, menu "
+    "board, a TV with the news on the north wall at x 1.85, round tables with cups, hanging lamps). "
+    "Pick the room the narration talks about. "
     "Other options: time_of_day, room_light (W), physics (true lets furniture, plates and books slide; REQUIRED "
     "for inertia_shock).",
     "meadow": "Outdoor countryside: hills, trees, rocks, flowers, sky. Options: time_of_day (dawn|day|dusk), "
     "trees, rocks, flowers, fireflies, hill_height. Characters stand on the ground at z=0 near the origin.",
+    "theater": "Broadway theatre: stage at the north end (y 4-10, top at z 1.1, a performer stands at "
+    "[0, 6.5]), golden arch, red curtains, footlights, a glowing sign; rows of red seats full of people in y "
+    "[-9.5, 2.5] with a centre aisle at x 0; entrance doors at the back (y -12). Option audience_fill (0-1).",
     "space": "Outer space: black sky with stars, one sun light. Options: sun_azimuth, sun_elevation, stars "
     "(density 0-1). Use with planet props; there is no ground.",
 }
@@ -34,11 +41,14 @@ ENVIRONMENT_SCALES = {
     "city": ("street", "building", "vehicle", "crowd", "aerial"),
     "coast": ("street", "building", "vehicle", "crowd", "aerial"),
     "interior": ("interior",),
+    "theater": ("interior", "crowd"),
     "meadow": ("street", "crowd", "aerial"),
     "space": ("global",),
 }
 
 PROPS = {
+    "theater_entrance": "city: a Broadway theatre front on the north side of the street (marquee with bulbs, "
+    "glowing doors). Params: location [x, 0, 0] (only x is used).",
     "lantern_post": "Street lantern (2.3 m) that can be switched on. Params: location [x,y,z], facing (deg).",
     "planet": "Sphere world. Params: location [x,y,z], radius (m), kind (earth|moon|mars|sun), spin_rate (deg/s, "
     "default 0), tilt (deg), oceans_moved (0-1, earth only: start with oceans already at the poles). Earth has "

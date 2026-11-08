@@ -7,6 +7,8 @@ the seed, so two kitchens never look identical.
 
 from __future__ import annotations
 
+import math
+
 from render_engines.cinematic.urban import Urban, _box, _cyl, _living_room, _mat, compound
 
 # Spots the director (and the catalog text) can use for effects such as fire.
@@ -240,10 +242,115 @@ def classroom(urban: Urban, rng, col) -> None:
             urban.loose.append((bag, 2))
 
 
+def cafe(urban: Urban, rng, col) -> None:
+    """A New York coffee shop: counter with an espresso machine and a pastry display (west wall), a menu
+    board and a TV on the north wall, hanging lamps, small round tables with cups, the street behind the window."""
+    from mathutils import Matrix
+
+    from render_engines.cinematic import ads
+    from render_engines.core.blender import lights, objects
+
+    def at(bm, loc):
+        return objects.transform(bm, Matrix.Translation(loc))
+
+    wood = _mat("cafe_wood", rng.choice(("#5a3a24", "#7a5234", "#3e2a1c")), roughness=0.45)
+    top = _mat("cafe_marble", "#e8e4dc", roughness=0.25)
+    chrome = _mat("cafe_chrome", "#c9ccd1", roughness=0.15, metallic=1.0)
+    black = _mat("cafe_black", "#16161a", roughness=0.4)
+    china = _mat("cafe_china", "#f4f1ea", roughness=0.25)
+    pastry = ads.glow("cafe_display", "#ffe2b8", 1.2)
+    counter = compound(
+        "cafe_counter",
+        [
+            (_box(0.7, 3.2, 1.0, (0, 0, 0.5)), wood),
+            (_box(0.8, 3.3, 0.06, (0, 0, 1.03)), top),
+            (_box(0.45, 0.6, 0.5, (0, 1.0, 1.31)), chrome),  # espresso machine
+            (at(objects.sphere(0.03, 8, 6), (-0.23, 1.15, 1.45)), ads.glow("cafe_led", "#ff3b30", 6.0)),
+            (_box(0.55, 0.9, 0.45, (0, -0.6, 1.28)), pastry),  # lit pastry display
+        ],
+        (-2.6, 0.6, 0),
+        col=col,
+    )
+    urban.static.append(counter)
+    menu = objects.mesh_object("cafe_menu", _box(1.5, 0.05, 0.9, (-1.95, 2.66, 1.95)), black, col=col)
+    holder = objects.empty("cafe_menu_text", location=(-1.95, 2.62, 1.95), col=col)
+    ads.text("cafe_menu_t", "CAFÉ  2$\nLATTE  3$\nBAGEL  2$", (0, 0, 0), 0.13, "#fff3d6", holder, col, 1.5)
+    del menu
+    ads.billboard("cafe_tv", (1.85, 2.63, 1.85), 1.35, 0.78, 1, ads.breaking, col)  # the TV with the news
+    for i, x in enumerate((-1.3, 0.0, 1.3)):  # hanging lamps
+        lamp = compound(
+            f"cafe_lamp_{i}",
+            [
+                (at(objects.cone(0.008, 0.008, 0.5, 6, base_at_origin=True), (0, 0, 2.2)), black),
+                (at(objects.cone(0.18, 0.04, 0.2, 16, base_at_origin=True), (0, 0, 2.02)), black),
+                (at(objects.sphere(0.07, 10, 6), (0, 0, 2.0)), ads.glow("cafe_bulb", "#ffd9a0", 8.0)),
+            ],
+            (x, 0.2, 0),
+            col=col,
+        )
+        urban.static.append(lamp)
+        lights.point(f"cafe_light_{i}", (x, 0.2, 1.95), "#ffcf90", 160, radius=0.2)
+    for t, (x, y) in enumerate(((0.35, -0.75), (1.8, 0.7), (-0.9, 1.3))):  # round tables, chairs and cups
+        table = compound(
+            f"cafe_table_{t}",
+            [
+                (at(objects.cone(0.38, 0.38, 0.04, 24), (0, 0, 0.74)), top),
+                (at(objects.cone(0.035, 0.035, 0.72, 8, base_at_origin=True), (0, 0, 0)), black),
+                (at(objects.cone(0.22, 0.22, 0.03, 16), (0, 0, 0.015)), black),
+            ],
+            (x, y, 0),
+            col=col,
+        )
+        urban.loose.append((table, 12))
+        cup = compound(
+            f"cafe_cup_{t}",
+            [(objects.cone(0.045, 0.04, 0.09, 16, base_at_origin=True), china)],
+            (x + 0.12, y + 0.08, 0.76),
+            col=col,
+        )
+        urban.loose.append((cup, 0.3))
+        for k, ang in enumerate((0.5, 3.6)):
+            urban.loose.append(
+                (
+                    _chair(
+                        f"cafe_chair_{t}_{k}",
+                        (x + 0.6 * math.cos(ang), y + 0.6 * math.sin(ang), 0),
+                        wood,
+                        col,
+                        rotation=(0, 0, ang + math.pi / 2),
+                    ),
+                    4,
+                )
+            )
+    # Warm details on the walls: dark wood wainscot, framed prints, a shelf of cups behind the counter.
+    for name, size, loc in (
+        ("n", (6.2, 0.04, 1.0), (0, 2.68, 0.5)),
+        ("e", (0.04, 5.2, 1.0), (2.98, 0, 0.5)),
+        ("w", (0.04, 5.2, 1.0), (-2.98, 0, 0.5)),
+    ):
+        urban.static.append(objects.mesh_object(f"cafe_wainscot_{name}", _box(*size, loc), wood, col=col))
+    for k, (y, design) in enumerate(((-1.4, ads.burger), (0.6, ads.musical))):
+        frame = objects.empty(f"cafe_print_{k}", location=(2.95, y, 1.75), col=col)
+        frame.rotation_euler = (0, 0, math.radians(90))
+        ads.billboard(f"cafe_print_{k}_b", (0, 0, 0), 1.1, 0.75, 1, design, col).parent = frame
+    shelf = [(_box(0.25, 2.6, 0.04, (0, 0, h)), wood) for h in (1.7, 2.1)]
+    shelf += [
+        (at(objects.cone(0.04, 0.035, 0.09, 12, base_at_origin=True), (0, -1.1 + i * 0.3, h + 0.02)), china)
+        for h in (1.7, 2.1)
+        for i in range(8)
+    ]
+    compound("cafe_shelf", shelf, (-2.85, 0.6, 0), col=col)
+    # The street behind the window: a bright, slightly blue city backdrop.
+    objects.mesh_object(
+        "cafe_outside", _box(6.0, 0.05, 3.0, (0, 3.6, 1.5)), ads.glow("cafe_street", "#cfdbe8", 1.6), col=col
+    )
+
+
 ROOM_BUILDERS = {
     "living_room": _living_room,
     "kitchen": kitchen,
     "bedroom": bedroom,
     "office": office,
     "classroom": classroom,
+    "cafe": cafe,
 }

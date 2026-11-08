@@ -78,7 +78,48 @@ def _planet(name, location, facing_deg=0.0, **params):
 
 from render_engines.cinematic.explainers import EXPLAINER_BUILDERS  # noqa: E402
 
+
+@dataclass
+class TheaterEntrance:
+    name: str
+    root: object
+    focus_height: float = 2.5
+
+
+def theater_entrance(name: str, location, facing_deg: float = 0.0, **params) -> TheaterEntrance:
+    """A Broadway theatre front on the north side of a city street: marquee with bulbs, glowing doors."""
+    import math
+
+    from mathutils import Matrix
+
+    from render_engines.cinematic import ads
+    from render_engines.cinematic.urban import BUILDING_LINE, compound
+    from render_engines.core.blender import materials, objects
+
+    x = float(location[0])
+    root = objects.empty(f"{name}_root", location=(x, BUILDING_LINE, 0))
+    gold = materials.principled("entr_gold", "#c9a227", roughness=0.3, metallic=0.9)
+    door = ads.glow("entr_door", "#ffcf8a", 2.0)
+    bulb = ads.glow("entr_bulb", "#fff1c4", 6.0)
+    parts = []
+    for dx in (-1.5, 0.0, 1.5):  # three glowing glass doors in golden frames
+        parts.append((objects.transform(objects.box(1.3, 0.1, 2.6), Matrix.Translation((dx, -0.05, 1.3))), door))
+        parts.append((objects.transform(objects.box(1.45, 0.12, 0.1), Matrix.Translation((dx, -0.07, 2.65))), gold))
+    for i in range(24):  # bulbs around the marquee
+        t = i / 23
+        parts.append(
+            (objects.transform(objects.sphere(0.08, 8, 6), Matrix.Translation((-3.6 + 7.2 * t, -1.25, 3.05))), bulb)
+        )
+    parts.append((objects.transform(objects.box(7.6, 1.4, 0.35), Matrix.Translation((0, -0.7, 3.1))), gold))
+    compound(f"{name}_front", parts, col=None).parent = root
+    sign = ads.billboard(f"{name}_sign", (0, -1.45, 4.3), 7.4, 1.9, 1, ads.musical)
+    sign.parent = root
+    root.rotation_euler = (0, 0, math.radians(facing_deg))
+    return TheaterEntrance(name, root)
+
+
 PROP_BUILDERS = {
+    "theater_entrance": theater_entrance,
     **EXPLAINER_BUILDERS,
     "lantern_post": lambda name, location, facing_deg=0.0, **_: lantern_post(name, location, facing_deg),
     "planet": _planet,
