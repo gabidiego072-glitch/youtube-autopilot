@@ -218,3 +218,12 @@ def test_prompts_carry_the_human_impact_rule():
     assert "at least 80% human-scale duration" in SCRIPT
     assert "10% or less of the total" in SCRIPT
     assert "Hard limits" in SCRIPT
+
+
+def test_simple_premises_are_preferred_over_technical_ones():
+    from app.services.ideas.generator import MAX_PREMISE_WORDS, SYSTEM_PROMPT, premise_words
+
+    technical = "¿Qué pasaría si los árboles de las ciudades dejaran de absorber dióxido de carbono hoy?"
+    simple = "¿Qué pasaría si no existieran los árboles desde mañana?"
+    assert premise_words(simple) <= MAX_PREMISE_WORDS < premise_words(technical)
+    assert "No technical terms" in SYSTEM_PROMPT

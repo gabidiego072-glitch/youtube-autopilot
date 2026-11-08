@@ -20,7 +20,7 @@ from app.core.errors import ProviderError
 from app.models.enums import ContentCategory
 from app.services.ai.base import AIProvider
 
-PROMPT_VERSION = "ideas-v2"
+PROMPT_VERSION = "ideas-v3"
 SCORE_WEIGHTS = {
     "curiosity": 0.30,
     "human_impact": 0.20,  # how strongly it changes daily life, homes and cities (human-impact rule)
@@ -29,6 +29,7 @@ SCORE_WEIGHTS = {
     "evergreen": 0.10,
 }
 DUPLICATE_THRESHOLD = 0.82
+MAX_PREMISE_WORDS = 10  # words after "¿Qué pasaría si"
 
 IDEA_SCHEMA = {
     "type": "object",
@@ -78,6 +79,12 @@ You propose premises for new videos. A strong premise:
 - can be answered with real science (physics, biology, astronomy, geology...),
 - produces striking, filmable images,
 - stays interesting for years (no news, no trends, no brands, no celebrities),
+- is the title itself, so it is SHORT and SIMPLE: at most 10 words after "¿Qué pasaría si", everyday words a
+  10-year-old understands, and a big, absolute change (no existieran, desaparecieran, se duplicara, para
+  siempre, desde mañana). No technical terms in the premise (dióxido de carbono, conductividad, fotosíntesis,
+  gravedad específica...): the science goes inside the video, never in the title.
+  Bad: "¿Qué pasaría si los árboles de las ciudades dejaran de absorber dióxido de carbono hoy?"
+  Good: "¿Qué pasaría si no existieran los árboles desde mañana?"
 - passes the first-second test: the viewer instantly FEELS it in their own body or home (everyone falls
   asleep, the Earth brakes, friction vanishes). Abstract material or physics properties that need explaining
   before anything visible happens score low on curiosity and human_impact.
@@ -112,6 +119,11 @@ def normalize(text: str) -> str:
     text = re.sub(r"[^a-z0-9 ]+", " ", text)
     text = re.sub(r"\b(que pasaria si|what would happen if|y si|what if)\b", " ", text)
     return " ".join(text.split())
+
+
+def premise_words(premise: str) -> int:
+    """Words of the premise without the '¿Qué pasaría si' opener."""
+    return len(normalize(premise).split())
 
 
 def is_duplicate(premise: str, existing: list[str], threshold: float = DUPLICATE_THRESHOLD) -> bool:
@@ -210,6 +222,8 @@ def generate_ideas(
         text = " ".join((draft.premise, draft.hook, draft.angle))
         if is_off_topic(text) or not draft.premise.endswith("?") or is_duplicate(draft.premise, seen):
             continue
+        if premise_words(draft.premise) > MAX_PREMISE_WORDS:  # long, technical titles get far fewer clicks
+            draft.score = round(draft.score * 0.6, 2)
         seen.append(draft.premise)
         accepted.append(draft)
     return sorted(accepted, key=lambda d: d.score, reverse=True)
