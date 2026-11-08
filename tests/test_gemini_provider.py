@@ -118,6 +118,20 @@ def test_schema_too_complex_falls_back_to_schema_in_prompt():
     assert "JSON Schema" in bodies[1]["contents"][0]["parts"][0]["text"]
 
 
+def test_bare_invalid_argument_with_a_schema_also_falls_back():
+    bodies = []
+
+    def handler(request):
+        bodies.append(json.loads(request.content))
+        if len(bodies) == 1:
+            message = "Request contains an invalid argument."
+            return httpx.Response(400, json={"error": {"status": "INVALID_ARGUMENT", "message": message}})
+        return _answer('{"ok": true}')
+
+    assert _provider(handler).generate_json(system="s", prompt="p", schema=SCHEMA).data == {"ok": True}
+    assert "responseJsonSchema" not in bodies[1]["generationConfig"]
+
+
 @pytest.mark.parametrize(
     ("response", "message"),
     [

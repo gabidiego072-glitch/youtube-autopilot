@@ -190,7 +190,11 @@ class GeminiProvider:
                 self._sleep(10 * transport_failures)
                 continue
             detail = _error(response)
-            if response.status_code == 400 and "schema" in detail.lower():
+            schema_sent = "responseJsonSchema" in body.get("generationConfig", {})
+            if response.status_code == 400 and (
+                "schema" in detail.lower() or (schema_sent and "INVALID_ARGUMENT" in detail)
+            ):
+                # Some free models reject parts of a JSON schema with a bare "invalid argument".
                 raise _SchemaRejected(detail)
             if response.status_code == 404:
                 # Not available to this key: another model may still work. This is not a
