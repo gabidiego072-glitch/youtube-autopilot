@@ -342,3 +342,23 @@ def test_missing_voice_falls_back_and_is_recorded(db, tmp_path):
     services.voices = lambda voice_id: None  # not installed
     run = run_pipeline(db, create_run(db, _channel(db), VideoFormat.SHORT, "draft"), services)
     assert db.get(VideoProject, run.project_id).features["voice"] == "davefx"
+
+
+def test_daily_done_lets_safety_retries_skip_when_todays_video_exists(db):
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "autopilot_cli", Path(__file__).parent.parent / "scripts" / "autopilot.py"
+    )
+    cli = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cli)
+
+    channel = _channel(db)
+    assert cli.daily_done(db) == 1  # nothing today: make a video
+    run = create_run(db, channel)
+    run.status = RunStatus.FAILED
+    db.commit()
+    assert cli.daily_done(db) == 1  # a failed attempt does not count
+    run.status = RunStatus.WAITING_APPROVAL
+    db.commit()
+    assert cli.daily_done(db) == 0
