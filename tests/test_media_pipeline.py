@@ -119,6 +119,20 @@ def test_plan_scenes_repairs_references_and_retries_once():
     assert len(stub.calls) == 2 and "ghost" in stub.calls[1]["prompt"]
 
 
+def test_plan_scenes_retries_when_the_answer_is_cut_off():
+    class CutOffOnce(StubAIProvider):
+        def generate_json(self, *, system, prompt, schema):
+            if not self.calls:
+                self.calls.append({"prompt": prompt})
+                raise ProviderError("Gemini output was truncated (raise GEMINI_MAX_TOKENS).")
+            return super().generate_json(system=system, prompt=prompt, schema=schema)
+
+    stub = CutOffOnce([STORYBOARD_RESPONSE])
+    durations = [2.0] * len(SCRIPT_RESPONSE["scenes"])
+    specs = plan_scenes(stub, scenes=SCRIPT_RESPONSE["scenes"], durations=durations, visual_bible=None, seed=3)
+    assert len(specs) == len(durations) and "cut off" in stub.calls[1]["prompt"]
+
+
 def test_piper_not_configured(tmp_path):
     with pytest.raises(IntegrationNotConfiguredError):
         PiperTTS("piper", None).synthesize("hola", tmp_path / "x.wav")

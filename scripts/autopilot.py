@@ -20,7 +20,7 @@ import argparse
 import json
 import sys
 import uuid
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -33,6 +33,7 @@ from app.db.session import get_session_factory  # noqa: E402
 from app.models import Channel, PipelineRun  # noqa: E402
 from app.models.enums import (
     PrivacyStatus,  # noqa: E402
+    RunStatus,  # noqa: E402
     VideoFormat,  # noqa: E402
 )
 from app.services.ai.factory import get_ai_provider  # noqa: E402
@@ -116,6 +117,7 @@ def main() -> int:
     sub.add_parser("sync-analytics")
     sub.add_parser("learning", help="what the system has learnt so far (voices, music, length, hooks)")
     sub.add_parser("trends")
+    sub.add_parser("daily-done", help="exit 0 if today's video is already made or being made (for retries)")
     report_p = sub.add_parser("channel-report", help="real YouTube data for every upload (views, retention, traffic)")
     report_p.add_argument("--days", type=int, default=120)
     report_p.add_argument("--out", type=Path, default=Path("channel_report.json"))
@@ -159,6 +161,8 @@ def main() -> int:
             )
             print(json.dumps([summary(r) for r in runs if r], ensure_ascii=False, indent=2, default=str))
             return 0
+        if args.command == "daily-done":
+            return daily_done(db)
         if args.command == "learning":
             channel = db.scalar(select(Channel).order_by(Channel.created_at))
             if channel is None:
@@ -197,6 +201,23 @@ def main() -> int:
             run = run_pipeline(db, run, services)
         print(json.dumps(summary(run), ensure_ascii=False, indent=2, default=str))
         return 0 if run.status.value in ("published", "waiting_approval") or args.command == "run" and args.until else 1
+
+
+def daily_done(db) -> int:
+    """0 = today (UTC) already has a published / waiting video, or one started in the last 3 hours; 1 = make one."""
+    now = datetime.now(UTC)
+    start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    runs = list(db.scalars(select(PipelineRun).where(PipelineRun.created_at >= start)))
+    for run in runs:
+        created = run.created_at if run.created_at.tzinfo else run.created_at.replace(tzinfo=UTC)
+        if run.status in (RunStatus.PUBLISHED, RunStatus.WAITING_APPROVAL):
+            print(f"Today's video exists: run {run.id} ({run.status.value}).")
+            return 0
+        if run.status in (RunStatus.RUNNING, RunStatus.QUEUED) and now - created < timedelta(hours=3):
+            print(f"Today's video is being made: run {run.id}.")
+            return 0
+    print(f"No video yet today ({len(runs)} earlier attempt(s) failed or stalled): make one.")
+    return 1
 
 
 def render_shard(db, args, settings) -> int:

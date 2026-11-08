@@ -22,6 +22,9 @@ on:
     # Daily at 06:17 UTC: 07:17 in Spain in winter and 08:17 in summer,
     # always inside the requested 07:17-09:17 local window. Cloud runners only.
     - cron: "17 6 * * *"
+    # Safety retries: they only make a video if today's has not been made yet (e.g. Gemini failed).
+    - cron: "47 8 * * *"
+    - cron: "17 11 * * *"
   workflow_dispatch:
     inputs:
       command:
@@ -105,7 +108,9 @@ jobs:
           echo "shards=$(python -c "print(list(range(max(1, min(8, int('$SHARDS'))))))")" >> "$GITHUB_OUTPUT"
           # Scheduled runs publish automatically after QA. Privacy remains PRIVATE by default.
           AUTO=""; if [ "${{ github.event_name }}" = "schedule" ] || { [ "${{ github.event_name }}" = "push" ] && [ "${{ contains(github.event.head_commit.message, '[one-shot-video]') }}" = "true" ]; } || [ "${{ vars.AUTO_PUBLISH }}" = "true" ]; then AUTO="--auto-publish"; fi
-          if [ "$CMD" = "run" ]; then
+          if [ "$CMD" = "run" ] && [ "${{ github.event_name }}" = "schedule" ] && python scripts/autopilot.py daily-done; then
+            echo "Today's video already exists or is being made: nothing to do."
+          elif [ "$CMD" = "run" ]; then
             python scripts/autopilot.py preflight
             python scripts/autopilot.py run --channel "$CHANNEL_NAME" \
               --format "${{ github.event.inputs.format || 'short' }}" --mode "$MODE" --until storyboard $AUTO | tee run.json
