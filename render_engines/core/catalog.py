@@ -47,6 +47,8 @@ ENVIRONMENT_SCALES = {
 }
 
 PROPS = {
+    "door": "a door in its frame; it opens with 'open_door' and bright daylight is behind it. Params: location "
+    "[x,y,z] (bottom centre of the doorway), facing (deg; 0 = the viewer stands at -Y), width, height.",
     "theater_entrance": "city: a Broadway theatre front on the north side of the street (marquee with bulbs, "
     "glowing doors). Params: location [x, 0, 0] (only x is used).",
     "lantern_post": "Street lantern (2.3 m) that can be switched on. Params: location [x,y,z], facing (deg).",
@@ -87,6 +89,7 @@ ACTIONS = {
     "lights_on": "city: street lamps and random windows switch on: start, end",
     "cover": "character crouches and covers the head: character, start, end",
     "fall": "character falls over: character, start, direction_deg",
+    "open_door": "a door prop swings open: prop, start, end",
     "vanish": "magic trick: a puff of white smoke and the character disappears: character, start",
     "fire": "flames, flickering light and smoke: location [x,y,z] (default: the kitchen stove), start, end, size "
     "(1 = stove fire, 3 = a burning car)",

@@ -80,6 +80,85 @@ from render_engines.cinematic.explainers import EXPLAINER_BUILDERS  # noqa: E402
 
 
 @dataclass
+class Door:
+    name: str
+    root: object
+    hinge: object
+    focus_height: float = 1.2
+
+    def open(self, start: int, end: int, angle_deg: float = 105.0) -> None:
+        """Swing the leaf open on its hinge (ease in-out)."""
+        import math
+
+        from render_engines.core.blender.animation import key
+
+        key(self.hinge, "rotation_euler", start, (0, 0, 0))
+        key(self.hinge, "rotation_euler", end, (0, 0, math.radians(angle_deg)))
+
+
+def door(
+    name: str,
+    location,
+    facing_deg: float = 0.0,
+    width: float = 1.0,
+    height: float = 2.2,
+    color: str = "#5a3a24",
+    glass: bool = True,
+    light_behind: bool = True,
+    col=None,
+    **_,
+) -> Door:
+    """A door in its frame. Local frame: the doorway lies in the X-Z plane; the leaf opens towards -Y (the side
+    the viewer stands on), hinged at -X. 'light_behind' puts bright daylight on the other side (+Y)."""
+    import math
+
+    from mathutils import Matrix
+
+    from render_engines.cinematic import ads
+    from render_engines.cinematic.urban import compound
+    from render_engines.core.blender import materials, objects
+
+    root = objects.empty(f"{name}_root", location=tuple(location), col=col)
+    root.rotation_euler = (0, 0, math.radians(facing_deg))
+    frame_mat = materials.principled(f"{name}_frame", "#2a2420", roughness=0.5)
+    leaf_mat = materials.principled(f"{name}_leaf", color, roughness=0.45)
+    pane = materials.principled("door_glass", "#bcd2e0", roughness=0.05, transmission=0.6)
+    brass = materials.principled("door_brass", "#c9a227", roughness=0.25, metallic=1.0)
+
+    def box(sx, sy, sz, at):
+        return objects.transform(objects.box(sx, sy, sz), Matrix.Translation(at))
+
+    frame = compound(
+        f"{name}_frame",
+        [
+            (box(0.12, 0.2, height + 0.12, (-width / 2 - 0.06, 0, (height + 0.12) / 2)), frame_mat),
+            (box(0.12, 0.2, height + 0.12, (width / 2 + 0.06, 0, (height + 0.12) / 2)), frame_mat),
+            (box(width + 0.24, 0.2, 0.12, (0, 0, height + 0.06)), frame_mat),
+        ],
+        col=col,
+    )
+    frame.parent = root
+    hinge = objects.empty(f"{name}_hinge", location=(-width / 2, -0.03, 0), parent=root, col=col)
+    parts = [
+        (box(width, 0.05, height, (width / 2, 0, height / 2)), leaf_mat),
+        (box(0.05, 0.08, 0.05, (width - 0.12, -0.05, 1.05)), brass),
+    ]
+    if glass:
+        parts.append((box(width * 0.6, 0.06, height * 0.45, (width / 2, 0, height * 0.66)), pane))
+    compound(f"{name}_leaf", parts, col=col).parent = hinge
+    if light_behind:  # daylight on the other side, so opening the door floods the view with light
+        sky = objects.mesh_object(
+            f"{name}_daylight",
+            objects.box(width * 4, 0.05, height * 2.5),
+            ads.glow("door_daylight", "#fff1d6", 3.0),
+            location=(0, 1.2, height * 0.9),
+            col=col,
+        )
+        sky.parent = root
+    return Door(name, root, hinge)
+
+
+@dataclass
 class TheaterEntrance:
     name: str
     root: object
@@ -119,6 +198,7 @@ def theater_entrance(name: str, location, facing_deg: float = 0.0, **params) -> 
 
 
 PROP_BUILDERS = {
+    "door": door,
     "theater_entrance": theater_entrance,
     **EXPLAINER_BUILDERS,
     "lantern_post": lambda name, location, facing_deg=0.0, **_: lantern_post(name, location, facing_deg),

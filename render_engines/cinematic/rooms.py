@@ -340,6 +340,12 @@ def cafe(urban: Urban, rng, col) -> None:
         for i in range(8)
     ]
     compound("cafe_shelf", shelf, (-2.85, 0.6, 0), col=col)
+    # South wall (the side the camera usually stands on) with the street door at x = 1.2.
+    for x0, x1 in ((-3.2, 0.62), (1.78, 3.2)):
+        urban.static.append(
+            objects.mesh_object(f"cafe_south_{x0}", _box(x1 - x0, 0.1, 2.7, ((x0 + x1) / 2, -2.6, 1.35)), wood, col=col)
+        )
+    objects.mesh_object("cafe_south_top", _box(1.16, 0.1, 0.45, (1.2, -2.6, 2.47)), wood, col=col)
     # The street behind the window: a bright, slightly blue city backdrop.
     objects.mesh_object(
         "cafe_outside", _box(6.0, 0.05, 3.0, (0, 3.6, 1.5)), ads.glow("cafe_street", "#cfdbe8", 1.6), col=col

@@ -290,6 +290,8 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
             urban_env.surge(urban, start, end, float(action.get("height", 3.0)), float(action.get("inland", 40.0)))
         elif kind == "lights_on":
             urban_env.lights_on(urban, start, end)
+        elif kind == "open_door":
+            props[action["prop"]].open(start, end, float(action.get("factor", 105.0)))
         elif kind == "vanish":  # a magician's trick: a puff of white smoke and the character is gone
             from render_engines.cinematic import effects
 
