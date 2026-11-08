@@ -58,6 +58,7 @@ SCENE_SCHEMA = {
                     "facing": _NUMBER,
                     "scale": _NUMBER,
                     "zombie": {"type": "boolean"},
+                    "hat": {"type": "boolean"},
                 },
                 "required": ["id", "start"],
                 "additionalProperties": False,
@@ -126,6 +127,8 @@ SCENE_SCHEMA = {
                 "handheld": _NUMBER,
                 "pov": {"type": "boolean"},
                 "pov_item": {"type": "string", "enum": ["none", "phone", "flashlight"]},
+                "pov_run": {"type": "boolean"},
+                "pov_pushes": {"type": "array", "items": _NUMBER},
                 "shots": {
                     "type": "array",
                     "items": {
