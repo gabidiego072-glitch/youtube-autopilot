@@ -214,6 +214,7 @@ def test_assemble_real_video(tmp_path):
             1.0,
             slots[0],
             [(boom, "impact", 0.5)],
+            "DÍA 1 · 07:42",
         ),
         EditScene(
             _clip(tmp_path / "b.mp4", 0.5), _tone(tmp_path / "b.wav", 1.5), "Todo saldría volando.", 1.5, slots[1]
@@ -227,6 +228,7 @@ def test_assemble_real_video(tmp_path):
     assert (result.width, result.height) == (180, 320) and result.has_audio
     assert abs(result.duration_seconds - total) < 0.1
     assert "¿Y si la" in (tmp_path / "w" / "subtitles.srt").read_text()
+    assert "DÍA 1 · 07:42" in (tmp_path / "w" / "hud.srt").read_text()  # POV counter on its own top track
 
 
 class _StubVoice:

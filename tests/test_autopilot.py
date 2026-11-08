@@ -321,7 +321,7 @@ def test_run_records_variants_and_applies_them(db, tmp_path):
     assert run.status == RunStatus.WAITING_APPROVAL, run.error
     project = db.get(VideoProject, run.project_id)
     features = project.features
-    assert set(features) == {"voice", "music", "length", "hook"}
+    assert set(features) == {"voice", "music", "length", "hook", "style"} and features["style"] == "classic"
     assert project.target_duration_seconds == int(features["length"])
     assert used_voices and set(used_voices) == {features["voice"]}
     script_prompt = next(c["prompt"] for c in services.ai.calls if "Hook style for this video" in c["prompt"])
@@ -362,3 +362,33 @@ def test_daily_done_lets_safety_retries_skip_when_todays_video_exists(db):
     run.status = RunStatus.WAITING_APPROVAL
     db.commit()
     assert cli.daily_done(db) == 0
+
+
+def test_planned_pov_topic_goes_first_and_every_scene_is_first_person(db, tmp_path, monkeypatch):
+    import json
+
+    from app.services import styles
+
+    planned = tmp_path / "planned.json"
+    planned.write_text(
+        json.dumps(
+            [{"premise": "¿Qué pasaría si todos fueran zombis menos tú?", "style": "pov", "category": "human_body"}]
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(styles, "PLANNED_TOPICS", planned)
+    services = _services(tmp_path, FULL_RUN[1:], planned_topics_enabled=True)  # no idea generation needed
+    run = run_pipeline(db, create_run(db, _channel(db)), services, until="storyboard")
+    assert run.status != RunStatus.FAILED, run.error
+    from app.models import VideoProject
+
+    project = db.get(VideoProject, run.project_id)
+    assert project.working_title.startswith("¿Qué pasaría si todos fueran zombis")
+    assert project.features["style"] == "pov"
+    script_prompt = services.ai.calls[2]["prompt"]
+    assert "first-person POV" in script_prompt and "DÍA 1" in script_prompt
+    assert all(spec["camera"]["pov"] for spec in project.scripts[-1].scene_specs)
+    # Used once: the next run goes back to generated ideas.
+    from app.services.styles import next_planned_topic
+
+    assert next_planned_topic({project.working_title}) is None

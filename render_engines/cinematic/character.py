@@ -25,6 +25,16 @@ DEFAULT_PALETTE = {
 
 HIP_HEIGHT = 0.78
 
+ZOMBIE_PALETTE = {
+    "body": "#4f5544",  # dirty, faded clothes
+    "skin": "#8ea377",  # grey-green skin
+    "accent": "#6b2a26",  # dried-blood red
+    "hair": "#2a2620",
+    "boots": "#2b2622",
+    "eyes": "#c9b13a",  # yellowish eyes
+}
+ZOMBIE_ARMS = math.radians(82)  # arms held forward
+
 
 @dataclass
 class CinematicCharacter:
@@ -40,6 +50,7 @@ class CinematicCharacter:
     yaw: float = 0.0  # radians, current facing
     position: tuple = (0.0, 0.0, 0.0)
     busy_until: dict = field(default_factory=dict)
+    zombie: bool = False
 
     # --- helpers ----------------------------------------------------------
     @staticmethod
@@ -74,12 +85,20 @@ class CinematicCharacter:
             fade = min(1.0, i / 2, (n - i) / 2) if n >= 4 else 1.0
             key(self.legs["L"], "rotation_euler", frame, (swing_leg * phase * fade, 0, 0))
             key(self.legs["R"], "rotation_euler", frame, (-swing_leg * phase * fade, 0, 0))
-            key(self.arms["L"], "rotation_euler", frame, (-swing_arm * phase * fade, 0, math.radians(-4)))
-            key(self.arms["R"], "rotation_euler", frame, (swing_arm * phase * fade, 0, math.radians(4)))
+            if self.zombie:  # arms stretched forward, swaying; a lurching, uneven gait
+                sway = 0.25 * swing_arm * phase
+                key(self.arms["L"], "rotation_euler", frame, (ZOMBIE_ARMS - sway, 0, math.radians(-6)))
+                key(self.arms["R"], "rotation_euler", frame, (ZOMBIE_ARMS + sway, 0, math.radians(6)))
+                key(self.hips, "rotation_euler", frame, (0, math.radians(7) * phase, 0))
+            else:
+                key(self.arms["L"], "rotation_euler", frame, (-swing_arm * phase * fade, 0, math.radians(-4)))
+                key(self.arms["R"], "rotation_euler", frame, (swing_arm * phase * fade, 0, math.radians(4)))
             bob = 0.035 * abs(math.cos(i * math.pi / 2)) * fade
             key(self.hips, "location", frame, (0, 0, HIP_HEIGHT + bob))
-        for limb in (*self.legs.values(), *self.arms.values()):
+        for limb in self.legs.values():
             key(limb, "rotation_euler", end + 4, (0, 0, 0))
+        for limb in self.arms.values():
+            key(limb, "rotation_euler", end + 4, (ZOMBIE_ARMS if self.zombie else 0, 0, 0))
         key(self.hips, "location", end + 4, (0, 0, HIP_HEIGHT))
 
     def raise_arm(self, start: int, end: int, side: str = "R", hold: int = 24) -> None:
@@ -207,10 +226,40 @@ class CinematicCharacter:
                 key(eye, "scale", frame + 4, (1, 1, 1))
 
 
+def _hat(name: str, accent, neck, col) -> None:
+    objects.mesh_object(
+        f"{name}_hat",
+        objects.cone(0.2, 0.02, 0.36, 24),
+        accent,
+        True,
+        (0, -0.02, 0.4),
+        rotation=(math.radians(-14), 0, 0),
+        parent=neck,
+        col=col,
+    )
+    objects.mesh_object(
+        f"{name}_brim",
+        objects.cone(0.32, 0.32, 0.025, 32),
+        accent,
+        True,
+        (0, -0.01, 0.39),
+        rotation=(math.radians(-8), 0, 0),
+        parent=neck,
+        col=col,
+    )
+
+
 def build_character(
-    name: str, palette: dict | None = None, location=(0, 0, 0), facing_deg: float = 0.0, scale: float = 1.0
+    name: str,
+    palette: dict | None = None,
+    location=(0, 0, 0),
+    facing_deg: float = 0.0,
+    scale: float = 1.0,
+    zombie: bool = False,
 ) -> CinematicCharacter:
     p = {**DEFAULT_PALETTE, **(palette or {})}
+    if zombie:  # a zombie keeps no palette of the living (continuity palettes are for the cast)
+        p = dict(ZOMBIE_PALETTE)
     body = materials.principled(f"{name}_body", p["body"], roughness=0.85)
     skin = materials.principled(f"{name}_skin", p["skin"], roughness=0.55, subsurface=0.15)
     accent = materials.principled(f"{name}_accent", p["accent"], roughness=0.7)
@@ -268,26 +317,8 @@ def build_character(
         col=col,
     )
     objects.mesh_object(f"{name}_nose", objects.sphere(0.04), skin, True, (0, 0.225, 0.22), parent=neck, col=col)
-    objects.mesh_object(
-        f"{name}_hat",
-        objects.cone(0.2, 0.02, 0.36, 24),
-        accent,
-        True,
-        (0, -0.02, 0.4),
-        rotation=(math.radians(-14), 0, 0),
-        parent=neck,
-        col=col,
-    )
-    objects.mesh_object(
-        f"{name}_brim",
-        objects.cone(0.32, 0.32, 0.025, 32),
-        accent,
-        True,
-        (0, -0.01, 0.39),
-        rotation=(math.radians(-8), 0, 0),
-        parent=neck,
-        col=col,
-    )
+    if not zombie:
+        _hat(name, accent, neck, col)
     eyes = []
     for sx in (-1, 1):
         eye = objects.mesh_object(
@@ -322,7 +353,12 @@ def build_character(
         )
         legs[side] = hip
 
+    if zombie:
+        for side, shoulder in arms.items():
+            shoulder.rotation_euler = (ZOMBIE_ARMS, 0, math.radians(-6 if side == "L" else 6))
+        neck.rotation_euler = (math.radians(12), math.radians(14), 0)  # head hanging to one side
     return CinematicCharacter(
+        zombie=zombie,
         name=name,
         root=root,
         hips=hips,
