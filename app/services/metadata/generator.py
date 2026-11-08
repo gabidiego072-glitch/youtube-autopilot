@@ -27,8 +27,11 @@ SCIENCE_TECH_CATEGORY = "28"  # YouTube "Science & Technology"
 
 SYSTEM_PROMPT = f"""You write YouTube metadata for this channel: {CHANNEL_CONCEPT}
 Rules:
-- Title: the 'What would happen if...?' question (in Spanish '¿Qué pasaría si...?'), at most 70 characters
-  when possible, never over 100. Curiosity without lying: the video must deliver what the title promises.
+- Title: the 'What would happen if...?' question (in Spanish '¿Qué pasaría si...?'), at most 60 characters
+  when possible, never over 100. Everyday words anyone understands in half a second, a big and simple change,
+  no technical terms (keep the science for the description). Bad: '¿Qué pasaría si los árboles dejaran de
+  absorber dióxido de carbono?'. Good: '¿Qué pasaría si no existieran los árboles?'. Curiosity without lying: the
+  video must deliver what the title promises.
 - Description: 2-3 hook sentences, then what the video explains, then a short line saying which parts are
   established science and which are estimates or speculation, then the sources (URLs) when given.
 - Tags: specific science terms of the topic plus general ones (ciencia, curiosidades, qué pasaría si).
