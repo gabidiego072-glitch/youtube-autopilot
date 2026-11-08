@@ -372,7 +372,15 @@ def test_planned_pov_topic_goes_first_and_every_scene_is_first_person(db, tmp_pa
     planned = tmp_path / "planned.json"
     planned.write_text(
         json.dumps(
-            [{"premise": "¿Qué pasaría si todos fueran zombis menos tú?", "style": "pov", "category": "human_body"}]
+            [
+                {
+                    "premise": "¿Qué pasaría si todos fueran zombis menos tú?",
+                    "style": "pov",
+                    "category": "human_body",
+                    "city_style": "new_york",
+                    "notes": "SETTING: New York City.",
+                }
+            ]
         ),
         encoding="utf-8",
     )
@@ -387,7 +395,10 @@ def test_planned_pov_topic_goes_first_and_every_scene_is_first_person(db, tmp_pa
     assert project.features["style"] == "pov"
     script_prompt = services.ai.calls[2]["prompt"]
     assert "first-person POV" in script_prompt and "DÍA 1" in script_prompt
-    assert all(spec["camera"]["pov"] for spec in project.scripts[-1].scene_specs)
+    specs = project.scripts[-1].scene_specs
+    assert all(spec["camera"]["pov"] for spec in specs)
+    assert all(s["environment"].get("style") == "new_york" for s in specs if s["environment"]["type"] == "city")
+    assert "SETTING: New York City." in services.ai.calls[-1]["prompt"]  # the storyboard knows the setting
     # Used once: the next run goes back to generated ideas.
     from app.services.styles import next_planned_topic
 
