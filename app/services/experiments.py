@@ -34,6 +34,7 @@ class Voice:
     model: str  # Piper model file name in the voices folder
     speaker: int | None = None
     credit: str | None = None  # attribution the voice's licence asks for (goes into the description)
+    language: str = "es"
 
 
 VOICES = {
@@ -48,6 +49,11 @@ VOICES = {
     "claude_mx": Voice("es_MX-claude-high.onnx"),
     "ald_mx": Voice("es_MX-ald-medium.onnx"),
     "daniela_ar": Voice("es_AR-daniela-high.onnx", None, "Voz: Piper daniela (OpenSLR 61, CC BY-SA 4.0)"),
+    # English channel: public-domain LibriVox voices by Bryce Beattie, trained without the lessac checkpoint
+    # (several other English Piper voices come from non-commercial datasets).
+    "norman_us": Voice("en_US-norman-medium.onnx", language="en"),
+    "john_us": Voice("en_US-john-medium.onnx", language="en"),
+    "kristin_us": Voice("en_US-kristin-medium.onnx", language="en"),
 }
 
 MUSIC = ("wistful", "tense", "bright", "curious", "rising")  # index = audio.synth PROGRESSIONS index
@@ -62,11 +68,18 @@ HOOKS = {
 }
 
 DIMENSIONS: dict[str, tuple[str, ...]] = {
-    "voice": tuple(VOICES),
+    "voice": tuple(k for k, v in VOICES.items() if v.language == "es"),
     "music": MUSIC,
     "length": LENGTHS,
     "hook": tuple(HOOKS),
 }
+
+
+def dimensions(language: str = "es") -> dict[str, tuple[str, ...]]:
+    """The experiment dimensions for a channel's language (each language has its own narrators)."""
+    code = (language or "es").split("-")[0].lower()
+    voices = tuple(k for k, v in VOICES.items() if v.language == code) or DIMENSIONS["voice"]
+    return {**DIMENSIONS, "voice": voices}
 
 
 def _scores(db: Session, channel_id: uuid.UUID) -> list[tuple[dict, float]]:
@@ -92,10 +105,10 @@ def _scores(db: Session, channel_id: uuid.UUID) -> list[tuple[dict, float]]:
     return out
 
 
-def standings(history: list[tuple[dict, float]]) -> dict[str, dict[str, dict]]:
+def standings(history: list[tuple[dict, float]], dims: dict | None = None) -> dict[str, dict[str, dict]]:
     """Per dimension and option: tries and mean score."""
     table: dict[str, dict[str, dict]] = {}
-    for dim, options in DIMENSIONS.items():
+    for dim, options in (dims or DIMENSIONS).items():
         table[dim] = {}
         for option in options:
             scores = [score for features, score in history if features.get(dim) == option]
@@ -103,10 +116,11 @@ def standings(history: list[tuple[dict, float]]) -> dict[str, dict[str, dict]]:
     return table
 
 
-def choose(history: list[tuple[dict, float]], rng: random.Random) -> dict[str, str]:
+def choose(history: list[tuple[dict, float]], rng: random.Random, dims: dict | None = None) -> dict[str, str]:
     choice = {}
-    table = standings(history)
-    for dim, options in DIMENSIONS.items():
+    dims = dims or DIMENSIONS
+    table = standings(history, dims)
+    for dim, options in dims.items():
         stats = table[dim]
         untried = [o for o in options if stats[o]["tries"] < MIN_TRIES]
         if untried:
@@ -119,10 +133,10 @@ def choose(history: list[tuple[dict, float]], rng: random.Random) -> dict[str, s
     return choice
 
 
-def choose_for_channel(db: Session, channel_id: uuid.UUID, seed: int) -> dict[str, str]:
-    return choose(_scores(db, channel_id), random.Random(seed))
+def choose_for_channel(db: Session, channel_id: uuid.UUID, seed: int, language: str = "es") -> dict[str, str]:
+    return choose(_scores(db, channel_id), random.Random(seed), dimensions(language))
 
 
-def channel_standings(db: Session, channel_id: uuid.UUID) -> dict:
+def channel_standings(db: Session, channel_id: uuid.UUID, language: str = "es") -> dict:
     history = _scores(db, channel_id)
-    return {"videos_with_results": len(history), "dimensions": standings(history)}
+    return {"videos_with_results": len(history), "dimensions": standings(history, dimensions(language))}

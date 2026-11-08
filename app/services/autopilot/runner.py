@@ -65,7 +65,7 @@ from app.services.reporting.builder import performances
 from app.services.research.briefing import build_brief
 from app.services.scenes.planner import plan_scenes
 from app.services.scripts.generator import generate_script
-from app.services.styles import POV_SCRIPT_NOTE, POV_STORYBOARD_NOTE, next_planned_topic
+from app.services.styles import POV_STORYBOARD_NOTE, next_planned_topic, pov_script_note
 from app.services.thumbnails.generator import best_moment, generate_thumbnails
 from app.services.variety import RECENT, RecentVideos, pick_idea, recent_videos
 from app.services.youtube.base import UploadRequest
@@ -201,7 +201,7 @@ def step_topic(db, run, services, ai) -> dict:
     )
     generated = 0
     used = set(db.scalars(select(VideoProject.working_title).where(VideoProject.channel_id == channel.id)))
-    planned = next_planned_topic(used) if services.settings.planned_topics_enabled else None
+    planned = next_planned_topic(used, channel.language) if services.settings.planned_topics_enabled else None
     if planned:  # a topic chosen by hand goes first, once
         idea = Idea(
             channel_id=channel.id,
@@ -259,7 +259,7 @@ def step_topic(db, run, services, ai) -> dict:
     db.add(project)
     db.flush()
     # Variants this video tries (voice, music, length, hook), chosen from past results.
-    features = choose_for_channel(db, channel.id, seed=int(project.id.int % 100_000))
+    features = choose_for_channel(db, channel.id, seed=int(project.id.int % 100_000), language=channel.language)
     if run.format == VideoFormat.SHORT:
         project.target_duration_seconds = int(features["length"])
     else:
@@ -366,7 +366,7 @@ def _write_script(db, project, services, ai, notes: str | None = None) -> Script
                     for n in (
                         project.notes,
                         notes,
-                        _style_note(project, POV_SCRIPT_NOTE),
+                        _style_note(project, pov_script_note(project.language)),
                         _hook_note(project),
                         _recent(db, project).script_note(),
                     )
@@ -522,7 +522,10 @@ def step_storyboard(db, run, services, ai) -> dict:
             "visual_bible": script.visual_bible or {},
             "scenes": script.scenes,
         },
-        "scenes": [{**spec, "duration_seconds": durations[i]} for i, spec in enumerate(script.scene_specs)],
+        "scenes": [
+            {**spec, "duration_seconds": durations[i], "language": project.language}  # on-screen texts
+            for i, spec in enumerate(script.scene_specs)
+        ],
     }
     (work / "production.json").write_text(json.dumps(production, ensure_ascii=False, indent=2), encoding="utf-8")
     envs = sorted({s["environment"]["type"] for s in script.scene_specs})
@@ -687,6 +690,7 @@ def step_publish(db, run, services, ai) -> dict:
         privacy=PrivacyStatus(services.settings.youtube_default_privacy),
         thumbnail_path=thumb,
         comment=metadata.pinned_comment,
+        language=project.language,
     )
     publisher.check_privacy(request)  # public needs YOUTUBE_ALLOW_PUBLIC=true, checked before uploading
     job = PublishJob(project_id=project.id, metadata_id=metadata.id, privacy=request.privacy)

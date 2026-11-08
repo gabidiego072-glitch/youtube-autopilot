@@ -3,6 +3,10 @@
 # runner such as your own PC under WSL (tools stay installed in the runner's tool folder, no download).
 name: Autopilot setup
 description: Install Python dependencies, FFmpeg, Blender and the voice models
+inputs:
+  voice:
+    description: default narrator model (used when the video's experiment voice is missing)
+    default: es_ES-davefx-medium
 runs:
   using: composite
   steps:
@@ -32,7 +36,7 @@ runs:
         path: |
           ${{ runner.tool_cache }}/blender
           ${{ runner.tool_cache }}/voices
-        key: tools-${{ runner.os }}-blender-4.5.15-piper-voices-v3
+        key: tools-${{ runner.os }}-blender-4.5.15-piper-voices-v4
     - name: Install Blender and voices
       shell: bash
       run: |
@@ -41,11 +45,12 @@ runs:
         if [ ! -x "$BLENDER_DIR/blender-4.5.15-linux-x64/blender" ]; then scripts/install_blender.sh "$BLENDER_DIR"; fi
         echo "BLENDER_BINARY=$BLENDER_DIR/blender-4.5.15-linux-x64/blender" >> "$GITHUB_ENV"
         # Narrator voices the system experiments with (all allow commercial use; see app/services/experiments.py).
-        for v in es/es_ES/davefx/medium es/es_ES/sharvard/medium es/es_MX/claude/high es/es_MX/ald/medium es/es_AR/daniela/high; do
+        for v in es/es_ES/davefx/medium es/es_ES/sharvard/medium es/es_MX/claude/high es/es_MX/ald/medium es/es_AR/daniela/high \
+                 en/en_US/norman/medium en/en_US/john/medium en/en_US/kristin/medium; do
           name="$(echo "$v" | awk -F/ '{print $2"-"$3"-"$4}')"
           if [ ! -f "$VOICES/${name}.onnx" ]; then scripts/install_voice.sh "$v" "$VOICES"; fi
         done
-        echo "PIPER_VOICE_MODEL=$VOICES/es_ES-davefx-medium.onnx" >> "$GITHUB_ENV"
+        echo "PIPER_VOICE_MODEL=$VOICES/${{ inputs.voice }}.onnx" >> "$GITHUB_ENV"
     - name: Python dependencies
       shell: bash
       run: python -m pip install -q -r requirements.txt

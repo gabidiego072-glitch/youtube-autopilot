@@ -11,6 +11,7 @@ from app.content.profile import (
     VISUAL_STYLE,
 )
 from app.models.enums import ClaimType, VideoFormat
+from app.services.language import title_guide
 from render_engines.core.catalog import catalog_text
 
 PROMPT_VERSION = "whatif-script-v6"
@@ -166,6 +167,7 @@ def build_script_prompt(
         f"Topic details: {topic}",
         f"Target length: about {target_duration_seconds} seconds.",
         f"Language: write title_question, narration and ending_line in '{language}'. Visual descriptions in English.",
+        title_guide(language),
     ]
     if niche:
         parts.append(f"Channel niche: {niche}")

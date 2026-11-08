@@ -64,7 +64,8 @@ def clean_tags(tags: list[str]) -> list[str]:
     return out
 
 
-def video_body(request: UploadRequest, language: str = "es") -> dict:
+def video_body(request: UploadRequest, language: str | None = None) -> dict:
+    language = language or request.language
     title = clean_text(request.title)[:TITLE_MAX]
     description = clean_text(request.description).encode()[:DESCRIPTION_MAX_BYTES].decode(errors="ignore")
     snippet = {
