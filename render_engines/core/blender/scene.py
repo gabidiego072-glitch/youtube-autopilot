@@ -38,7 +38,7 @@ def configure_render(scene: bpy.types.Scene, ctx: RenderContext, frames_dir: str
     cycles.adaptive_threshold = 0.05
     cycles.use_denoising = True
     cycles.denoiser = "OPENIMAGEDENOISE"
-    cycles.denoising_prefilter = "FAST"
+    cycles.denoising_prefilter = "ACCURATE" if ctx.samples >= 4 else "FAST"  # cleaner edges on hd/final
     with contextlib.suppress(AttributeError, TypeError):  # older Blender has no quality setting
         cycles.denoising_quality = "BALANCED"
     cycles.max_bounces = 6
