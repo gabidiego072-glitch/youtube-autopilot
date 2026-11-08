@@ -103,6 +103,9 @@ jobs:
           # Scheduled runs have no inputs: they use the RENDER_MODE variable.
           MODE="${{ github.event.inputs.mode }}"; MODE="$(echo "${MODE:-${{ vars.RENDER_MODE || 'hd' }}}" | tr -d '[:space:]')"
           SHARDS="${{ vars.RENDER_SHARDS || '4' }}"
+          # Cloud machines are free and parallel: never fewer than 4 (an old RENDER_SHARDS=1 from the
+          # home-PC setup made hand-started videos render on one machine for hours).
+          SHARDS=$(( SHARDS < 4 ? 4 : SHARDS ))
           # Scheduled daily video: light quality, split across four GitHub-hosted machines.
           if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event_name }}" = "push" ]; then MODE=lite; SHARDS=4; fi
           echo "shards=$(python -c "print(list(range(max(1, min(8, int('$SHARDS'))))))")" >> "$GITHUB_OUTPUT"
