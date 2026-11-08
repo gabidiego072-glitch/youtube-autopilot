@@ -256,6 +256,7 @@ def build_character(
     facing_deg: float = 0.0,
     scale: float = 1.0,
     zombie: bool = False,
+    hat: bool = True,
 ) -> CinematicCharacter:
     p = {**DEFAULT_PALETTE, **(palette or {})}
     if zombie:  # a zombie keeps no palette of the living (continuity palettes are for the cast)
@@ -317,7 +318,7 @@ def build_character(
         col=col,
     )
     objects.mesh_object(f"{name}_nose", objects.sphere(0.04), skin, True, (0, 0.225, 0.22), parent=neck, col=col)
-    if not zombie:
+    if hat and not zombie:
         _hat(name, accent, neck, col)
     eyes = []
     for sx in (-1, 1):
