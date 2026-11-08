@@ -52,7 +52,13 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
     for c in spec.get("characters", []):
         start = tuple(c.get("start", (0, 0))[:2]) + (0.0,)
         char = build_character(
-            c["id"], c.get("palette"), start, c.get("facing", 0), c.get("scale", 1.0), zombie=bool(c.get("zombie"))
+            c["id"],
+            c.get("palette"),
+            start,
+            c.get("facing", 0),
+            c.get("scale", 1.0),
+            zombie=bool(c.get("zombie")),
+            hat=c.get("hat", True),
         )
         char.idle(ctx.frame_start, ctx.frame_end, ctx.fps, ctx.seed + len(characters))
         characters[c["id"]] = char
@@ -80,7 +86,9 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
                 "skin": rng.choice(("#e0ac85", "#c68642", "#8d5524", "#f1c27d")),
                 "hair": rng.choice(("#2d1e14", "#6b4423", "#1b1b1b", "#b89778")),
             }
-            walker = build_character(f"ped_{i}", palette, (x0, y, 0.0), 0, rng.uniform(0.92, 1.08))
+            walker = build_character(
+                f"ped_{i}", palette, (x0, y, 0.0), 0, rng.uniform(0.92, 1.08), hat=rng.random() < 0.2
+            )
             walker.idle(ctx.frame_start, ctx.frame_end, ctx.fps, ctx.seed + 50 + i)
             walker.walk(
                 ctx.frame_start,
