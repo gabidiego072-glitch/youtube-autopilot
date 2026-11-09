@@ -46,6 +46,7 @@ SCENE_SCHEMA = {
                 "zombies": {"type": "integer"},
                 "plaza": {"type": "boolean"},
                 "wet": {"type": "boolean"},
+                "steam": {"type": "boolean"},
                 "crowd": {"type": "integer"},
                 "panic": {"type": "integer"},
                 "onlookers": {"type": "integer"},
