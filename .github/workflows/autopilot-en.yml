@@ -68,7 +68,7 @@ env:
 jobs:
   prepare:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.RUNS_ON || '["self-hosted","linux","x64"]') }}
     timeout-minutes: 60
     outputs:
       run_id: ${{ steps.plan.outputs.run_id }}
@@ -99,6 +99,8 @@ jobs:
           SHARDS=$(( SHARDS < 4 ? 4 : SHARDS ))
           # Scheduled daily video: light quality, split across four GitHub-hosted machines.
           if [ "${{ github.event_name }}" = "schedule" ]; then MODE=lite; SHARDS=4; fi
+          # Your own PC (self-hosted runner): one machine, so one shard (the shards would only queue).
+          if [ "${{ runner.environment }}" != "github-hosted" ]; then SHARDS=1; fi
           echo "shards=$(python -c "print(list(range(max(1, min(8, int('$SHARDS'))))))")" >> "$GITHUB_OUTPUT"
           # Scheduled and hand-started runs publish automatically after QA (the owner authorised
           # autonomous uploads). Privacy remains PRIVATE by default.
@@ -155,7 +157,7 @@ jobs:
   render:
     needs: prepare
     if: needs.prepare.outputs.render == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.RUNS_ON || '["self-hosted","linux","x64"]') }}
     timeout-minutes: 350  # GitHub-hosted jobs stop at 6 h
     strategy:
       fail-fast: false
@@ -183,7 +185,7 @@ jobs:
   finish:
     needs: [prepare, render]
     if: always() && needs.prepare.result == 'success' && needs.prepare.outputs.ready == 'true' && needs.render.result != 'failure' && needs.render.result != 'cancelled'
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.RUNS_ON || '["self-hosted","linux","x64"]') }}
     timeout-minutes: 350
     env:
       RUN_ID: ${{ needs.prepare.outputs.run_id }}

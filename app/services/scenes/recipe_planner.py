@@ -48,6 +48,8 @@ Choices per scene: recipe; threat (none|zombies|panic|fire|flood|collapse) = wha
 time_of_day (dawn|day|golden|dusk|night) following the story's clock (the on-screen counter); look (normal, or
 xray when the narration says the world itself changes how it looks); headline only for cafe_news (2-5 words in
 the narration's language, e.g. the news the TV shows).
+Scene 0 is the hook: give it the most striking recipe and threat of the story (street_run, street_watch with
+fire/collapse/flood/zombies, waterfront), never a calm room.
 Pick what each line SHOWS: if it says you run, street_run; the news, cafe_news; the lights go out, dark_room;
 water or food running out, kitchen; the river or the sea, waterfront; the whole planet, space."""
 
@@ -85,6 +87,7 @@ def plan_with_recipes(
 def assemble(picks: list[dict], durations: list[float], *, seed: int, city: str) -> list[dict]:
     """Build every scene from its recipe, with doors, flashes and shared places between scenes."""
     picks = [_clean(p) for p in picks]
+    _striking_start(picks)
     seeds: dict[str, int] = {}
     specs = []
     for i, (pick, duration) in enumerate(zip(picks, durations, strict=True)):
@@ -112,6 +115,20 @@ def assemble(picks: list[dict], durations: list[float], *, seed: int, city: str)
         except SpecError as exc:
             raise ProviderError(f"recipe {recipe} built an invalid scene: {exc}") from exc
     return specs
+
+
+SLOW_STARTS = {"wake_up", "kitchen", "dark_room", "cafe_news", "theater", "park"}
+
+
+def _striking_start(picks: list[dict]) -> None:
+    """The first scene must grab the viewer: a calm room becomes the street with the story's main threat."""
+    if picks and picks[0]["recipe"] in SLOW_STARTS:
+        threat = next((p["threat"] for p in picks if p["threat"] != "none"), "panic")
+        picks[0] = {
+            **picks[0],
+            "recipe": "waterfront" if threat == "flood" else "street_watch",
+            "threat": threat if threat != "none" else "panic",
+        }
 
 
 def _clean(pick: dict) -> dict:
