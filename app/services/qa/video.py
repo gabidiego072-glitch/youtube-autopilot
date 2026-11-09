@@ -78,7 +78,8 @@ def check_video(video: Path, frames: int = 8, report_path: Path | None = None, s
     srt = srt or video.parent / video.stem.split("_")[-1] / "edit" / "subtitles.srt"
     if report_path.is_file() and srt.is_file():
         report = json.loads(report_path.read_text())
-        windows = [(s["start"] + 0.06, s["start"] + 0.06 + s["voice_seconds"]) for s in report["scenes"]]
+        lead = float(report.get("lead_seconds", 0.0))  # the cold open shifts the whole story
+        windows = [(s["start"] + lead + 0.06, s["start"] + lead + 0.06 + s["voice_seconds"]) for s in report["scenes"]]
         for block in srt.read_text(encoding="utf-8").strip().split("\n\n"):
             lines = block.splitlines()
             times = re.findall(r"(\d+):(\d+):(\d+),(\d+)", lines[1])
