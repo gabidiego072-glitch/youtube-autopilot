@@ -8,5 +8,14 @@
     "science_basis": "Epidemiology (SIR models, R0), rabies and the Ophiocordyceps fungus as real 'zombifying' agents, how cities fail without maintenance (power grid, water pumping), human survival needs (water 3 days, food 3 weeks).",
     "city_style": "new_york",
     "notes": "SETTING: New York City. Name real places (Times Square, a Manhattan apartment, the subway, Brooklyn Bridge, Central Park, the Hudson river) and move through them as the days pass. Times Square's giant screens show emergency messages. Use the city street with style new_york for every outdoor street scene, the interior environment for the apartment, coast for the river and meadow for Central Park."
+  },
+  {
+    "premise": "¿Qué pasaría si ayudaras a todas las personas sin hogar?",
+    "style": "pov",
+    "category": "society_and_technology",
+    "hook": "Tienes una semana para sacar a todos de la calle.",
+    "angle": "First-person mission, day by day, in a big city: you meet the people who sleep on the street, give each one a home first (the 'Housing First' idea), then see what changes: the street, hospitals, police, the city budget and the people themselves. Treat everyone with dignity: real people with names and stories, never jokes about them.",
+    "science_basis": "Housing First evidence: Finland gives homeless people a permanent home first and its long-term homelessness fell by more than half since 2008; US studies find that housing a chronically homeless person can cost less than the emergency rooms, shelters and police calls they otherwise need; health and employment improve once people have a stable home.",
+    "notes": "Respectful tone: these are real people in a hard situation, never the butt of a joke. Show them as individuals (characters with their own palette), your first-person hands giving keys, food or a coat. Use street_watch and street_run recipes for the city, kitchen for a first meal in a new home, park for the morning after, space only for the final 'every city did it' idea."
   }
 ]
