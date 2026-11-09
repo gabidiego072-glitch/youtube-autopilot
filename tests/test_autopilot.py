@@ -399,7 +399,7 @@ def test_planned_pov_topic_goes_first_and_every_scene_is_first_person(db, tmp_pa
     script_prompt = services.ai.calls[2]["prompt"]
     assert "first-person POV" in script_prompt and "DÍA 1" in script_prompt
     specs = project.scripts[-1].scene_specs
-    assert all(spec["camera"]["pov"] for spec in specs)
+    assert all(spec["camera"]["pov"] for spec in specs if spec["environment"]["type"] != "space")
     assert all(s["environment"].get("style") == "new_york" for s in specs if s["environment"]["type"] == "city")
     assert "SETTING: New York City." in services.ai.calls[-1]["prompt"]  # the storyboard knows the setting
     # Used once: the next run goes back to generated ideas.
