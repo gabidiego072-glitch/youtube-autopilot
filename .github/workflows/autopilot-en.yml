@@ -5,9 +5,10 @@ name: Autopilot (English)
 
 on:
   schedule:
-    # Daily at 13:41 UTC (8:41 New York in winter): the video is ready around midday in the US.
+    # Daily at 11:41 UTC (6:41 New York in winter): ready for the US morning even if GitHub starts it late.
+    - cron: "41 11 * * *"
+    # Safety retries: they only make a video if today's has not been made yet (late start, Gemini failure).
     - cron: "41 13 * * *"
-    # Safety retries: they only make a video if today's has not been made yet (e.g. Gemini failed).
     - cron: "11 16 * * *"
     - cron: "41 18 * * *"
   workflow_dispatch:
