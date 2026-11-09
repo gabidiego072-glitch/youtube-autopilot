@@ -19,10 +19,14 @@ STYLES = ("classic", "pov")
 
 POV_SCRIPT_NOTE = """STYLE: first-person POV ("what if it were YOU").
 - Narrate in second person, present tense, as a survival JOURNEY with decisions: {lines}.
-  Every scene is a new place and a new moment of the story.
-- Each scene's 'hud' is the on-screen counter for that moment: day and clock time, short, e.g.
-  {example} (in the narration's language). Time only moves forward; jump hours and days to keep
-  the pace. The first scene starts at {first}.
+  Every scene is a new moment of the story; move through only 2-4 places (home, the street, the river...).
+- The story has a GOAL with a number, said in the hook in a few words (e.g. {goal}, "reach the river before
+  night", "keep the lights on for 24 hours"): the viewer stays to see if they make it.
+- Each scene's 'hud' is the on-screen counter towards that goal: day out of the total and clock time, short,
+  e.g. {example} (in the narration's language). Time only moves forward; jump hours and days to keep the
+  pace. The first scene starts at {first} (N = the goal's number of days; for a goal in hours use the hour).
+- The last line closes a loop: it leads straight back into the first line (e.g. it ends {loop} when the
+  story starts with you waking up), so the video can be watched again and again.
 - Keep the science: each decision is explained in half a sentence with a real fact (how fast an outbreak
   spreads, how long the water and the power last without workers, how long a person lasts without water).
 - The 'visual' describes what YOU see in first person (your hands, your phone, the door in front of you)."""
@@ -34,8 +38,8 @@ protagonist as a character (the viewer is the protagonist); other people and zom
 
 
 def pov_script_note(language: str = "es") -> str:
-    lines, example, first = POV_VOICE[base(language)]
-    return POV_SCRIPT_NOTE.format(lines=lines, example=example, first=first)
+    lines, example, first, goal, loop = POV_VOICE[base(language)]
+    return POV_SCRIPT_NOTE.format(lines=lines, example=example, first=first, goal=goal, loop=loop)
 
 
 def planned_topics() -> list[dict]:
