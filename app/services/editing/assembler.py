@@ -20,7 +20,7 @@ from app.services.rendering.ffmpeg import FFmpeg, ProbeResult, escape_filter_val
 SCENE_PAUSE = 0.3  # breathing room after each line
 VOICE_LEAD = 0.06  # voice starts just after the cut
 MIN_SCENE = 1.5
-TRANSITIONS = {"cut": 0.0, "fade": 0.35}
+TRANSITIONS = {"cut": 0.0, "fade": 0.35, "flash": 0.3}  # flash: through white, same place, new look
 SFX_GAIN = {"whoosh": 0.9, "impact": 1.0, "rumble": 0.8, "wind": 0.7, "chime": 0.6}
 
 
@@ -133,7 +133,8 @@ def assemble_video(
     current = "c0"
     for i, scene in enumerate(scenes[1:], start=1):
         graph.append(
-            f"[{current}][c{i}]xfade=transition=fade:duration={scene.slot.transition_seconds:.4f}:"
+            f"[{current}][c{i}]xfade=transition={'fadewhite' if scene.slot.transition_in == 'flash' else 'fade'}:"
+            f"duration={scene.slot.transition_seconds:.4f}:"
             f"offset={scene.slot.start:.4f}[x{i}]"
         )
         current = f"x{i}"

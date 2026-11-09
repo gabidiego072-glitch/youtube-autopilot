@@ -369,6 +369,10 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
             constraint.target = camera
             constraint.track_axis = "TRACK_Z"
             constraint.up_axis = "UP_Y"
+    if spec.get("look"):  # the same scene drawn another way (x-ray outlines...)
+        from render_engines.cinematic import looks
+
+        looks.apply(spec["look"], scene)
 
 
 def _effect(kind: str, action: dict, start: int, end: int, ctx, urban, env: dict) -> None:
