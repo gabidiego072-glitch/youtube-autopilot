@@ -516,10 +516,7 @@ def build_city(env: dict, ctx, scene, seed: int) -> Urban:
         "london": ("#a4a29c", "#b4b2ab", "#94928c"),
         "tokyo": ("#9b9a96", "#adaca7", "#8c8b87"),
     }.get(style)
-    if wet:
-        asphalt = materials.wet_asphalt("asphalt")
-    else:
-        asphalt = materials.noise_ground("asphalt", "#2b2c30", "#3b3c41", scale=1.6, roughness=0.78, bump=0.12)
+    asphalt = materials.wet_asphalt("asphalt") if wet else materials.city_asphalt("asphalt", road_half=ROAD_HALF)
     if big:
         tones = tuple(_darken(c, 0.55) for c in paving) if wet else paving
         concrete = materials.paver_ground(
@@ -534,7 +531,7 @@ def build_city(env: dict, ctx, scene, seed: int) -> Urban:
     if big and env.get("plaza"):  # Times Square: the avenue is a pedestrian plaza paved like the sidewalks
         plaza = ("#55504a", "#6a645c", "#4a4642") if wet else ("#8a837a", "#9a938a", "#7c766e")
         asphalt = materials.paver_ground("plaza_pavers", plaza, size=0.8, roughness=0.3 if wet else 0.75)
-    paint = _mat("road_paint", "#f2f2ee", roughness=0.6)
+    paint = materials.worn_paint("road_paint")
     # The road sits one curb lower; sidewalks are at z = 0, where people walk.
     ground = objects.mesh_object("Road", _box(length * 2, ROAD_HALF * 2, 0.2, (0, 0, -CURB_H - 0.1)), asphalt, col=col)
     urban.static = [ground]
@@ -998,10 +995,10 @@ def build_interior(env: dict, ctx, scene, seed: int) -> Urban:
     col = objects.collection("Interior")
     room = env.get("room") if env.get("room") in ROOMS else "living_room"
     dark, light = rng.choice(ROOM_FLOORS[room])
-    tiles = room == "kitchen"
-    floor = materials.noise_ground(
-        f"floor_{room}", dark, light, scale=14.0 if tiles else 6.0, roughness=0.35 if tiles else 0.6, bump=0.15
-    )
+    if room in ("kitchen", "cafe"):  # tiled floors; homes, offices and classrooms get wooden planks
+        floor = materials.floor_tiles(f"floor_{room}", light, dark)
+    else:
+        floor = materials.wood_planks(f"floor_{room}", (dark, light))
     wall = _mat("wall_paint", env.get("wall_color") or rng.choice(WALL_COLORS), roughness=0.9)
     trim = _mat("trim", "#f4f1ea", roughness=0.6)
     urban.static = [objects.mesh_object("Floor", _box(6.4, 5.4, 0.1, (0, 0, -0.05)), floor, col=col)]
@@ -1272,7 +1269,7 @@ def _blade_sign(name, at, side, rng, col):
 def ny_cross_street(urban, length, col):
     """The cross street: asphalt, crossings and buildings that recede, plus mast-arm traffic lights."""
     x0, x1 = NY_CROSS_STREET
-    asphalt = materials.noise_ground("asphalt_cross", "#232427", "#34353a", scale=2.0, roughness=0.35, bump=0.08)
+    asphalt = materials.city_asphalt("asphalt_cross", lanes=(), road_half=99.0)
     for side in (1, -1):
         objects.mesh_object(
             f"cross_road_{side}",
