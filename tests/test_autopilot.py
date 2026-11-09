@@ -399,10 +399,30 @@ def test_planned_pov_topic_goes_first_and_every_scene_is_first_person(db, tmp_pa
     script_prompt = services.ai.calls[2]["prompt"]
     assert "first-person POV" in script_prompt and "DÍA 1" in script_prompt
     specs = project.scripts[-1].scene_specs
-    assert all(spec["camera"]["pov"] for spec in specs)
+    assert all(spec["camera"]["pov"] for spec in specs if spec["environment"]["type"] != "space")
     assert all(s["environment"].get("style") == "new_york" for s in specs if s["environment"]["type"] == "city")
     assert "SETTING: New York City." in services.ai.calls[-1]["prompt"]  # the storyboard knows the setting
     # Used once: the next run goes back to generated ideas.
     from app.services.styles import next_planned_topic
 
     assert next_planned_topic({project.working_title}) is None
+
+
+def test_recipe_storyboard_writes_a_production_that_renders(db, tmp_path):
+    """Recipes pick the place; the script's scene scales follow it, so the render accepts every scene
+    (a calm opening room turned into the street must not be checked as an 'interior' scene)."""
+    from app.services.production.short import load_production
+
+    scenes = len(SCRIPT_RESPONSE["scenes"])
+    picks = {
+        "scenes": [{"recipe": "wake_up", "threat": "none", "time_of_day": "dawn", "look": "normal"}]
+        + [{"recipe": "street_run", "threat": "zombies", "time_of_day": "day", "look": "normal"}] * (scenes - 2)
+        + [{"recipe": "space", "threat": "none", "time_of_day": "day", "look": "normal"}]
+    }
+    responses = [IDEAS_RESPONSE, CONCEPTS, FACTS, SCRIPT_RESPONSE, FACTCHECK_PASS, picks]
+    services = _services(tmp_path, responses, recipes_enabled=True, default_style="pov")
+    run = run_pipeline(db, create_run(db, _channel(db)), services, until="storyboard")
+    assert run.status != RunStatus.FAILED, run.error
+    production = load_production(tmp_path / "media" / "autopilot" / str(run.id) / "production.json")
+    assert production["scenes"][0]["recipe"] == "street_watch"
+    assert production["scenes"][-1]["camera"]["pov"] is False  # no hands floating in space
