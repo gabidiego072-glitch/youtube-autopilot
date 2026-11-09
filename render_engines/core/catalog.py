@@ -120,7 +120,10 @@ CHARACTERS = (
 CAMERA = (
     "camera.shots: list of {time, location [x,y,z], target (id or [x,y,z]), lens (mm, 18-85)} in ascending time; "
     "the camera moves smoothly between shots and always aims at the target. Optional: fstop, handheld (0-0.05), "
-    "shakes [{start, end, strength}] for impacts. Scene-level options: transition (cut|fade) into the scene, "
+    "shakes [{start, end, strength}] for impacts. Scene-level options: "
+    "transition (cut|fade|flash = through white) into the scene, "
+    "look (normal|xray: the same scene as glowing outlines on black with a sparkling ground, for when physics "
+    "changes; continue the previous scene's place and camera), "
     "sfx [{type: whoosh|impact|rumble|wind|chime, at}] in scene seconds. First-person view: camera.pov true "
     "shows the viewer's own arms at the bottom of the frame (the viewer IS the protagonist): put the shots at eye "
     "height (z 1.6) where the protagonist is, lens 22-28, and optionally pov_item phone|flashlight; "
