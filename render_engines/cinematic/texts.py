@@ -2,6 +2,7 @@
 
 # Language of the on-screen texts ("es" or "en"); the director sets it from the scene spec.
 LANG = "es"
+HEADLINE = ""  # the breaking-news line of this scene (the TV in the café), if the story gives one
 TEXTS = {
     "magic_1": ("EL GRAN ACTO", "THE GREAT"),
     "magic_2": ("DE DESAPARICIÓN", "VANISHING ACT"),

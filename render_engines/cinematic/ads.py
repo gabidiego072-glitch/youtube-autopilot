@@ -13,6 +13,7 @@ import os
 import bpy
 from mathutils import Matrix
 
+from render_engines.cinematic import texts
 from render_engines.cinematic.texts import tr
 from render_engines.core.blender import materials, objects
 
@@ -203,7 +204,12 @@ def breaking(name, w, h, parent, col):
         col,
     )
     text(f"{name}_t1", tr("breaking_1"), (0, -0.13, h * 0.27), h * 0.2, "#ffffff", parent, col, 3.0)
-    text(f"{name}_t2", tr("breaking_2"), (0, -0.12, -h * 0.17), h * 0.17, "#ffe14d", parent, col, 2.5)
+    headline = texts.HEADLINE.upper() if texts.HEADLINE else tr("breaking_2")
+    if texts.HEADLINE and len(headline) > 14 and "\n" not in headline:  # two lines on the TV
+        words = headline.split()
+        half = max(1, len(words) // 2)
+        headline = " ".join(words[:half]) + "\n" + " ".join(words[half:])
+    text(f"{name}_t2", headline, (0, -0.12, -h * 0.17), h * 0.17, "#ffe14d", parent, col, 2.5)
     return "#0b1d3a"
 
 
