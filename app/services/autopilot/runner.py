@@ -64,6 +64,7 @@ from app.services.qa.video import check_video
 from app.services.reporting.builder import performances
 from app.services.research.briefing import build_brief
 from app.services.scenes.planner import plan_scenes
+from app.services.scenes.recipe_planner import plan_with_recipes
 from app.services.scripts.generator import generate_script
 from app.services.styles import POV_STORYBOARD_NOTE, city_note, next_city, next_planned_topic, pov_script_note
 from app.services.thumbnails.generator import best_moment, generate_thumbnails
@@ -264,7 +265,7 @@ def step_topic(db, run, services, ai) -> dict:
         project.target_duration_seconds = int(features["length"])
     else:
         features.pop("length")
-    features["style"] = (planned or {}).get("style", "classic")
+    features["style"] = (planned or {}).get("style", services.settings.default_style)
     if planned and planned.get("city_style"):
         features["city_style"] = planned["city_style"]
     if planned and planned.get("notes"):
@@ -492,7 +493,21 @@ def step_storyboard(db, run, services, ai) -> dict:
         max(1.0, services.ffmpeg.probe(work / "voice" / f"scene_{i:02d}.wav").duration_seconds + 0.3)
         for i in range(len(script.scenes))
     ]
-    script.scene_specs = plan_scenes(
+    features = project.features or {}
+    specs = None
+    if services.settings.recipes_enabled and features.get("style") == "pov":
+        try:  # hand-made scene recipes: the AI only picks one per line
+            specs = plan_with_recipes(
+                ai,
+                scenes=script.scenes,
+                durations=durations,
+                seed=int(project.id.int % 100_000),
+                city=features.get("city_style") or "new_york",
+                notes=project.notes,
+            )
+        except Exception as exc:  # noqa: BLE001 - never lose the day's video: fall back to the old storyboard
+            services.log(f"recipe storyboard failed ({exc}); using the free-form storyboard")
+    script.scene_specs = specs or plan_scenes(
         ai,
         scenes=script.scenes,
         durations=durations,
@@ -509,7 +524,6 @@ def step_storyboard(db, run, services, ai) -> dict:
         )
         or None,
     )
-    features = project.features or {}
     for spec in script.scene_specs:  # planned choices hold in every scene, whatever the AI wrote
         if features.get("style") == "pov":
             spec["camera"]["pov"] = True

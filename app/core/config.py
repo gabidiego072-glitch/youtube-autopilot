@@ -48,6 +48,10 @@ class Settings(BaseSettings):
     gemini_fallback_models: str = ""
     gemini_max_tokens: int = 32000
     planned_topics_enabled: bool = True  # app/content/planned_topics.json goes before generated ideas
+    # Every video is a first-person journey ("pov") built from hand-made scene recipes, the way the best
+    # videos were made by hand; "classic" + recipes off = the older third-person, AI-placed storyboard.
+    default_style: str = "pov"
+    recipes_enabled: bool = True
     gemini_timeout_seconds: float = 300.0
 
     # --- AI provider: Claude (Anthropic), optional and paid -----------------
