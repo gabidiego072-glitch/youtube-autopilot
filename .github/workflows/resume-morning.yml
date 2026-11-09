@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   resume-and-publish:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(vars.RUNS_ON || '["self-hosted","linux","x64"]') }}
     timeout-minutes: 350
     env:
       ENVIRONMENT: staging
