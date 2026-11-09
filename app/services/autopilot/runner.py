@@ -71,6 +71,7 @@ from app.services.thumbnails.generator import best_moment, generate_thumbnails
 from app.services.variety import RECENT, RecentVideos, pick_idea, recent_videos
 from app.services.youtube.base import UploadRequest
 from app.services.youtube.data_api import YouTubeDataAPIPublisher
+from render_engines.core.catalog import ENVIRONMENT_SCALES
 
 logger = logging.getLogger(__name__)
 
@@ -525,10 +526,17 @@ def step_storyboard(db, run, services, ai) -> dict:
         or None,
     )
     for spec in script.scene_specs:  # planned choices hold in every scene, whatever the AI wrote
-        if features.get("style") == "pov":
+        if features.get("style") == "pov" and spec["environment"].get("type") != "space":
             spec["camera"]["pov"] = True
         if features.get("city_style") and spec["environment"].get("type") in ("city", "coast"):
             spec["environment"]["style"] = features["city_style"]
+    if specs:  # recipes choose the place: the script's scene scale follows it (a calm room may become the street)
+        scenes = [dict(scene) for scene in script.scenes]
+        for scene, spec in zip(scenes, script.scene_specs, strict=True):
+            allowed = ENVIRONMENT_SCALES.get(spec["environment"].get("type"), ())
+            if allowed and scene.get("scale") not in allowed:
+                scene["scale"] = allowed[0]
+        script.scenes = scenes
     db.commit()
     production = {
         "id": f"run_{run.id.hex[:8]}",
