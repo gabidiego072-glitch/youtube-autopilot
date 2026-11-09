@@ -28,14 +28,14 @@ POV_VOICE = {
         '"DÍA 1/7 · 07:42"',
         "DÍA 1/N",
         '"Sobrevive 7 días."',
-        '"...y entonces te despiertas."',
+        '"...y todo vuelve a empezar."',
     ),
     "en": (
         '"You wake up...", "You grab your phone...", "You walk down to the street..."',
         '"DAY 1/7 · 07:42"',
         "DAY 1/N",
         '"Survive 7 days."',
-        '"...and then you wake up."',
+        '"...and it all starts again."',
     ),
 }
 

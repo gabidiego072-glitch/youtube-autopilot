@@ -26,7 +26,7 @@ def test_leaving_a_place_opens_a_door_and_flashes_into_the_next():
         {"recipe": "street_run", "threat": "zombies", "time_of_day": "day", "look": "xray"},
         {"recipe": "bogus", "threat": "?", "time_of_day": "noon", "look": "?"},
     ]
-    specs = assemble(picks, [4.0, 6.0, 5.0, 3.0], seed=10, city="tokyo")
+    specs = assemble([picks[1], *picks], [4.0, 4.0, 6.0, 5.0, 3.0], seed=10, city="tokyo")[1:]
     assert any(a["type"] == "open_door" for a in specs[0]["actions"])
     assert specs[1]["transition"] == "flash" and specs[1]["environment"]["style"] == "tokyo"
     assert specs[1]["seed"] == specs[2]["seed"]  # same recipe, same street
@@ -44,3 +44,12 @@ def test_the_ai_only_picks_recipes(tmp_path):
         ai, scenes=[{"narration": "Te despiertas.", "hud": "DÍA 1 · 07:00"}], durations=[4.0], seed=3
     )
     assert specs[0]["camera"]["pov"] and "wake_up" in ai.calls[0]["system"]
+
+
+def test_a_video_never_starts_in_a_calm_room():
+    picks = [
+        {"recipe": "wake_up", "threat": "none", "time_of_day": "dawn", "look": "normal"},
+        {"recipe": "street_run", "threat": "zombies", "time_of_day": "day", "look": "normal"},
+    ]
+    first = assemble(picks, [4.0, 4.0], seed=1, city="new_york")[0]
+    assert first["recipe"] == "street_watch" and first["environment"].get("zombies")
