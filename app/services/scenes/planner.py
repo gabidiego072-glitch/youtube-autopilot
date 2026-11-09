@@ -25,6 +25,8 @@ _STRING = {"type": "string"}
 SCENE_SCHEMA = {
     "type": "object",
     "properties": {
+        "look": {"type": "string", "enum": ["normal", "xray"]},
+        "transition": {"type": "string", "enum": ["cut", "fade", "flash"]},
         "environment": {
             "type": "object",
             "properties": {
@@ -44,6 +46,7 @@ SCENE_SCHEMA = {
                 "zombies": {"type": "integer"},
                 "plaza": {"type": "boolean"},
                 "wet": {"type": "boolean"},
+                "steam": {"type": "boolean"},
                 "crowd": {"type": "integer"},
                 "panic": {"type": "integer"},
                 "onlookers": {"type": "integer"},
@@ -197,6 +200,9 @@ Rules:
   street, a modern avenue, a suburb) and vary places, camera heights and lenses between scenes.
 - Show the idea of the narration with what exists (scale comparisons with trees and people, planets spinning,
   characters walking, growing, jumping, reacting). Prefer one clear action per scene.
+- When the story changes how the world itself looks (atoms, electrons, light, x-ray vision, everything turning
+  invisible), keep the SAME place and continue the camera move in the next scene with look xray and transition
+  flash: the world transforms in front of the viewer instead of cutting to somewhere else.
 - Keep continuity: reuse the same character ids and the same environment type across scenes unless the story
   changes location. Units are metres; a person is 1.7 m tall; keep the camera 3-25 m from the subject
   (for planets, 2.5-6 radii away).

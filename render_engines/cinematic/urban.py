@@ -714,7 +714,7 @@ def build_city(env: dict, ctx, scene, seed: int) -> Urban:
         if not coast:
             ny_cross_street(urban, length, col)
         ny_skyline(length, rng, col)
-        if env.get("steam", True):
+        if env.get("steam", False):
             ny_steam(urban, ctx, rng, col)
     if coast:
         _seafront(urban, env, length, col)
@@ -1337,7 +1337,7 @@ def ny_steam(urban, ctx, rng, col):
             ctx.fps,
             color="#f2f0ec",
             alpha=0.32,
-            count=int((ctx.duration_seconds + 3) * 4),
+            count=int((ctx.duration_seconds + 3) * 3),
             rise=7.0,
             spread=2.2,
             size=0.7,

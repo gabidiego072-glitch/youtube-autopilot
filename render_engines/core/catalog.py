@@ -16,13 +16,14 @@ ENVIRONMENTS = {
     "houses | modern = tall grey/glass towers | suburb = 1-2 floor houses with roofs | new_york = Manhattan: "
     "separate buildings of very different heights (brick walk-ups with fire escapes and water towers, "
     "limestone towers with setbacks, glass towers), giant billboards, vertical neon signs, yellow taxis, a wet "
-    "street, steam from manholes, a cross street at x 6-14, a skyline in the haze; with plaza true the avenue is "
+    "street, a cross street at x 6-14, a skyline in the haze; with plaza true the avenue is "
     "the paved Times Square plaza with the red steps | paris = cream stone Haussmann blocks with iron "
     "balconies, café terraces, the Eiffel Tower at the end of the avenue | tokyo = narrow buildings covered in "
     "vertical neon signs, power lines, vending machines, Tokyo Tower | london = brick terraces, red double-decker "
     "buses, black cabs, red phone boxes, Big Ben | mixed). Keep the same "
     "style in every scene of a video. wet (true = wet street and paving after rain, mirroring the lights; "
-    "only when the story has rain, a flood or a dramatic night).",
+    "only when the story has rain, a flood or a dramatic night). steam (true = steam rising from manholes; costs "
+    "render time, use it in one or two scenes).",
     "coast": "Seafront street: like 'city' but the south side is a promenade with a railing, a beach and the sea "
     "(water starts around y=-35). Use 'surge' to bring the sea into the street.",
     "interior": "A room (x in [-3,3], y in [-2.5,2.5], height 2.7; east wall at x=+3; window in the north "
@@ -120,7 +121,10 @@ CHARACTERS = (
 CAMERA = (
     "camera.shots: list of {time, location [x,y,z], target (id or [x,y,z]), lens (mm, 18-85)} in ascending time; "
     "the camera moves smoothly between shots and always aims at the target. Optional: fstop, handheld (0-0.05), "
-    "shakes [{start, end, strength}] for impacts. Scene-level options: transition (cut|fade) into the scene, "
+    "shakes [{start, end, strength}] for impacts. Scene-level options: "
+    "transition (cut|fade|flash = through white) into the scene, "
+    "look (normal|xray: the same scene as glowing outlines on black with a sparkling ground, for when physics "
+    "changes; continue the previous scene's place and camera), "
     "sfx [{type: whoosh|impact|rumble|wind|chime, at}] in scene seconds. First-person view: camera.pov true "
     "shows the viewer's own arms at the bottom of the frame (the viewer IS the protagonist): put the shots at eye "
     "height (z 1.6) where the protagonist is, lens 22-28, and optionally pov_item phone|flashlight; "

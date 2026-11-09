@@ -35,25 +35,31 @@ class Voice:
     speaker: int | None = None
     credit: str | None = None  # attribution the voice's licence asks for (goes into the description)
     language: str = "es"
+    engine: str = "piper"  # piper (model file) | kokoro (voice id)
+    explore: bool = True  # False: kept for old videos, no longer tried
 
 
+_SHARVARD = "Voz: Piper sharvard (Sharvard corpus, CC BY 3.0, Univ. of Edinburgh)"
 VOICES = {
-    # All of them allow commercial use (CC0, CC BY 3.0, Apache-2.0, Unlicense, CC BY-SA 4.0).
-    "davefx": Voice("es_ES-davefx-medium.onnx"),
-    "sharvard_m": Voice(
-        "es_ES-sharvard-medium.onnx", 0, "Voz: Piper sharvard (Sharvard corpus, CC BY 3.0, Univ. of Edinburgh)"
+    # Kokoro-82M (Apache-2.0): natural narrators, the ones every new video tries.
+    "kokoro_alex": Voice("em_alex", engine="kokoro"),
+    "kokoro_dora": Voice("ef_dora", engine="kokoro"),
+    "kokoro_michael": Voice("am_michael", language="en", engine="kokoro"),
+    "kokoro_onyx": Voice("am_onyx", language="en", engine="kokoro"),
+    "kokoro_heart": Voice("af_heart", language="en", engine="kokoro"),
+    # Piper voices of earlier videos (robotic next to Kokoro): kept so old videos still resolve, not tried.
+    # All allow commercial use (CC0, CC BY 3.0, Apache-2.0, Unlicense, CC BY-SA 4.0, public domain).
+    "davefx": Voice("es_ES-davefx-medium.onnx", explore=False),
+    "sharvard_m": Voice("es_ES-sharvard-medium.onnx", 0, _SHARVARD, explore=False),
+    "sharvard_f": Voice("es_ES-sharvard-medium.onnx", 1, _SHARVARD, explore=False),
+    "claude_mx": Voice("es_MX-claude-high.onnx", explore=False),
+    "ald_mx": Voice("es_MX-ald-medium.onnx", explore=False),
+    "daniela_ar": Voice(
+        "es_AR-daniela-high.onnx", None, "Voz: Piper daniela (OpenSLR 61, CC BY-SA 4.0)", explore=False
     ),
-    "sharvard_f": Voice(
-        "es_ES-sharvard-medium.onnx", 1, "Voz: Piper sharvard (Sharvard corpus, CC BY 3.0, Univ. of Edinburgh)"
-    ),
-    "claude_mx": Voice("es_MX-claude-high.onnx"),
-    "ald_mx": Voice("es_MX-ald-medium.onnx"),
-    "daniela_ar": Voice("es_AR-daniela-high.onnx", None, "Voz: Piper daniela (OpenSLR 61, CC BY-SA 4.0)"),
-    # English channel: public-domain LibriVox voices by Bryce Beattie, trained without the lessac checkpoint
-    # (several other English Piper voices come from non-commercial datasets).
-    "norman_us": Voice("en_US-norman-medium.onnx", language="en"),
-    "john_us": Voice("en_US-john-medium.onnx", language="en"),
-    "kristin_us": Voice("en_US-kristin-medium.onnx", language="en"),
+    "norman_us": Voice("en_US-norman-medium.onnx", language="en", explore=False),
+    "john_us": Voice("en_US-john-medium.onnx", language="en", explore=False),
+    "kristin_us": Voice("en_US-kristin-medium.onnx", language="en", explore=False),
 }
 
 MUSIC = ("wistful", "tense", "bright", "curious", "rising")  # index = audio.synth PROGRESSIONS index
@@ -68,7 +74,7 @@ HOOKS = {
 }
 
 DIMENSIONS: dict[str, tuple[str, ...]] = {
-    "voice": tuple(k for k, v in VOICES.items() if v.language == "es"),
+    "voice": tuple(k for k, v in VOICES.items() if v.language == "es" and v.explore),
     "music": MUSIC,
     "length": LENGTHS,
     "hook": tuple(HOOKS),
@@ -78,7 +84,7 @@ DIMENSIONS: dict[str, tuple[str, ...]] = {
 def dimensions(language: str = "es") -> dict[str, tuple[str, ...]]:
     """The experiment dimensions for a channel's language (each language has its own narrators)."""
     code = (language or "es").split("-")[0].lower()
-    voices = tuple(k for k, v in VOICES.items() if v.language == code) or DIMENSIONS["voice"]
+    voices = tuple(k for k, v in VOICES.items() if v.language == code and v.explore) or DIMENSIONS["voice"]
     return {**DIMENSIONS, "voice": voices}
 
 
