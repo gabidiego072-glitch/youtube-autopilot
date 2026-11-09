@@ -17,7 +17,7 @@ from pathlib import Path
 
 from app.models.enums import VideoFormat
 from app.services.audio.synth import SFX, generate_music, generate_sfx
-from app.services.editing.assembler import EditScene, SceneSlot, assemble_video, plan_timeline
+from app.services.editing.assembler import ColdOpen, EditScene, SceneSlot, assemble_video, plan_timeline
 from app.services.production.formats import FormatSpec
 from app.services.production.modes import RenderMode, get_mode
 from app.services.rendering.blender import Blender
@@ -86,6 +86,30 @@ def scene_effects(ffmpeg: FFmpeg, spec: dict, slot, cache_dir: Path) -> list:
         planned = float(spec.get("duration_seconds") or slot.duration)
         effects.append((path, effect["type"], effect.get("at", 0.0) * slot.duration / planned))
     return effects
+
+
+COLD_OPEN_SECONDS = 1.6
+_STRIKING = ("collapse", "fire", "flood", "surge", "fling", "inertia_shock", "shatter_windows", "fall")
+
+
+def cold_open_scene(specs: list[dict], selected: list[int]) -> int | None:
+    """The most striking scene to open the video with (a chase, a collapse, a fire...), never the first."""
+
+    def score(i: int) -> int:
+        spec = specs[i]
+        env = spec.get("environment", {})
+        kinds = {a.get("type") for a in spec.get("actions", [])}
+        points = 5 if spec.get("recipe") == "street_run" else 0
+        points += 4 * bool(kinds & set(_STRIKING[:5])) + 2 * ("fall" in kinds)
+        points += 3 * bool(env.get("chasers") or env.get("zombies")) + 2 * bool(env.get("panic"))
+        points += 2 * bool(spec.get("look"))
+        return points
+
+    candidates = [i for i in selected[1:]]
+    if not candidates:
+        return None
+    best = max(candidates, key=score)
+    return best if score(best) > 0 else None
 
 
 def output_format(video_format: str, quality: str) -> FormatSpec:
@@ -197,9 +221,27 @@ def produce_short(
     music = None
     if mode.music:
         music = out_dir / mode.name / "music.wav"
-        generate_music(ffmpeg, total + 1.0, music, variant=production.get("music_variant", production.get("seed", 0)))
+        generate_music(
+            ffmpeg,
+            total + COLD_OPEN_SECONDS + 1.0,
+            music,
+            variant=production.get("music_variant", production.get("seed", 0)),
+        )
 
-    # 5. Edit.
+    # 5. Edit, opening on the most striking moment with the title over it.
+    opening = None
+    if mode.full_video and production.get("cold_open", True) and len(selected) > 2:
+        k = cold_open_scene(specs, selected)
+        if k is not None and script.get("title_question"):
+            fx_dir = out_dir / "sfx"
+            hits = []
+            for kind, at in (("impact", 0.0), ("rumble", 0.0), ("whoosh", COLD_OPEN_SECONDS - 0.35)):
+                path = fx_dir / f"{kind}.wav"
+                if not path.is_file():
+                    generate_sfx(ffmpeg, kind, path)
+                hits.append((path, kind, at))
+            excerpt = max(0.0, min(slots[k].duration * 0.45, slots[k].clip_length - COLD_OPEN_SECONDS))
+            opening = ColdOpen(clips[k], excerpt, COLD_OPEN_SECONDS, script.get("title_question", ""), hits)
     spec = output_format(production.get("format", "short"), mode.output_quality or mode.quality)
     output = out_dir / f"{production.get('id', 'short')}_{mode.name}.mp4"
     t0 = time.monotonic()
@@ -212,8 +254,10 @@ def produce_short(
         music_path=music,
         crf=mode.crf,
         preset=mode.preset,
+        cold_open=opening,
     )
     report = {
+        "cold_open": {"clip": str(opening.clip), "start": opening.start} if opening else None,
         "output": str(output),
         "mode": mode.name,
         "resolution": f"{probe.width}x{probe.height}",
