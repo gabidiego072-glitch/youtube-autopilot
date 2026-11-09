@@ -23,8 +23,20 @@ GENERAL_TAGS = {
 }
 
 POV_VOICE = {
-    "es": ('"Te despiertas...", "Coges el móvil...", "Bajas a la calle..."', '"DÍA 1 · 07:42"', "DÍA 1"),
-    "en": ('"You wake up...", "You grab your phone...", "You walk down to the street..."', '"DAY 1 · 07:42"', "DAY 1"),
+    "es": (
+        '"Te despiertas...", "Coges el móvil...", "Bajas a la calle..."',
+        '"DÍA 1/7 · 07:42"',
+        "DÍA 1/N",
+        '"Sobrevive 7 días."',
+        '"...y entonces te despiertas."',
+    ),
+    "en": (
+        '"You wake up...", "You grab your phone...", "You walk down to the street..."',
+        '"DAY 1/7 · 07:42"',
+        "DAY 1/N",
+        '"Survive 7 days."',
+        '"...and then you wake up."',
+    ),
 }
 
 # Trend research: Wikipedia edition, YouTube region and search queries.

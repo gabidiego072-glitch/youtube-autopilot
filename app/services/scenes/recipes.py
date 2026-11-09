@@ -105,6 +105,15 @@ def build(
     return spec
 
 
+def _bed(kind: str, start: float, end: float, every: float = 2.0) -> list[dict]:
+    """A looping sound (steps, breath, heartbeat) cued every `every` seconds between start and end."""
+    out, t = [], start
+    while t < end - 0.3:
+        out.append({"type": kind, "at": round(t, 3)})
+        t += every
+    return out
+
+
 def _fit(spec: dict, d: float) -> None:
     """Short voice lines squeeze a recipe: keep every moment inside the scene and the shots in order."""
     for action in spec["actions"]:
@@ -126,6 +135,7 @@ def _fit(spec: dict, d: float) -> None:
         cam["shakes"] = [s for s in cam["shakes"] if s["start"] < d]
     if "power_out" in spec:
         spec["power_out"] = min(spec["power_out"], d * 0.9)
+    spec["sfx"] = [e for e in spec.get("sfx", []) if 0 <= e["at"] < d]
 
 
 # --- indoors -----------------------------------------------------------------------------------------
@@ -143,6 +153,9 @@ def wake_up(d, *, rng, seed, threat, time_of_day, door_out, **_):
     )
     t_door = max(1.2, d * 0.6)
     spec["actions"].append({"type": "open_door", "prop": "door", "start": t_door, "end": t_door + 0.8})
+    spec["sfx"] = [{"type": "whoosh", "at": t_door}]
+    if threat in ("zombies", "panic", "fire"):
+        spec["sfx"] += _bed("heartbeat", t_door, d, 1.6)
     if threat == "zombies":
         spec["characters"].append(_person("z", (-1.2, -3.3), 0, rng, zombie=True))
         spec["actions"].append(
@@ -199,6 +212,7 @@ def cafe_news(d, *, rng, seed, time_of_day, door_out, headline, **_):
         )
         t = max(d * 0.72, d - 1.3)
         spec["actions"].append({"type": "open_door", "prop": "door", "start": t + 0.4, "end": t + 1.0})
+        spec["sfx"] = [{"type": "whoosh", "at": t + 0.4}]
         shots += [
             _shot(t + 0.3, (0.95, -1.45, 1.65), (1.2, -3.6, 1.55)),
             _shot(d, (1.2, -2.35, 1.65), (1.2, -5.0, 1.55)),
@@ -221,6 +235,7 @@ def dark_room(d, *, rng, seed, threat, door_out, **_):
     env = {"type": "interior", "room": "living_room", "time_of_day": "night", "room_light": 110}
     spec = _base(d, seed, env)
     spec["power_out"] = round(d * 0.45, 3)
+    spec["sfx"] = [{"type": "impact", "at": d * 0.45}, *_bed("heartbeat", d * 0.5, d, 1.6)]
     if threat in ("zombies", "panic"):
         spec["characters"].append(_person("z", (-2.4, 1.7), 180, rng, zombie=threat == "zombies"))
         spec["actions"].append(
@@ -368,7 +383,11 @@ def street_run(d, *, rng, seed, city, threat, time_of_day, door_out, **_):
             _shot(tb + 0.4, (xb + 2, y, 1.65), (xb - 22, -0.4, 1.5)),
             _shot(tb + 0.8, (xb + 4, y, 1.65), (xb + 24, -0.6, 1.45)),
         ]
+    spec["sfx"] = [*_bed("steps", 0.0, d), *_bed("breath", 0.3, d), *[{"type": "impact", "at": p} for p in pushes]]
+    if threat == "zombies":
+        spec["sfx"] += _bed("heartbeat", 0.2, d, 1.6)
     if door_out:
+        spec["sfx"].append({"type": "whoosh", "at": max(0.0, d - 1.0)})
         xd = x_end + 3.0
         if CROSS_STREET[0] <= xd <= CROSS_STREET[1]:
             xd = CROSS_STREET[1] + 2.0
@@ -416,6 +435,7 @@ def street_watch(d, *, rng, seed, city, threat, time_of_day, **_):
         spec["actions"].append({"type": "fire", "location": [10.0, 6.4, 0.0], "start": 0.0, "end": d, "size": 3})
     elif threat == "collapse":
         spec["actions"].append({"type": "collapse", "x": 22.0, "start": d * 0.25, "end": d})
+        spec["sfx"] = [{"type": "rumble", "at": d * 0.25}, {"type": "impact", "at": d * 0.3}]
         focus = (22.0, 12.0, 14.0)
     elif threat == "flood":
         spec["actions"].append({"type": "flood", "start": 0.0, "end": d, "height": 0.8})
@@ -447,6 +467,9 @@ def waterfront(d, *, rng, seed, city, threat, time_of_day, **_):
     if threat == "flood":
         spec["actions"].append({"type": "surge", "start": d * 0.2, "end": d, "height": 1.2, "inland": 12})
     turn = d * 0.5
+    spec["sfx"] = [{"type": "wind", "at": 0.0}]
+    if threat == "zombies":
+        spec["sfx"] += [{"type": "whoosh", "at": turn}, *_bed("heartbeat", turn, d, 1.6)]
     spec["camera"] = {
         "pov": True,
         "handheld": 0.015,

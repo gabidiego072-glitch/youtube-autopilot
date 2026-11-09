@@ -38,6 +38,25 @@ SFX = {
         "anoisesrc=color=pink:amplitude=0.8:duration={d}",
         "bandpass=f=500:w=1.5,tremolo=f=0.7:d=0.6,volume='0.8*min(1,t*2)*min(1,({d}-t)*1.5)':eval=frame",
     ),
+    # First person: a heartbeat (lub-dub, ~75 bpm) for fear.
+    "heartbeat": (
+        1.6,
+        "aevalsrc='0.95*sin(2*PI*52*t)*(exp(-26*(t))*gte(t,0)+0.7*exp(-26*(t-0.24))*gte(t,0.24)"
+        "+exp(-26*(t-0.8))*gte(t,0.8)+0.7*exp(-26*(t-1.04))*gte(t,1.04))':d={d}",
+        "lowpass=f=140,volume=1.3",
+    ),
+    # First person: panting while running (two breaths a second, in and out).
+    "breath": (
+        2.0,
+        "anoisesrc=color=pink:amplitude=0.9:duration={d}",
+        "bandpass=f=1300:w=1.4,volume='2.4*pow(sin(2*PI*t),4)':eval=frame,lowpass=f=3500",
+    ),
+    # First person: running footsteps on pavement (three a second).
+    "steps": (
+        2.0,
+        "aevalsrc='(random(0)-0.5)*1.6*exp(-38*mod(t,0.33))+0.6*sin(2*PI*90*t)*exp(-50*mod(t,0.33))':d={d}",
+        "lowpass=f=1100,highpass=f=60",
+    ),
     # Soft bell for the ending.
     "chime": (
         2.5,
