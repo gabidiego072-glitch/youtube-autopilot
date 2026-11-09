@@ -258,6 +258,8 @@ def produce_short(
     )
     report = {
         "cold_open": {"clip": str(opening.clip), "start": opening.start} if opening else None,
+        # The story starts after the opening: scene starts below are story times, add this for video times.
+        "lead_seconds": opening.length if opening else 0.0,
         "output": str(output),
         "mode": mode.name,
         "resolution": f"{probe.width}x{probe.height}",
