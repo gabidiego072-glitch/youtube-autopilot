@@ -38,6 +38,11 @@ def real_services(settings: Settings, log=print) -> Services:
 def voice_tts(settings: Settings, voice_id: str) -> PiperTTS | None:
     """The narrator for an experiment voice, or None if its model is not installed."""
     voice = VOICES.get(voice_id)
+    if voice is not None and voice.engine == "kokoro":
+        from app.services.voice.kokoro import KokoroTTS
+
+        tts = KokoroTTS(settings.kokoro_model_dir, voice.model, settings.kokoro_speed)
+        return tts if tts.is_available() else None
     folder = settings.piper_voice_model.parent if settings.piper_voice_model else Path("models/voices")
     if voice is None or not (folder / voice.model).is_file():
         return None
