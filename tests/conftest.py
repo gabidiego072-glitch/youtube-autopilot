@@ -35,6 +35,8 @@ def make_settings(**overrides) -> Settings:
         "database_url": "sqlite://",
         "anthropic_api_key": None,
         "planned_topics_enabled": False,
+        "default_style": "classic",
+        "recipes_enabled": False,
     }
     return Settings(_env_file=None, **{**base, **overrides})
 

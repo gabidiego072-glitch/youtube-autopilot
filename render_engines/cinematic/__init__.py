@@ -23,6 +23,7 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
     from render_engines.cinematic import texts
 
     texts.LANG = spec.get("language", "es")  # billboards, TV and menu texts
+    texts.HEADLINE = (spec.get("environment") or {}).get("headline", "")
     from render_engines.cinematic import urban as urban_env
     from render_engines.cinematic.environment import sun_path
     from render_engines.cinematic.explainers import start_wind
@@ -369,10 +370,50 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
             constraint.target = camera
             constraint.track_axis = "TRACK_Z"
             constraint.up_axis = "UP_Y"
+    import bpy
+
+    beam = bpy.data.objects.get("pov_beam")
+    if beam is not None:  # a real torch: a cone of light where you look, darkness around
+        beam.data.type = "SPOT"
+        beam.data.energy = 650
+        beam.data.spot_size = math.radians(48)
+        beam.data.spot_blend = 0.6
+        beam.constraints.new("COPY_ROTATION").target = camera
+    if spec.get("power_out") is not None:  # the lights flicker and die
+        _power_out(scene, ctx.frame(float(spec["power_out"])))
     if spec.get("look"):  # the same scene drawn another way (x-ray outlines...)
         from render_engines.cinematic import looks
 
         looks.apply(spec["look"], scene)
+
+
+def _power_out(scene, frame: int) -> None:
+    """Room lights flicker and go out (the window keeps a little moonlight); lamp shades and the sky darken."""
+    import bpy
+
+    for ob in bpy.data.objects:
+        if ob.type == "LIGHT" and ob.name.startswith(("Ceiling light", "Window light", "Fill")):
+            e = ob.data.energy
+            night = 0.0 if ob.name.startswith("Ceiling") else e * (0.2 if ob.name.startswith("Window") else 0.08)
+            for df, val in ((-1, e), (0, e * 0.15), (2, e * 0.8), (4, e * 0.05), (6, e * 0.5), (8, night)):
+                ob.data.energy = val
+                ob.data.keyframe_insert("energy", frame=frame + df)
+    world = scene.world
+    for node in world.node_tree.nodes if world and world.use_nodes else []:
+        if node.type == "BACKGROUND":
+            v = node.inputs[1].default_value
+            node.inputs[1].keyframe_insert("default_value", frame=frame - 1)
+            node.inputs[1].default_value = v * 0.12
+            node.inputs[1].keyframe_insert("default_value", frame=frame + 8)
+            node.inputs[1].default_value = v
+    for mat in bpy.data.materials:
+        if mat.use_nodes and mat.name.startswith(("lampshade", "lamp_shade", "floor_lamp")):
+            sock = mat.node_tree.nodes["Principled BSDF"].inputs["Emission Strength"]
+            v = sock.default_value
+            sock.keyframe_insert("default_value", frame=frame - 1)
+            sock.default_value = 0.0
+            sock.keyframe_insert("default_value", frame=frame + 8)
+            sock.default_value = v
 
 
 def _effect(kind: str, action: dict, start: int, end: int, ctx, urban, env: dict) -> None:
