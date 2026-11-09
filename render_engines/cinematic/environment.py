@@ -41,7 +41,7 @@ def build_terrain(
     bmesh.ops.create_grid(bm, x_segments=resolution, y_segments=resolution, size=size / 2)
     for v in bm.verts:
         v.co.z = flat_radius_height(v.co.x, v.co.y, seed, flat_radius, amplitude)
-    mat = materials.noise_ground("ground", colors[0], colors[1], scale=0.15, bump=0.15)
+    mat = materials.grass_ground("ground", colors)
     return objects.mesh_object("Terrain", bm, mat, smooth=True)
 
 
