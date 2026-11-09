@@ -19,12 +19,14 @@ name: Autopilot
 
 on:
   schedule:
-    # Daily at 06:17 UTC: 07:17 in Spain in winter and 08:17 in summer,
-    # always inside the requested 07:17-09:17 local window. Cloud runners only.
-    - cron: "17 6 * * *"
-    # Safety retries: they only make a video if today's has not been made yet (e.g. Gemini failed).
-    - cron: "47 8 * * *"
-    - cron: "17 11 * * *"
+    # Daily at 04:17 UTC (05:17 in Spain in winter): GitHub often starts scheduled runs hours late, so the
+    # first try is early enough for the video to be ready in the morning even when it is delayed.
+    - cron: "17 4 * * *"
+    # Safety retries: they only make a video if today's has not been made yet (late start, Gemini failure).
+    - cron: "47 5 * * *"
+    - cron: "17 7 * * *"
+    - cron: "47 9 * * *"
+    - cron: "17 12 * * *"
   workflow_dispatch:
     inputs:
       command:
