@@ -94,6 +94,9 @@ class Settings(BaseSettings):
     piper_binary: str = "piper"
     piper_voice_model: Path | None = None
     piper_length_scale: float = 0.92  # <1 = faster, livelier narration
+    # Kokoro-82M (natural voices, Apache-2.0): model folder from scripts/install_kokoro.sh.
+    kokoro_model_dir: Path | None = Path("models/kokoro")
+    kokoro_speed: float = 1.05
 
     # --- Video rendering --------------------------------------------------
     blender_binary: str = "blender"
