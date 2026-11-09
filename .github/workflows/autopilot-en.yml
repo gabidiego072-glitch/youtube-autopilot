@@ -68,7 +68,7 @@ env:
 jobs:
   prepare:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
-    runs-on: ${{ fromJSON(vars.RUNS_ON || '["self-hosted","linux","x64"]') }}
+    runs-on: ${{ fromJSON(vars.RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 60
     outputs:
       run_id: ${{ steps.plan.outputs.run_id }}
@@ -157,7 +157,7 @@ jobs:
   render:
     needs: prepare
     if: needs.prepare.outputs.render == 'true'
-    runs-on: ${{ fromJSON(vars.RUNS_ON || '["self-hosted","linux","x64"]') }}
+    runs-on: ${{ fromJSON(vars.RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 350  # GitHub-hosted jobs stop at 6 h
     strategy:
       fail-fast: false
@@ -185,7 +185,7 @@ jobs:
   finish:
     needs: [prepare, render]
     if: always() && needs.prepare.result == 'success' && needs.prepare.outputs.ready == 'true' && needs.render.result != 'failure' && needs.render.result != 'cancelled'
-    runs-on: ${{ fromJSON(vars.RUNS_ON || '["self-hosted","linux","x64"]') }}
+    runs-on: ${{ fromJSON(vars.RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 350
     env:
       RUN_ID: ${{ needs.prepare.outputs.run_id }}
