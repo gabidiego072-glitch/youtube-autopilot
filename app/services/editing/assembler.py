@@ -21,7 +21,16 @@ SCENE_PAUSE = 0.3  # breathing room after each line
 VOICE_LEAD = 0.06  # voice starts just after the cut
 MIN_SCENE = 1.5
 TRANSITIONS = {"cut": 0.0, "fade": 0.35, "flash": 0.3}  # flash: through white, same place, new look
-SFX_GAIN = {"whoosh": 0.9, "impact": 1.0, "rumble": 0.8, "wind": 0.7, "chime": 0.6}
+SFX_GAIN = {
+    "whoosh": 0.9,
+    "impact": 1.0,
+    "rumble": 0.8,
+    "wind": 0.7,
+    "chime": 0.6,
+    "heartbeat": 0.9,
+    "breath": 0.55,
+    "steps": 0.6,
+}
 
 
 @dataclass(frozen=True)
@@ -66,6 +75,49 @@ class EditScene:
     slot: SceneSlot
     sfx: list = field(default_factory=list)  # [(path, kind, at_seconds_in_scene)]
     hud: str = ""  # counter shown at the top for the whole scene (POV videos)
+
+
+@dataclass(frozen=True)
+class ColdOpen:
+    """The video opens on its most striking moment with the title over it, then the story starts.
+    clip: a rendered scene clip; start/length: the excerpt (s); sfx: [(path, kind, at)] during the opening."""
+
+    clip: Path
+    start: float
+    length: float
+    title: str
+    sfx: list = field(default_factory=list)
+
+
+def title_card(title: str, length: float, path: Path, portrait: bool = True) -> Path:
+    """Big title over the cold open: fades in and out, centred in the upper part of the frame."""
+    w, h = (1080, 1920) if portrait else (1920, 1080)
+    size = 100 if portrait else 76
+    text = title.replace("{", "(").replace("}", ")").strip()
+    words, lines, line = text.split(), [], ""
+    for word in words:  # wrap at ~18 characters per line
+        if line and len(line) + 1 + len(word) > 16:
+            lines.append(line)
+            line = word
+        else:
+            line = f"{line} {word}".strip()
+    if line:
+        lines.append(line)
+    end = f"0:00:{length + 0.4:05.2f}"
+    path.write_text(
+        "[Script Info]\nScriptType: v4.00+\n"
+        f"PlayResX: {w}\nPlayResY: {h}\n\n"
+        "[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, "
+        "Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, "
+        "MarginL, MarginR, MarginV, Encoding\n"
+        f"Style: Title,Liberation Serif,{size},&H00FFFFFF,&H00FFFFFF,&H00101010,&H80000000,1,0,0,0,100,100,0,0,1,3,4,"
+        "5,60,60,0,1\n\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
+        f"Dialogue: 0,0:00:00.05,{end},Title,,0,0,0,,{{\\pos({w // 2},{int(h * 0.36)})\\fad(200,300)}}"
+        + "\\N".join(lines)
+        + "\n",
+        encoding="utf-8",
+    )
+    return path
 
 
 def subtitle_cues(scenes: list[EditScene], words_per_cue: int) -> list[dict]:
@@ -113,12 +165,14 @@ def assemble_video(
     subtitles: bool = True,
     crf: int = 18,
     preset: str = "medium",
+    cold_open: ColdOpen | None = None,
 ) -> ProbeResult:
     if not scenes:
         raise ValueError("Nothing to assemble.")
     work_dir.mkdir(parents=True, exist_ok=True)
     w, h, fps = spec.width, spec.height, spec.fps
-    total = scenes[-1].slot.start + scenes[-1].slot.duration
+    lead = cold_open.length if cold_open else 0.0  # everything of the story starts after the opening
+    total = scenes[-1].slot.start + scenes[-1].slot.duration + lead
     args = [ffmpeg.ffmpeg_binary, "-y", "-hide_banner", "-loglevel", "error"]
     graph = []
 
@@ -138,8 +192,24 @@ def assemble_video(
             f"offset={scene.slot.start:.4f}[x{i}]"
         )
         current = f"x{i}"
+    if cold_open:  # the striking excerpt with the title, then a white flash into the story
+        args += ["-i", str(cold_open.clip)]
+        graph.append(
+            f"[{len(scenes)}:v]scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h},fps={fps},setsar=1,"
+            f"format=yuv420p,tpad=stop_mode=clone:stop_duration=3,trim=start={cold_open.start:.4f}:"
+            f"duration={cold_open.length:.4f},setpts=PTS-STARTPTS[co]"
+        )
+        graph.append(f"[{current}]fade=t=in:st=0:d=0.25:color=white[story]")
+        graph.append("[co][story]concat=n=2:v=1:a=0[opened]")
+        card = title_card(cold_open.title, cold_open.length, work_dir / "title.ass", portrait=h > w)
+        graph.append(f"[opened]subtitles=filename={escape_filter_value(str(card))}[titled]")
+        current = "titled"
     hud_cues = [
-        {"start": round(s.slot.start, 3), "end": round(s.slot.start + s.slot.duration, 3), "text": s.hud.strip()}
+        {
+            "start": round(s.slot.start + lead, 3),
+            "end": round(s.slot.start + s.slot.duration + lead, 3),
+            "text": s.hud.strip(),
+        }
         for s in scenes
         if s.hud.strip()
     ]
@@ -150,7 +220,9 @@ def assemble_video(
         )
         current = "hud"
     if subtitles:
-        cues = subtitle_cues(scenes, 4 if h > w else 8)
+        cues = [
+            {**c, "start": c["start"] + lead, "end": c["end"] + lead} for c in subtitle_cues(scenes, 4 if h > w else 8)
+        ]
         srt = write_srt(cues, work_dir / "subtitles.srt")
         graph.append(
             f"[{current}]subtitles=filename={escape_filter_value(str(srt))}:force_style='{subtitle_style(h > w)}'[vout]"
@@ -159,25 +231,29 @@ def assemble_video(
         graph.append(f"[{current}]null[vout]")
 
     # --- audio: voices on their exact times, effects on cue, ducked music --
-    index = len(scenes)
+    index = len(scenes) + (1 if cold_open else 0)
     voice_labels, sfx_labels = [], []
     for i, scene in enumerate(scenes):
         args += ["-i", str(scene.voice)]
-        delay = round((scene.slot.start + VOICE_LEAD) * 1000)
+        delay = round((scene.slot.start + VOICE_LEAD + lead) * 1000)
         graph.append(f"[{index}:a]aresample=48000,aformat=channel_layouts=stereo,adelay={delay}:all=1[vo{i}]")
         voice_labels.append(f"[vo{i}]")
         index += 1
-    for i, scene in enumerate(scenes):
-        for j, (path, kind, at) in enumerate(scene.sfx):
-            args += ["-i", str(path)]
-            delay = round(max(0.0, scene.slot.start + at) * 1000)
-            gain = SFX_GAIN.get(kind, 0.8)
-            graph.append(
-                f"[{index}:a]aresample=48000,aformat=channel_layouts=stereo,volume={gain},"
-                f"adelay={delay}:all=1[fx{i}_{j}]"
-            )
-            sfx_labels.append(f"[fx{i}_{j}]")
-            index += 1
+    effects = [
+        (f"{i}_{j}", path, kind, scene.slot.start + at + lead)
+        for i, scene in enumerate(scenes)
+        for j, (path, kind, at) in enumerate(scene.sfx)
+    ]
+    if cold_open:  # the opening's own hits, at absolute times
+        effects += [(f"open_{j}", path, kind, at) for j, (path, kind, at) in enumerate(cold_open.sfx)]
+    for label, path, kind, when in effects:
+        args += ["-i", str(path)]
+        graph.append(
+            f"[{index}:a]aresample=48000,aformat=channel_layouts=stereo,volume={SFX_GAIN.get(kind, 0.8)},"
+            f"adelay={round(max(0.0, when) * 1000)}:all=1[fx{label}]"
+        )
+        sfx_labels.append(f"[fx{label}]")
+        index += 1
     graph.append(
         f"{''.join(voice_labels)}amix=inputs={len(voice_labels)}:normalize=0:duration=longest,volume=1.6[speech]"
     )
