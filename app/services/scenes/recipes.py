@@ -32,9 +32,21 @@ RECIPES = (
     "theater",
     "park",
     "space",
+    "meet_person",
+    "room_view",
 )
-INDOOR = {"wake_up", "cafe_news", "dark_room", "kitchen", "theater"}
+INDOOR = {"wake_up", "cafe_news", "dark_room", "kitchen", "theater", "room_view"}
 THREATS = ("none", "zombies", "panic", "fire", "flood", "collapse")
+PEOPLE = ("busy", "empty", "rough_sleepers")  # who is on the street
+ITEMS = ("none", "phone", "key", "cup", "flashlight")  # what you hold in your hand
+ROOMS = ("living_room", "kitchen", "bedroom", "office", "classroom", "cafe", "hospital")
+TRENDS = ("none", "up", "down")
+SUBJECTS = ("sitting", "standing")
+# Recipes whose hands are free to hold something (the others already hold a phone, a cup or a torch).
+FREE_HANDS = {"street_watch", "meet_person", "room_view", "waterfront", "park"}
+# Spots along the north wall that no bench, tree, lamp or café terrace takes, in every city style.
+WALL_SPOTS = (-14.0, -6.0, 2.0)
+WALL_Y = 6.95
 DOOR_Y = 7.27  # a door on the north facade of the street (BUILDING_LINE - 0.13)
 CROSS_STREET = (5.0, 15.0)
 
@@ -84,8 +96,18 @@ def build(
     look: str = "normal",
     door_out: bool = False,
     headline: str = "",
+    people: str = "busy",
+    item: str = "none",
+    room: str = "office",
+    subject: str = "sitting",
+    stat: str = "",
+    trend: str = "none",
 ) -> dict:
-    """One full scene spec from a recipe. Unknown recipes fall back to street_watch."""
+    """One full scene spec from a recipe. Unknown recipes fall back to street_watch.
+
+    people, item, room, subject, stat and trend put the story's own things in the scene: people sleeping
+    rough or an empty street, a key in your hand, the hospital the narration mentions, the person you meet,
+    a big number (with an arrow up or down) for a fact."""
     rng = random.Random(seed)
     maker = BUILDERS.get(recipe, street_watch)
     spec = maker(
@@ -97,7 +119,14 @@ def build(
         time_of_day=time_of_day,
         door_out=door_out,
         headline=headline,
+        people=people if people in PEOPLE else "busy",
+        room=room if room in ROOMS else "office",
+        subject=subject if subject in SUBJECTS else "sitting",
     )
+    if item in ITEMS and item != "none" and recipe in FREE_HANDS and spec["camera"].get("pov"):
+        spec["camera"].setdefault("pov_item", item)
+    if stat and stat.strip():
+        _add_stat(spec, duration, stat.strip(), trend if trend in TRENDS else "none")
     _fit(spec, duration)
     if look and look != "normal":
         spec["look"] = look
@@ -426,10 +455,25 @@ def street_run(d, *, rng, seed, city, threat, time_of_day, door_out, **_):
     return spec
 
 
-def street_watch(d, *, rng, seed, city, threat, time_of_day, **_):
+def street_watch(d, *, rng, seed, city, threat, time_of_day, people="busy", **_):
     """Standing on the sidewalk, first person: you look up the avenue at what is happening."""
     env = _street_env(city, time_of_day, threat)
+    _people(env, people)
     spec = _base(d, seed, env)
+    if people == "rough_sleepers" and threat == "none":  # look at the people sleeping along the wall
+        _rough_sleepers(spec, rng)
+        spec["camera"] = {
+            "pov": True,
+            "handheld": 0.02,
+            "fstop": 5.6,
+            "shots": [
+                _shot(0, (-25.0, 5.0, 1.65), (-14.0, WALL_Y, 0.9), 24),
+                _shot(d * 0.5, (-23.5, 5.15, 1.65), (-8.0, WALL_Y, 0.9), 24),
+                _shot(d, (-22.0, 5.3, 1.65), (-2.0, WALL_Y, 1.0), 26),
+            ],
+        }
+        spec["sfx"] = _bed("steps", 0.0, d, 0.6)
+        return spec
     focus = (12.0, 7.0, 4.0)
     if threat == "fire":
         spec["actions"].append({"type": "fire", "location": [10.0, 6.4, 0.0], "start": 0.0, "end": d, "size": 3})
@@ -547,6 +591,150 @@ def space(d, *, rng, seed, **_):
     return spec
 
 
+def _people(env: dict, people: str) -> None:
+    """busy: the normal city; empty: nobody around; rough_sleepers: like busy (they are added by the recipe)."""
+    if people == "empty":
+        env.update(crowd=0, onlookers=0, panic=0, traffic=1, parked_cars=3)
+
+
+def _rough_sleepers(spec: dict, rng, spots=WALL_SPOTS) -> None:
+    """People sitting on cardboard against the north wall, with their sleeping bags and backpacks."""
+    for k, x in enumerate(spots):
+        cid = f"sleeper{k}"
+        spec["props"].append(
+            {
+                "id": f"bed{k}",
+                "type": "bedroll",
+                "location": [x, WALL_Y, 0.0],
+                "facing": 180,
+                "seed": rng.randint(0, 99),
+            }
+        )
+        palette = dict(rng.choice(PALETTES))
+        palette["body"] = rng.choice(("#4a4a40", "#3a3f5c", "#5a4632", "#2f3440"))  # worn, dark clothes
+        spec["characters"].append(_person(cid, (x, WALL_Y), 180, rng, pose="sit", hat=rng.random() < 0.5))
+        spec["characters"][-1]["palette"] = palette
+    env = spec["environment"]
+    env["crowd_side"] = "south"  # nobody walks through them
+    env["onlookers"] = 0
+
+
+def _add_stat(spec: dict, d: float, text: str, trend: str) -> None:
+    """A big number or a short fact floating in the scene where you look, with an arrow up or down."""
+    import math
+
+    shots = spec["camera"]["shots"]
+    last = shots[-1]
+    loc, tgt = last["location"], last["target"]
+    if isinstance(tgt, str):
+        tgt = [loc[0], loc[1] + 6, loc[2]]
+    dx, dy = tgt[0] - loc[0], tgt[1] - loc[1]
+    n = math.hypot(dx, dy) or 1.0
+    dx, dy = dx / n, dy / n
+    indoor = spec["environment"].get("type") == "interior"
+    dist, size = (2.3, 0.4) if indoor else (8.0, 1.1)
+    text = text[:12]
+    size = min(size, 0.7 * dist / max(1, len(text)))  # the whole text fits in the vertical frame
+    at = [loc[0] + dx * dist, loc[1] + dy * dist, loc[2] + (0.5 if indoor else 1.4)]
+    appear = round(min(d * 0.2, max(0.0, d - 1.0)), 3)
+    spec["props"].append(
+        {
+            "id": "stat",
+            "type": "label",
+            "location": [round(v, 3) for v in at],
+            "text": text,
+            "size": size,
+            "color": "#ffffff",
+        }
+    )
+    spec["actions"].append({"type": "appear", "target": "stat", "start": appear, "end": appear + 0.4})
+    if trend in ("up", "down"):
+        right = (dy, -dx)
+        off = size * 0.33 * len(text) + size * 0.7
+        z = at[2] + (size * 0.7 if trend == "down" else -size * 0.7)
+        spec["props"].append(
+            {
+                "id": "stat_arrow",
+                "type": "arrow",
+                "location": [round(at[0] + right[0] * off, 3), round(at[1] + right[1] * off, 3), round(z, 3)],
+                "direction": [0, 0, -1 if trend == "down" else 1],
+                "length": round(size * 1.4, 3),
+                "thickness": round(size * 0.12, 3),
+                "color": "#ff4d4d" if trend == "down" else "#3ee08a",
+            }
+        )
+        spec["actions"].append({"type": "appear", "target": "stat_arrow", "start": appear + 0.3, "end": appear + 0.8})
+    spec.setdefault("sfx", []).append({"type": "whoosh", "at": appear})
+
+
+def meet_person(d, *, rng, seed, city, threat, time_of_day, subject, people, **_):
+    """You walk along the sidewalk to someone (sitting on cardboard against the wall, or standing): they look
+    up at you, your hand reaches out (to give them something), they take it and, if sitting, stand up."""
+    env = _street_env(city, time_of_day, "none")
+    env.update(crowd_side="south", onlookers=0, crowd=60, traffic=6)
+    _people(env, people)
+    spec = _base(d, seed, env)
+    px = -16.0  # clear of benches, trees, lamps and terraces in every city style
+    sitting = subject != "standing"
+    py = WALL_Y if sitting else 6.2
+    if sitting:
+        spec["props"].append(
+            {"id": "bed", "type": "bedroll", "location": [px, WALL_Y, 0.0], "facing": 180, "seed": rng.randint(0, 99)}
+        )
+    person = _person("p", (px, py), 180, rng, **({"pose": "sit"} if sitting else {}))
+    if sitting:
+        person["palette"]["body"] = rng.choice(("#4a4a40", "#3a3f5c", "#5a4632"))
+    spec["characters"].append(person)
+    arrive = d * 0.55
+    give = min(d - 0.4, arrive + 0.3)
+    head = 0.75 if sitting else 1.5
+    spec["actions"] += [
+        {"type": "look_at", "character": "p", "target": "camera", "start": max(0.0, arrive - 1.2)},
+        {"type": "reach", "character": "p", "side": "right", "start": give, "end": min(d, give + 0.5)},
+    ]
+    if sitting and d >= 4.0:
+        spec["actions"].append({"type": "stand_up", "character": "p", "start": d * 0.72, "end": min(d, d * 0.72 + 1.2)})
+    x0 = px - 9.0
+    spec["camera"] = {
+        "pov": True,
+        "handheld": 0.02,
+        "fstop": 4.0,
+        "pov_pushes": [round(give, 3)],
+        "shots": [
+            _shot(0, (x0, 5.4, 1.65), (px + 2, 6.4, 1.2), 24),
+            _shot(arrive * 0.6, (x0 + 5.0, 5.3, 1.65), (px, py, head), 24),
+            _shot(arrive, (px - 1.0, 4.95, 1.62), (px, py, head), 24),
+            _shot(d, (px - 0.9, 4.85, 1.6), (px, py, 1.3 if sitting and d >= 4.0 else head), 24),
+        ],
+    }
+    spec["sfx"] = [*_bed("steps", 0.0, arrive, 0.55), {"type": "chime", "at": round(give, 3)}]
+    return spec
+
+
+def room_view(d, *, rng, seed, room, people, threat, time_of_day, **_):
+    """You stand in a room the story talks about (an office, a hospital ward, a classroom...) and look around."""
+    env = {"type": "interior", "room": room, "time_of_day": time_of_day}
+    spec = _base(d, seed, env)
+    if people != "empty":
+        for k, (x, y, f) in enumerate(((-0.75, 0.5, 200), (0.85, 0.3, 160))):
+            spec["characters"].append(_person(f"r{k}", (x, y), f, rng))
+            spec["actions"].append({"type": "look_at", "character": f"r{k}", "target": "camera", "start": d * 0.4})
+    if threat == "fire":
+        spec["actions"].append({"type": "smoke", "location": [2.0, 2.0, 2.2], "start": 0.0, "end": d})
+    side = rng.choice((-1, 1))
+    spec["camera"] = {
+        "pov": True,
+        "handheld": 0.015,
+        "fstop": 4.0,
+        "shots": [
+            _shot(0, (0.4 * side, -2.3, 1.62), (1.6 * side, 1.6, 1.1), 22),
+            _shot(d, (0.1 * side, -2.0, 1.62), (-0.6 * side, 1.8, 1.0), 22),
+        ],
+    }
+    spec["sfx"] = _bed("steps", 0.0, d * 0.6, 0.6)
+    return spec
+
+
 BUILDERS = {
     "wake_up": wake_up,
     "cafe_news": cafe_news,
@@ -558,6 +746,8 @@ BUILDERS = {
     "theater": theater,
     "park": park,
     "space": space,
+    "meet_person": meet_person,
+    "room_view": room_view,
 }
 
 RECIPE_GUIDE = """Scene recipes (pick one per scene; the camera is always YOUR eyes):
@@ -574,6 +764,18 @@ RECIPE_GUIDE = """Scene recipes (pick one per scene; the camera is always YOUR e
 - theater: a packed Broadway theatre, you walk down the aisle to the stage.
 - park: a big city park on a sunny day, people on the grass.
 - space: the whole Earth seen from space (only for what happens to the whole planet).
+- meet_person: you walk along the sidewalk to ONE person (subject sitting = someone sleeping rough on cardboard
+  against the wall; standing = anyone) who looks up at you; your hand reaches out to them (item key: you hand
+  them a key) and they take it; a sitting person then stands up. For meeting, helping or giving someone something.
+- room_view: you stand in a room the line talks about (room: office, hospital, classroom, living_room, bedroom,
+  kitchen, cafe); people empty = nobody there.
+Extra choices for any scene (they put the story's OWN things on screen, use them):
+- people: busy (normal city) | empty (nobody on the street) | rough_sleepers (people sleeping on cardboard
+  along the wall; street_watch with threat none).
+- item: what YOU hold (key, phone, cup, flashlight, or none) in street_watch, meet_person, room_view,
+  waterfront, park.
+- stat: when the line gives a number or a fact, at most 12 characters shown big in 3D ("-40%", "0", "x2"),
+  in the narration's language; trend up or down adds a green or red arrow.
 Rules: keep the story a journey through few places (2-4 recipes in a video, repeat a recipe rather than jumping
 everywhere); start with the most striking recipe of the story when it fits; use look xray when physics changes
 how the world looks (atoms, light, x-ray vision) and keep the same recipe as the previous scene."""

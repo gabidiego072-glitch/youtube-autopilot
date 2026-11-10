@@ -81,8 +81,11 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
             hat=c.get("hat", True),
         )
         char.idle(ctx.frame_start, ctx.frame_end, ctx.fps, ctx.seed + len(characters))
+        if c.get("pose") == "sit":  # e.g. someone sleeping rough, sitting on cardboard against a wall
+            char.sit(ctx.frame_start)
         characters[c["id"]] = char
-        timeline.register(c["id"], start, focus_height=1.25, scale=char.scale)
+        sitting = c.get("pose") == "sit"
+        timeline.register(c["id"], start, focus_height=0.75 if sitting else 1.25, scale=char.scale)
     for p in spec.get("props", []):
         params = {k: v for k, v in p.items() if k not in ("id", "type", "location", "facing")}
         if p["type"] == "wind":
@@ -128,7 +131,10 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
         n = int(env.get("crowd", 0))
         span = (-60.0, 60.0)
         side_walk = (urban_env.ROAD_HALF + 0.4, urban_env.BUILDING_LINE - 0.4)
-        crowd.walkers(n // 2, (span, side_walk), 0, (0.9, 1.6), ctx.frame_start, ctx.frame_end, ctx.fps, ctx.seed + 1)
+        if env.get("crowd_side") != "south":  # 'south' keeps the north sidewalk free (someone sits there)
+            crowd.walkers(
+                n // 2, (span, side_walk), 0, (0.9, 1.6), ctx.frame_start, ctx.frame_end, ctx.fps, ctx.seed + 1
+            )
         crowd.walkers(
             n // 2,
             (span, (-side_walk[1], -side_walk[0])),
@@ -338,6 +344,10 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
             _effect(kind, action, start, end, ctx, urban, env)
         elif kind == "cover":
             char.cover(start, end)
+        elif kind == "stand_up":
+            char.stand_up(start, end)
+        elif kind == "reach":
+            char.reach(start, end, "R" if action.get("side", "right") == "right" else "L", round(ctx.fps * 3))
         elif kind == "fall":
             char.fall(start, ctx.fps, float(action.get("direction_deg", 0.0)))
         elif kind == "appear":

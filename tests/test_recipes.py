@@ -53,3 +53,53 @@ def test_a_video_never_starts_in_a_calm_room():
     ]
     first = assemble(picks, [4.0, 4.0], seed=1, city="new_york")[0]
     assert first["recipe"] == "street_watch" and first["environment"].get("zombies")
+
+
+def _pick(recipe, **extra):
+    return {"recipe": recipe, "threat": "none", "time_of_day": "day", "look": "normal", **extra}
+
+
+def test_the_story_own_things_are_on_screen():
+    """The homeless video showed five empty streets: now the scenes carry the people, the key and the numbers."""
+    picks = [
+        _pick("street_watch", people="rough_sleepers"),
+        _pick("meet_person", subject="sitting", item="key"),
+        _pick("room_view", room="hospital", people="empty", stat="-40%", trend="down"),
+        _pick("street_watch", people="empty", stat="0"),
+    ]
+    specs = assemble(picks, [4.0, 5.5, 4.5, 3.0], seed=5, city="paris")
+    sitting = [c for c in specs[0]["characters"] if c.get("pose") == "sit"]
+    assert len(sitting) == 3 and sum(p["type"] == "bedroll" for p in specs[0]["props"]) == 3
+    assert specs[0]["environment"]["crowd_side"] == "south"  # nobody walks through them
+    meet = specs[1]
+    assert meet["camera"]["pov_item"] == "key" and meet["camera"]["pov_pushes"]
+    assert {a["type"] for a in meet["actions"]} >= {"look_at", "reach", "stand_up"}
+    hospital = specs[2]
+    assert hospital["environment"] == {**hospital["environment"], "type": "interior", "room": "hospital"}
+    assert not hospital["characters"]  # people empty: an empty ward
+    labels = {p["id"]: p for p in hospital["props"]}
+    assert labels["stat"]["text"] == "-40%" and labels["stat_arrow"]["direction"] == [0, 0, -1]
+    assert specs[3]["environment"]["crowd"] == 0 and any(p["id"] == "stat" for p in specs[3]["props"])
+
+
+def test_a_story_without_a_threat_opens_on_its_own_subject():
+    picks = [_pick("kitchen"), _pick("cafe_news"), _pick("meet_person", subject="sitting", stat="x2")]
+    first = assemble(picks, [4.0, 4.0, 5.0], seed=2, city="london")[0]
+    assert first["recipe"] == "meet_person" and not first["environment"].get("panic")
+    assert not any(p["id"] == "stat" for p in first["props"])
+
+
+def test_long_stats_still_fit_the_frame():
+    spec = build("room_view", 4.0, seed=1, room="office", stat="ALQUILER < CALLE")
+    label = next(p for p in spec["props"] if p["id"] == "stat")
+    assert len(label["text"]) <= 12 and label["size"] * len(label["text"]) <= 0.7 * 2.3 + 1e-6
+
+
+def test_bad_choices_are_repaired():
+    spec = assemble(
+        [_pick("meet_person", people="?", item="sword", room="moon", subject="?", trend="?", stat=None)],
+        [4.0],
+        seed=1,
+        city="paris",
+    )[0]
+    assert "pov_item" not in spec["camera"] and spec["characters"][0].get("pose") == "sit"

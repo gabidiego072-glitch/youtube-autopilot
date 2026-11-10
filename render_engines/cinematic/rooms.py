@@ -353,6 +353,49 @@ def cafe(urban: Urban, rng, col) -> None:
     )
 
 
+def hospital(urban: Urban, rng, col) -> None:
+    """A hospital ward: two beds with white sheets and rails, drip stands, heart monitors on the wall."""
+    frame = _mat("hosp_frame", "#c9ced4", roughness=0.35, metallic=0.6)
+    sheet = _mat("hosp_sheet", "#f4f6f7", roughness=0.9)
+    blanket = _mat("hosp_blanket", rng.choice(("#9fc3d6", "#b9d4c4", "#d9d2e6")), roughness=0.95)
+    screen = _mat("hosp_screen", "#06120c", roughness=0.1, emission="#3ee08a", strength=1.8)
+    for i, x in enumerate((-1.75, 1.75)):
+        bed = compound(
+            f"hosp_bed_{i}",
+            [
+                (_box(0.95, 2.0, 0.12, (0, 0, 0.62)), frame),
+                (_box(0.9, 1.95, 0.14, (0, 0, 0.75)), sheet),
+                (_box(0.92, 1.2, 0.06, (0, -0.35, 0.84)), blanket),
+                (_box(0.55, 0.32, 0.12, (0, 0.75, 0.87)), sheet),  # pillow
+                (_box(0.95, 0.05, 0.55, (0, 1.0, 0.85)), frame),  # head board
+                (_box(0.04, 1.2, 0.04, (0.48, -0.1, 0.95)), frame),  # side rails
+                (_box(0.04, 1.2, 0.04, (-0.48, -0.1, 0.95)), frame),
+            ]
+            + [(_cyl(0.025, 0.6, (dx, dy, 0.3)), frame) for dx in (-0.42, 0.42) for dy in (-0.9, 0.9)],
+            (x, 1.25, 0),
+            col=col,
+        )
+        urban.loose.append((bed, 60))
+        drip = compound(
+            f"hosp_drip_{i}",
+            [
+                (_cyl(0.015, 1.8, (0, 0, 0.9)), frame),
+                (_cyl(0.22, 0.03, (0, 0, 0.02)), frame),
+                (_box(0.12, 0.04, 0.2, (0, 0, 1.7)), _mat("drip_bag", "#e6f0f5", 0.1)),
+            ],
+            (x + (0.75 if x > 0 else -0.75), 1.9, 0),
+            col=col,
+        )
+        urban.loose.append((drip, 4))
+        monitor = compound(
+            f"hosp_monitor_{i}",
+            [(_box(0.4, 0.06, 0.3, (0, 0, 0)), frame), (_box(0.34, 0.02, 0.24, (0, -0.035, 0)), screen)],
+            (x + (-0.75 if x > 0 else 0.75), 2.62, 1.7),
+            col=col,
+        )
+        urban.static.append(monitor)
+
+
 ROOM_BUILDERS = {
     "living_room": _living_room,
     "kitchen": kitchen,
@@ -360,4 +403,5 @@ ROOM_BUILDERS = {
     "office": office,
     "classroom": classroom,
     "cafe": cafe,
+    "hospital": hospital,
 }

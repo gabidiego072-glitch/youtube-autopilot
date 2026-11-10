@@ -10,7 +10,18 @@ from __future__ import annotations
 from app.content.profile import CHANNEL_CONCEPT
 from app.core.errors import ProviderError
 from app.services.ai.base import AIProvider
-from app.services.scenes.recipes import BUILDERS, RECIPE_GUIDE, RECIPES, THREATS, build
+from app.services.scenes.recipes import (
+    BUILDERS,
+    ITEMS,
+    PEOPLE,
+    RECIPE_GUIDE,
+    RECIPES,
+    ROOMS,
+    SUBJECTS,
+    THREATS,
+    TRENDS,
+    build,
+)
 from render_engines.core.spec import SpecError, validate_spec
 
 DOOR_EXITS = {"wake_up", "cafe_news", "street_run"}  # recipes that can end by opening a door
@@ -27,9 +38,15 @@ RECIPE_SCHEMA = {
                     "threat": {"type": "string", "enum": list(THREATS)},
                     "time_of_day": {"type": "string", "enum": list(TIMES)},
                     "look": {"type": "string", "enum": ["normal", "xray"]},
+                    "people": {"type": "string", "enum": list(PEOPLE)},
+                    "item": {"type": "string", "enum": list(ITEMS)},
+                    "room": {"type": "string", "enum": list(ROOMS)},
+                    "subject": {"type": "string", "enum": list(SUBJECTS)},
+                    "stat": {"type": "string"},
+                    "trend": {"type": "string", "enum": list(TRENDS)},
                     "headline": {"type": "string"},
                 },
-                "required": ["recipe", "threat", "time_of_day", "look"],
+                "required": ["recipe", "threat", "time_of_day", "look", "people", "item", "stat", "trend"],
                 "additionalProperties": False,
             },
         }
@@ -48,10 +65,18 @@ Choices per scene: recipe; threat (none|zombies|panic|fire|flood|collapse) = wha
 time_of_day (dawn|day|golden|dusk|night) following the story's clock (the on-screen counter); look (normal, or
 xray when the narration says the world itself changes how it looks); headline only for cafe_news (2-5 words in
 the narration's language, e.g. the news the TV shows).
-Scene 0 is the hook: give it the most striking recipe and threat of the story (street_run, street_watch with
-fire/collapse/flood/zombies, waterfront), never a calm room.
+THE VIEWER MUST SEE WHAT THE NARRATION SAYS. A street where nothing related happens is a failure: every scene
+shows the line's own subject (the person, the place, the object, the number).
+Scene 0 is the hook: the most striking picture of the story (a threat if there is one: street_run,
+street_watch with fire/collapse/flood/zombies, waterfront; otherwise the story's own subject: meet_person,
+rough_sleepers...), never a calm room.
 Pick what each line SHOWS: if it says you run, street_run; the news, cafe_news; the lights go out, dark_room;
-water or food running out, kitchen; the river or the sea, waterfront; the whole planet, space."""
+water or food running out, kitchen; the river or the sea, waterfront; the whole planet, space; you meet, help or
+give something to someone, meet_person; a hospital, an office, a school, room_view with that room; people
+living on the street, people rough_sleepers; nobody left, people empty. A line with a number or a measurable
+result gets a stat (the number itself, e.g. "-40%") and a trend.
+Never use the same recipe with the same choices in more than 2 scenes in a row: the picture must move on with
+the story."""
 
 
 def _scene_list(scenes: list[dict], durations: list[float]) -> str:
@@ -105,6 +130,12 @@ def assemble(picks: list[dict], durations: list[float], *, seed: int, city: str)
             look=pick["look"],
             door_out=door_out,
             headline=pick.get("headline", ""),
+            people=pick["people"],
+            item=pick["item"],
+            room=pick["room"],
+            subject=pick["subject"],
+            stat=pick["stat"],
+            trend=pick["trend"],
         )
         if i:
             prev = picks[i - 1]
@@ -121,14 +152,22 @@ SLOW_STARTS = {"wake_up", "kitchen", "dark_room", "cafe_news", "theater", "park"
 
 
 def _striking_start(picks: list[dict]) -> None:
-    """The first scene must grab the viewer: a calm room becomes the street with the story's main threat."""
-    if picks and picks[0]["recipe"] in SLOW_STARTS:
-        threat = next((p["threat"] for p in picks if p["threat"] != "none"), "panic")
-        picks[0] = {
-            **picks[0],
-            "recipe": "waterfront" if threat == "flood" else "street_watch",
-            "threat": threat if threat != "none" else "panic",
-        }
+    """The first scene must grab the viewer. A calm room becomes the street with the story's main threat; a story
+    without a threat opens instead on its own strongest picture (the person you meet, people sleeping rough)."""
+    if not picks or picks[0]["recipe"] not in SLOW_STARTS:
+        return
+    threat = next((p["threat"] for p in picks if p["threat"] != "none"), None)
+    if threat:
+        picks[0] = {**picks[0], "recipe": "waterfront" if threat == "flood" else "street_watch", "threat": threat}
+        return
+    subject = next(
+        (p for p in picks if p["recipe"] == "meet_person" or p["people"] == "rough_sleepers"),
+        None,
+    )
+    if subject is not None:
+        picks[0] = {**subject, "stat": "", "trend": "none"}
+    else:
+        picks[0] = {**picks[0], "recipe": "street_watch", "people": "busy"}
 
 
 def _clean(pick: dict) -> dict:
@@ -141,4 +180,14 @@ def _clean(pick: dict) -> dict:
         out["time_of_day"] = "day"
     if out.get("look") not in ("normal", "xray"):
         out["look"] = "normal"
+    for key, allowed, default in (
+        ("people", PEOPLE, "busy"),
+        ("item", ITEMS, "none"),
+        ("room", ROOMS, "office"),
+        ("subject", SUBJECTS, "sitting"),
+        ("trend", TRENDS, "none"),
+    ):
+        if out.get(key) not in allowed:
+            out[key] = default
+    out["stat"] = str(out.get("stat") or "").strip()[:12]
     return out

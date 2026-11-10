@@ -197,10 +197,48 @@ def theater_entrance(name: str, location, facing_deg: float = 0.0, **params) -> 
     return TheaterEntrance(name, root)
 
 
+@dataclass
+class Bedroll:
+    name: str
+    root: object
+    focus_height: float = 0.5
+
+
+def bedroll(name: str, location, facing_deg: float = 0.0, *, seed: int = 0, **_) -> Bedroll:
+    """Where someone sleeps on the street: flattened cardboard, a sleeping bag, a backpack, a paper cup.
+    A character with pose 'sit' at the same location and facing sits on it (local +Y = where they face)."""
+    import math
+    import random
+
+    from render_engines.cinematic.urban import _box, _cyl, _mat, compound
+    from render_engines.core.blender import objects
+
+    rng = random.Random(seed)
+    card = _mat("cardboard", rng.choice(("#a47d52", "#9a7448", "#b08a5c")), roughness=0.95)
+    card_dark = _mat("cardboard_dark", "#7d5c3a", roughness=0.95)
+    bag = _mat(f"{name}_sleeping_bag", rng.choice(("#2f4a3a", "#3a3f5c", "#5c2f2f", "#4a4a40")), roughness=0.85)
+    pack = _mat(f"{name}_backpack", rng.choice(("#2b2d33", "#5a3a28", "#3d4a2a")), roughness=0.8)
+    paper = _mat("paper_cup", "#efe8da", roughness=0.6)
+    root = objects.empty(f"{name}_root", location=tuple(location))
+    root.rotation_euler = (0, 0, math.radians(facing_deg))
+    parts = [
+        (_box(2.1, 1.05, 0.025, (0.45, 0.3, 0.012)), card),
+        (_box(0.9, 0.7, 0.02, (-0.55, 0.35, 0.03)), card_dark),  # a second, overlapping piece
+        (_cyl(0.17, 1.15, (1.0, 0.0, 0.16), axis="X", segments=16), bag),  # the rolled sleeping bag
+        (_cyl(0.21, 0.14, (1.62, 0.0, 0.16), axis="X", segments=16), bag),
+        (_box(0.34, 0.2, 0.42, (-0.55, -0.12, 0.23)), pack),  # backpack against the wall
+        (_box(0.28, 0.06, 0.2, (-0.55, 0.0, 0.18)), pack),
+        (_cyl(0.045, 0.1, (0.05, 0.95, 0.05)), paper),  # a paper cup on the pavement in front
+    ]
+    compound(f"{name}_things", parts, col=None).parent = root
+    return Bedroll(name, root)
+
+
 PROP_BUILDERS = {
     "door": door,
     "theater_entrance": theater_entrance,
     **EXPLAINER_BUILDERS,
     "lantern_post": lambda name, location, facing_deg=0.0, **_: lantern_post(name, location, facing_deg),
     "planet": _planet,
+    "bedroll": bedroll,
 }
