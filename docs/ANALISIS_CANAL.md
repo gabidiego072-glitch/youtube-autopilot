@@ -56,3 +56,43 @@ Como YouTube deja los vídeos en privado hasta que se pasan a público a mano, l
 la de ese cambio. Prueba propuesta: rotar las franjas **14:00, 19:00 y 21:30** (hora de Madrid), un vídeo
 por franja, y repetir. Con unos 9 vídeos, `channel-report` muestra la mediana de vistas por franja
 (`by_publish_slot`).
+
+## Informe del 10 de noviembre de 2026 (datos reales de YouTube Analytics)
+
+Canal en español, vídeos públicos (vistas a 10 nov; "se quedan" = proporción de gente que no desliza):
+
+| Publicado | Vídeo | Vistas | Se quedan | Retención al final |
+|---|---|---|---|---|
+| 4 nov 14:13 | La Tierra frena en seco | 1.692 | 53 % | 22 % |
+| 5 nov 14:13 | La fricción desaparece | 1.147 | 34 % | 22 % |
+| 5 nov 23:03 | Todos los humanos se duermen | 1.216 | 46 % | 23 % |
+| 7 nov 11:08 | Los metales pierden su conductividad | 108 | 49 % | 25 % |
+| 7 nov 23:26 | La gravedad baja un 1 % | 299 | **23 %** | 16 % |
+| 8 nov 13:52 | Los árboles dejan de absorber CO₂ | 96 | (aún sin datos) | |
+| 9 nov 11:08 | Zombis POV | 121 | (aún sin datos) | |
+| 10 nov 09:16 | Ayudar a todas las personas sin hogar (sistema nuevo) | **1.051** en el primer día | (aún sin datos) | |
+
+Canal en inglés: lluvia hacia arriba (sistema nuevo) 1.231 vistas; zombis 65; envejecer 10 años (hoy) 70.
+YouTube tarda unos 3 días en dar retención, así que los vídeos del 8-10 nov aún no la tienen.
+
+### Lo que dicen
+
+1. **La hipótesis del 7 nov se confirma: las premisas abstractas o pequeñas no despegan.** Conductividad
+   (108), un 1 % menos de gravedad (299) y árboles que dejan de absorber CO₂ (96) se quedan por debajo de
+   300 vistas, frente a más de 1.000 de las premisas grandes y que se sienten en el cuerpo (la Tierra
+   frena, la fricción desaparece, todos se duermen).
+2. **No es solo la retención.** El de los metales retuvo como los buenos (49 % se quedan), pero YouTube
+   apenas lo enseñó (96 vistas del feed). El tema y el título deciden cuánta gente lo prueba al principio.
+3. **El cambio pequeño es el peor gancho.** "Un 1 %" tiene el peor dato del canal: solo se queda el 23 %.
+4. **Los vídeos del sistema nuevo vuelven a superar las 1.000 vistas** (sin hogar en español, lluvia en
+   inglés), con temas concretos y humanos. Falta su retención para confirmar que el arranque nuevo
+   retiene más.
+5. **Zombis rinde poco en los dos canales** (121 y 65). Es un tema muy visto; hipótesis por confirmar
+   cuando lleguen sus datos.
+
+### Cambios aplicados
+
+- Ideas: los ejemplos malos incluyen ya "un 1 por ciento" y los porcentajes pequeños; la premisa tiene
+  que ser un cambio grande, absoluto y visible.
+- Siguiente revisión: cuando lleguen los datos de retención de sin hogar, lluvia, envejecer y dinosaurios
+  (TikTok), comparar el sistema nuevo con el anterior.
