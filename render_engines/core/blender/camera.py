@@ -175,6 +175,24 @@ def _pov_rig(cam, item: str | None = None) -> None:
             parent=cup,
         )
         holder["cup"] = cup.name
+    elif item == "key":  # a brass door key between the fingers, held up in view
+        brass = materials.principled("pov_key", "#d4a83a", roughness=0.28, metallic=1.0)
+        key_root = objects.empty("pov_key_root", parent=holder)
+        key_root.location = (0.05, -0.12, -0.42)
+        key_root.rotation_euler = (math.radians(-70), math.radians(20), 0)
+        ring = objects.transform(objects.cone(0.022, 0.022, 0.006, 20), Matrix.Rotation(math.pi / 2, 4, "X"))
+        objects.mesh_object("pov_key_bow", ring, brass, True, location=(0, 0, 0), parent=key_root)
+        objects.mesh_object(
+            "pov_key_shaft", objects.box(0.008, 0.006, 0.06), brass, location=(0, 0, 0.05), parent=key_root
+        )
+        for i, h in enumerate((0.012, 0.007, 0.01)):  # the bit's teeth
+            objects.mesh_object(
+                f"pov_key_tooth_{i}",
+                objects.box(h, 0.006, 0.006),
+                brass,
+                location=(0.004 + h / 2, 0, 0.064 + 0.009 * i),
+                parent=key_root,
+            )
     elif item == "flashlight":
         metal = materials.principled("pov_torch", "#2a2b2f", roughness=0.3, metallic=0.8)
         torch = objects.mesh_object(

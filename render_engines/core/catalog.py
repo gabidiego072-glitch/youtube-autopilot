@@ -30,7 +30,8 @@ ENVIRONMENTS = {
     "wall at x in [-0.9,0.9]; keep people in the free centre |x|<1, -1.8<y<0.6). Option room: living_room "
     "(sofa, coffee table, bookshelf, TV) | kitchen (counter and stove on the west wall, stove at [-2.8,0.6,0.95], "
     "fridge, table with plates and cups) | bedroom (bed, wardrobe, desk) | office (desks, monitors, office chairs, "
-    "whiteboard) | classroom (blackboard, pupil desks, backpacks) | cafe (counter with espresso machine, menu "
+    "whiteboard) | classroom (blackboard, pupil desks, backpacks) | hospital (a ward: two beds with white sheets, "
+    "drip stands, heart monitors) | cafe (counter with espresso machine, menu "
     "board, a TV with the news on the north wall at x 1.85, round tables with cups, hanging lamps). "
     "Pick the room the narration talks about. "
     "Other options: time_of_day, room_light (W), physics (true lets furniture, plates and books slide; REQUIRED "
@@ -69,6 +70,9 @@ PROPS = {
     "Params: location [x,y,z], text, size (m), color.",
     "magnetic_field": "Glowing dipole field lines around a planet. Params: location (planet centre), radius "
     "(planet radius), color. Use 'fade' to weaken it.",
+    "bedroll": "where someone sleeps on the street: flattened cardboard, a sleeping bag, a backpack, a paper cup. "
+    "Put a character with pose 'sit' at the same location and facing to sit on it. Params: location [x,y,0], "
+    "facing (deg, where the sitting person faces), seed.",
     "wind": "Wind streaks and flying leaves/rocks (meadow), still until a 'wind' action. Params: location "
     "[x,y,z] (centre), direction_deg (0 = towards +x / east), count, debris.",
 }
@@ -95,6 +99,8 @@ ACTIONS = {
     "shatter_windows": "the hero building's windows break (glass shards fall; needs physics): start",
     "surge": "coast only: the sea rises and floods into the street: start, end, height (m), inland (m)",
     "lights_on": "city: street lamps and random windows switch on: start, end",
+    "stand_up": "a sitting character gets up: character, start, end",
+    "reach": "character holds a hand out in front (to take something): character, side, start, end",
     "cover": "character crouches and covers the head: character, start, end",
     "fall": "character falls over: character, start, direction_deg",
     "open_door": "a door prop swings open: prop, start, end",
@@ -113,7 +119,8 @@ ACTIONS = {
 }
 
 CHARACTERS = (
-    "characters: {id, start [x,y], facing (deg), scale, zombie (true = grey-green zombie with arms forward and a "
+    "characters: {id, start [x,y], facing (deg), scale, pose (sit = sitting on the ground, legs forward), "
+    "zombie (true = grey-green zombie with arms forward and a "
     "lurching walk; use 'walk' to make it shamble towards someone)}. Environment option zombies (count) adds a "
     "horde that shambles in from the distance (city, coast, meadow; 2-3 inside a room)."
 )
@@ -127,7 +134,7 @@ CAMERA = (
     "changes; continue the previous scene's place and camera), "
     "sfx [{type: whoosh|impact|rumble|wind|chime, at}] in scene seconds. First-person view: camera.pov true "
     "shows the viewer's own arms at the bottom of the frame (the viewer IS the protagonist): put the shots at eye "
-    "height (z 1.6) where the protagonist is, lens 22-28, and optionally pov_item phone|flashlight; "
+    "height (z 1.6) where the protagonist is, lens 22-28, and optionally pov_item phone|flashlight|cup|key; "
     "pov_run true when running (bobbing view, pumping arms); "
     "pov_pushes [seconds] when your hand shoves someone (pair it with that person's 'fall')."
 )

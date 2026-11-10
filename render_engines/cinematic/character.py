@@ -188,6 +188,40 @@ class CinematicCharacter:
             key(self.legs[side], "rotation_euler", end, (math.radians(70), 0, 0))
         key(self.neck, "rotation_euler", start + 6, (math.radians(25), 0, 0))
 
+    SIT_HIPS = 0.17  # hip height when sitting on the ground
+
+    def sit(self, frame: int) -> None:
+        """Sitting on the ground, legs stretched forward, leaning back a little, head down (tired)."""
+        key(self.hips, "location", frame, (0, 0, self.SIT_HIPS))
+        key(self.hips, "rotation_euler", frame, (math.radians(-12), 0, 0))
+        for side, sign in (("L", 1), ("R", -1)):
+            key(self.legs[side], "rotation_euler", frame, (math.radians(84), 0, math.radians(6 * sign)))
+            key(self.arms[side], "rotation_euler", frame, (math.radians(42), 0, math.radians(-12 * sign)))
+        key(self.neck, "rotation_euler", frame, (math.radians(22), 0, 0))
+        self.sitting = True
+
+    def stand_up(self, start: int, end: int) -> None:
+        """From sitting on the ground to standing."""
+        mid = (start + end) // 2
+        key(self.hips, "location", start, (0, 0, self.SIT_HIPS))
+        key(self.hips, "location", mid, (0, 0.15, HIP_HEIGHT * 0.6))
+        key(self.hips, "location", end, (0, 0, HIP_HEIGHT))
+        key(self.hips, "rotation_euler", start, (math.radians(-12), 0, 0))
+        key(self.hips, "rotation_euler", mid, (math.radians(25), 0, 0))
+        key(self.hips, "rotation_euler", end, (0, 0, 0))
+        for side in ("L", "R"):
+            key(self.legs[side], "rotation_euler", start, tuple(self.legs[side].rotation_euler))
+            key(self.legs[side], "rotation_euler", mid, (math.radians(70), 0, 0))
+            key(self.legs[side], "rotation_euler", end, (0, 0, 0))
+        self.sitting = False
+
+    def reach(self, start: int, end: int, side: str = "R", hold: int = 24) -> None:
+        """Hold a hand out in front (to take something, to shake hands)."""
+        arm = self.arms[side]
+        key(arm, "rotation_euler", start, tuple(arm.rotation_euler))
+        key(arm, "rotation_euler", end, (math.radians(80), 0, math.radians(8 if side == "R" else -8)))
+        key(arm, "rotation_euler", end + hold, (math.radians(80), 0, math.radians(8 if side == "R" else -8)))
+
     def fall(self, start: int, fps: int, direction_deg: float = 0.0) -> None:
         """Topple over towards a direction (about the feet), arms out."""
         heading = math.radians(direction_deg) - self.yaw

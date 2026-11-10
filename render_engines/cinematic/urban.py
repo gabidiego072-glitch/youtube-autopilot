@@ -975,7 +975,7 @@ def lights_on(urban: Urban, start: int, end: int, windows: float = 0.45) -> None
 
 
 # --- interior -------------------------------------------------------------------------------
-ROOMS = ("living_room", "kitchen", "bedroom", "office", "classroom", "cafe")
+ROOMS = ("living_room", "kitchen", "bedroom", "office", "classroom", "cafe", "hospital")
 ROOM_FLOORS = {  # floor colours (dark, light), scale
     "living_room": (("#8a5a36", "#a8714a"), ("#6e4a2f", "#8c6240"), ("#a68a64", "#c2a37a")),
     "kitchen": (("#b9b4aa", "#d8d3c8"), ("#6f6a63", "#8d877e"), ("#2d2f33", "#d9d5cc")),
@@ -983,6 +983,7 @@ ROOM_FLOORS = {  # floor colours (dark, light), scale
     "office": (("#5c6066", "#6f747b"), ("#7a7266", "#8f877a")),
     "classroom": (("#a89a7c", "#c2b494"), ("#7f8a7a", "#97a291")),
     "cafe": (("#2a2420", "#3a312a"), ("#5a4632", "#6e573f")),
+    "hospital": (("#b9c4c2", "#d3dbd9"), ("#c9c2b4", "#ddd6c8")),
 }
 WALL_COLORS = ("#e9e1d3", "#d9e3e8", "#efe6c9", "#e3d2c4", "#cfd8c8", "#f2efe9", "#d6cbe0", "#c9b9a3")
 
@@ -995,7 +996,7 @@ def build_interior(env: dict, ctx, scene, seed: int) -> Urban:
     col = objects.collection("Interior")
     room = env.get("room") if env.get("room") in ROOMS else "living_room"
     dark, light = rng.choice(ROOM_FLOORS[room])
-    if room in ("kitchen", "cafe"):  # tiled floors; homes, offices and classrooms get wooden planks
+    if room in ("kitchen", "cafe", "hospital"):  # tiled floors; homes, offices and classrooms get wooden planks
         floor = materials.floor_tiles(f"floor_{room}", light, dark)
     else:
         floor = materials.wood_planks(f"floor_{room}", (dark, light))
