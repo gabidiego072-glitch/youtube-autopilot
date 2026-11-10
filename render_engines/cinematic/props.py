@@ -234,6 +234,60 @@ def bedroll(name: str, location, facing_deg: float = 0.0, *, seed: int = 0, **_)
     return Bedroll(name, root)
 
 
+@dataclass
+class Model:
+    name: str
+    root: object
+    focus_height: float = 1.0
+
+
+MODEL_SHAPES = ("box", "sphere", "cylinder", "cone")
+MAX_MODEL_PARTS = 60
+
+
+def model(name: str, location, facing_deg: float = 0.0, *, parts=(), height: float = 1.0, **_) -> Model:
+    """Any object the engine has no hand-made model for (a rocket, a dinosaur, a bus stop), designed by the AI
+    from simple shapes: parts [{shape box|sphere|cylinder|cone, size [x,y,z], at [x,y,z], rotation [deg x,y,z],
+    color, glow}], in metres, +Y = its front, base at z=0. It is scaled to `height` metres and stands at
+    `location`, its front towards `facing_deg`."""
+    import math
+
+    from mathutils import Euler, Matrix, Vector
+
+    from render_engines.cinematic.urban import _mat, compound
+    from render_engines.core.blender import objects
+
+    built, top = [], 0.0
+    for i, part in enumerate(list(parts)[:MAX_MODEL_PARTS]):
+        shape = part.get("shape", "box")
+        sx, sy, sz = (max(0.005, float(v)) for v in (list(part.get("size", (0.3, 0.3, 0.3))) + [0.3] * 3)[:3])
+        if shape == "sphere":
+            bm = objects.transform(objects.sphere(0.5, 16, 8), Matrix.Diagonal((sx, sy, sz, 1)))
+        elif shape in ("cylinder", "cone"):
+            top_r = 0.5 if shape == "cylinder" else 0.0
+            bm = objects.transform(
+                objects.cone(0.5, top_r, 1.0, 20, base_at_origin=False), Matrix.Diagonal((sx, sy, sz, 1))
+            )
+        else:
+            bm = objects.box(sx, sy, sz)
+        rot = [math.radians(float(v)) for v in (list(part.get("rotation", (0, 0, 0))) + [0] * 3)[:3]]
+        at = [float(v) for v in (list(part.get("at", (0, 0, 0))) + [0] * 3)[:3]]
+        bm = objects.transform(bm, Matrix.Translation(Vector(at)) @ Euler(rot).to_matrix().to_4x4())
+        top = max(top, at[2] + sz / 2)
+        color = str(part.get("color") or "#9a9a9a")
+        glow = float(part.get("glow", 0) or 0)
+        mat = _mat(f"{name}_m{i}", color, 0.55, emission=color if glow > 0 else None, strength=min(glow, 8.0))
+        built.append((bm, mat))
+    root = objects.empty(f"{name}_root", location=tuple(location))
+    root.rotation_euler = (0, 0, math.radians(facing_deg))
+    if built:
+        obj = compound(f"{name}_model", built, col=None)
+        obj.parent = root
+        k = max(0.01, float(height)) / max(0.05, top)
+        root.scale = (k, k, k)
+    return Model(name, root, focus_height=max(0.3, float(height) * 0.6))
+
+
 PROP_BUILDERS = {
     "door": door,
     "theater_entrance": theater_entrance,
@@ -241,4 +295,5 @@ PROP_BUILDERS = {
     "lantern_post": lambda name, location, facing_deg=0.0, **_: lantern_post(name, location, facing_deg),
     "planet": _planet,
     "bedroll": bedroll,
+    "model": model,
 }

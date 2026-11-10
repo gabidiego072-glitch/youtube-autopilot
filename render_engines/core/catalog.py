@@ -73,6 +73,8 @@ PROPS = {
     "bedroll": "where someone sleeps on the street: flattened cardboard, a sleeping bag, a backpack, a paper cup. "
     "Put a character with pose 'sit' at the same location and facing to sit on it. Params: location [x,y,0], "
     "facing (deg, where the sitting person faces), seed.",
+    "model": "any other object, built from simple shapes. Params: location [x,y,z] (base), facing (deg), "
+    "height (m), parts [{shape box|sphere|cylinder|cone, size [x,y,z], at [x,y,z], rotation [deg], color, glow}].",
     "wind": "Wind streaks and flying leaves/rocks (meadow), still until a 'wind' action. Params: location "
     "[x,y,z] (centre), direction_deg (0 = towards +x / east), count, debris.",
 }

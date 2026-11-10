@@ -102,6 +102,7 @@ def build(
     subject: str = "sitting",
     stat: str = "",
     trend: str = "none",
+    obj: dict | None = None,
 ) -> dict:
     """One full scene spec from a recipe. Unknown recipes fall back to street_watch.
 
@@ -125,6 +126,8 @@ def build(
     )
     if item in ITEMS and item != "none" and recipe in FREE_HANDS and spec["camera"].get("pov"):
         spec["camera"].setdefault("pov_item", item)
+    if obj and obj.get("parts") and recipe != "meet_person":  # there the person you meet fills the view
+        _add_object(spec, obj)
     if stat and stat.strip():
         _add_stat(spec, duration, stat.strip(), trend if trend in TRENDS else "none")
     _fit(spec, duration)
@@ -619,6 +622,60 @@ def _rough_sleepers(spec: dict, rng, spots=WALL_SPOTS) -> None:
     env["onlookers"] = 0
 
 
+def _view(spec: dict):
+    """Where the scene ends up looking: the camera's last position and its flat direction."""
+    import math
+
+    last = spec["camera"]["shots"][-1]
+    loc, tgt = last["location"], last["target"]
+    if isinstance(tgt, str):
+        tgt = [loc[0], loc[1] + 6, loc[2]]
+    dx, dy = tgt[0] - loc[0], tgt[1] - loc[1]
+    n = math.hypot(dx, dy) or 1.0
+    return loc, dx / n, dy / n
+
+
+def _add_object(spec: dict, obj: dict, side: float = 0.0) -> None:
+    """An AI-designed object (see app/services/scenes/objects.py) standing where you look, facing you."""
+    import math
+
+    loc, dx, dy = _view(spec)
+    env_type = spec["environment"].get("type")
+    height = float(obj.get("height", 1.0))
+    if env_type == "interior":
+        height = min(height, 2.0)
+        dist, ground = 1.9, 0.0
+    elif env_type == "space":
+        dist, ground = 9.0, loc[2] - 1.0
+        height = min(height, 4.0)
+    else:
+        # Far enough that the whole thing fits above eye level in the vertical frame.
+        dist = min(90.0, max(4.5, (height - 1.6) / 0.4 + 2.5))
+        ground = 0.0
+    right = (dy, -dx)
+    at = [loc[0] + dx * dist + right[0] * side, loc[1] + dy * dist + right[1] * side, ground]
+    if env_type in ("city", "coast"):  # in the middle of the road, never inside a building
+        at[1] = max(-2.0, min(2.0, at[1]))
+        at[2] = -0.15
+        last = spec["camera"]["shots"][-1]
+        if abs(last["location"][1]) > 3.0:  # step off the sidewalk: lamp posts and trees hide the view
+            last["location"] = [last["location"][0], math.copysign(2.4, last["location"][1]), last["location"][2]]
+    facing = math.degrees(math.atan2(-dy, -dx)) - 90  # its front (+y) towards the camera
+    spec["props"].append(
+        {
+            "id": "obj",
+            "type": "model",
+            "location": [round(v, 3) for v in at],
+            "facing": round(facing, 1),
+            "height": round(height, 3),
+            "parts": obj["parts"],
+        }
+    )
+    spec["object_name"] = obj.get("name", "")
+    if env_type != "space":  # the scene ends looking at it: big things are framed from below
+        spec["camera"]["shots"][-1]["target"] = [round(at[0], 3), round(at[1], 3), round(at[2] + height * 0.45, 3)]
+
+
 def _add_stat(spec: dict, d: float, text: str, trend: str) -> None:
     """A big number or a short fact floating in the scene where you look, with an arrow up or down."""
     import math
@@ -636,6 +693,11 @@ def _add_stat(spec: dict, d: float, text: str, trend: str) -> None:
     text = text[:12]
     size = min(size, 0.7 * dist / max(1, len(text)))  # the whole text fits in the vertical frame
     at = [loc[0] + dx * dist, loc[1] + dy * dist, loc[2] + (0.5 if indoor else 1.4)]
+    model = next((p for p in spec["props"] if p.get("id") == "obj"), None)
+    if model is not None and model["height"] >= 3.0 and not indoor:  # below a big one, not over it
+        at[2] = loc[2] - 0.1
+    if model is not None and model["height"] < 3.0:  # the number floats above a small object, not over it
+        at[2] = max(at[2], model["location"][2] + model["height"] + size * 0.8)
     appear = round(min(d * 0.2, max(0.0, d - 1.0)), 3)
     spec["props"].append(
         {
