@@ -103,3 +103,41 @@ def test_bad_choices_are_repaired():
         city="paris",
     )[0]
     assert "pov_item" not in spec["camera"] and spec["characters"][0].get("pose") == "sit"
+
+
+def test_missing_things_are_designed_and_built():
+    """A thing no recipe shows (a rocket) is designed by the AI from shapes and stands where you look."""
+    from app.services.scenes.objects import clean_design
+    from tests.conftest import StubAIProvider
+
+    rocket = {
+        "height": 30,
+        "parts": [
+            {"shape": "cylinder", "size": [3, 3, 20], "at": [0, 0, 12], "color": "#e8e8ec"},
+            {"shape": "cone", "size": [3, 3, 6], "at": [0, 0, 25], "color": "#c0392b"},
+            {"shape": "teapot", "size": "big", "at": [0], "color": "red", "glow": "x"},
+        ],
+    }
+    ai = StubAIProvider(
+        [
+            {"scenes": [{**_pick("street_watch"), "object": " Rocket ", "stat": "3..2..1"}, _pick("park")]},
+            rocket,
+        ]
+    )
+    specs = plan_with_recipes(ai, scenes=[{"narration": "Despega."}, {"narration": "Calma."}], durations=[5, 4], seed=1)
+    assert "Object: rocket" in ai.calls[1]["prompt"]
+    model = next(p for p in specs[0]["props"] if p["type"] == "model")
+    validate_spec(specs[0])
+    assert abs(model["location"][1]) <= 2.0 and model["height"] == 30  # on the road, real size
+    assert specs[0]["camera"]["shots"][-1]["target"][:2] == model["location"][:2]  # you end up looking at it
+    assert model["parts"][2] == clean_design(rocket)["parts"][2]  # nonsense is repaired, not fatal
+    assert model["parts"][2]["shape"] == "box" and model["parts"][2]["color"] == "#9a9a9a"
+    assert not any(p["type"] == "model" for p in specs[1]["props"])
+
+
+def test_a_failed_design_leaves_the_scene_without_the_object():
+    from tests.conftest import StubAIProvider
+
+    ai = StubAIProvider([{"scenes": [{**_pick("park"), "object": "dragon"}]}, {"height": 3, "parts": []}])
+    spec = plan_with_recipes(ai, scenes=[{"narration": "Un dragón."}], durations=[4], seed=1)[0]
+    assert not any(p["type"] == "model" for p in spec["props"])

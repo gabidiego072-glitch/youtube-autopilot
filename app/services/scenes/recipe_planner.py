@@ -10,6 +10,7 @@ from __future__ import annotations
 from app.content.profile import CHANNEL_CONCEPT
 from app.core.errors import ProviderError
 from app.services.ai.base import AIProvider
+from app.services.scenes.objects import design_object
 from app.services.scenes.recipes import (
     BUILDERS,
     ITEMS,
@@ -45,6 +46,7 @@ RECIPE_SCHEMA = {
                     "stat": {"type": "string"},
                     "trend": {"type": "string", "enum": list(TRENDS)},
                     "headline": {"type": "string"},
+                    "object": {"type": "string"},
                 },
                 "required": ["recipe", "threat", "time_of_day", "look", "people", "item", "stat", "trend"],
                 "additionalProperties": False,
@@ -75,6 +77,9 @@ water or food running out, kitchen; the river or the sea, waterfront; the whole 
 give something to someone, meet_person; a hospital, an office, a school, room_view with that room; people
 living on the street, people rough_sleepers; nobody left, people empty. A line with a number or a measurable
 result gets a stat (the number itself, e.g. "-40%") and a trend.
+If the line talks about a THING none of the above shows (a rocket, a dinosaur, a vending machine, a tent, a
+giant coin...), name it in object (English, 1-3 words) and it will be built for that scene; leave object empty
+otherwise. Never ask for people, cars, buildings, streets or rooms as an object: the recipes already have them.
 Never use the same recipe with the same choices in more than 2 scenes in a row: the picture must move on with
 the story."""
 
@@ -106,10 +111,34 @@ def plan_with_recipes(
     picks = result.data.get("scenes", [])
     if len(picks) != len(scenes):
         raise ProviderError(f"Recipe storyboard has {len(picks)} scenes; the script has {len(scenes)}.")
-    return assemble(picks, durations, seed=seed, city=city)
+    return assemble(picks, durations, seed=seed, city=city, objects=design_objects(provider, picks))
 
 
-def assemble(picks: list[dict], durations: list[float], *, seed: int, city: str) -> list[dict]:
+MAX_OBJECTS = 3  # designs per video (one AI call each)
+
+
+def design_objects(provider: AIProvider, picks: list[dict]) -> dict[str, dict]:
+    """Design every thing the storyboard asked for that the engine has no model of (a few per video)."""
+    names: list[str] = []
+    for pick in picks:
+        name = _object_name(pick.get("object"))
+        if name and name not in names:
+            names.append(name)
+    designs = {}
+    for name in names[:MAX_OBJECTS]:
+        design = design_object(provider, name)
+        if design is not None:
+            designs[name] = design
+    return designs
+
+
+def _object_name(value) -> str:
+    return " ".join(str(value or "").lower().split())[:40]
+
+
+def assemble(
+    picks: list[dict], durations: list[float], *, seed: int, city: str, objects: dict[str, dict] | None = None
+) -> list[dict]:
     """Build every scene from its recipe, with doors, flashes and shared places between scenes."""
     picks = [_clean(p) for p in picks]
     _striking_start(picks)
@@ -136,6 +165,7 @@ def assemble(picks: list[dict], durations: list[float], *, seed: int, city: str)
             subject=pick["subject"],
             stat=pick["stat"],
             trend=pick["trend"],
+            obj=(objects or {}).get(_object_name(pick.get("object"))),
         )
         if i:
             prev = picks[i - 1]
