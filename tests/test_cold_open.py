@@ -92,3 +92,18 @@ def test_qa_accepts_subtitles_shifted_by_the_opening(tmp_path):
         srt=tmp_path / "edit" / "subtitles.srt",
     )
     assert not any("subtitle" in p for p in result["problems"]), result["problems"]
+
+
+def test_the_title_number_stands_out_like_the_hand_made_cards():
+    from app.services.editing.assembler import _highlight_numbers
+
+    out = _highlight_numbers("subiera 100 metros?")
+    assert "100 METROS?" in out and "&HFFB01E&" in out and out.startswith("subiera ")
+    assert _highlight_numbers("sin números") == "sin números"
+
+
+def test_pov_scripts_are_written_like_the_hand_made_videos():
+    from app.services.styles import pov_script_note
+
+    note = pov_script_note("en")
+    assert "ONE LINE = ONE THING YOU SEE" in note and "+30 m" in note and "DAY 1/N" in note

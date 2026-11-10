@@ -104,6 +104,7 @@ def title_card(title: str, length: float, path: Path, portrait: bool = True) -> 
     if line:
         lines.append(line)
     end = f"0:00:{length + 0.4:05.2f}"
+    lines = [_highlight_numbers(line) for line in lines]
     path.write_text(
         "[Script Info]\nScriptType: v4.00+\n"
         f"PlayResX: {w}\nPlayResY: {h}\n\n"
@@ -118,6 +119,22 @@ def title_card(title: str, length: float, path: Path, portrait: bool = True) -> 
         encoding="utf-8",
     )
     return path
+
+
+def _highlight_numbers(line: str) -> str:
+    """The premise's number ("100 METROS", "1 AÑO") in big cyan, like the hand-made title cards."""
+    words = line.split()
+    out, i = [], 0
+    while i < len(words):
+        if any(ch.isdigit() for ch in words[i]):
+            unit = i + 1 < len(words) and words[i + 1].strip("?!.,¿¡").isalpha()
+            chunk = words[i] + (f" {words[i + 1]}" if unit else "")
+            i += 2 if " " in chunk else 1
+            out.append("{\\c&HFFB01E&\\fscx130\\fscy130}" + chunk.upper() + "{\\c&HFFFFFF&\\fscx100\\fscy100}")
+        else:
+            out.append(words[i])
+            i += 1
+    return " ".join(out)
 
 
 def subtitle_cues(scenes: list[EditScene], words_per_cue: int) -> list[dict]:
