@@ -13,6 +13,7 @@ from app.services.ai.base import AIProvider
 from app.services.scenes.objects import design_object
 from app.services.scenes.recipes import (
     BUILDERS,
+    HANDS,
     ITEMS,
     PEOPLE,
     RECIPE_GUIDE,
@@ -45,10 +46,11 @@ RECIPE_SCHEMA = {
                     "subject": {"type": "string", "enum": list(SUBJECTS)},
                     "stat": {"type": "string"},
                     "trend": {"type": "string", "enum": list(TRENDS)},
+                    "hands": {"type": "string", "enum": list(HANDS)},
                     "headline": {"type": "string"},
                     "object": {"type": "string"},
                 },
-                "required": ["recipe", "threat", "time_of_day", "look", "people", "item", "stat", "trend"],
+                "required": ["recipe", "threat", "time_of_day", "look", "people", "item", "stat", "trend", "hands"],
                 "additionalProperties": False,
             },
         }
@@ -141,6 +143,7 @@ def assemble(
 ) -> list[dict]:
     """Build every scene from its recipe, with doors, flashes and shared places between scenes."""
     picks = [_clean(p) for p in picks]
+    _ration_stats(picks)
     _striking_start(picks)
     seeds: dict[str, int] = {}
     specs = []
@@ -166,6 +169,7 @@ def assemble(
             stat=pick["stat"],
             trend=pick["trend"],
             obj=(objects or {}).get(_object_name(pick.get("object"))),
+            hands=pick["hands"],
         )
         if i:
             prev = picks[i - 1]
@@ -200,6 +204,21 @@ def _striking_start(picks: list[dict]) -> None:
         picks[0] = {**picks[0], "recipe": "street_watch", "people": "busy"}
 
 
+MAX_STATS = 3
+
+
+def _ration_stats(picks: list[dict]) -> None:
+    """Big 3D numbers are for real numbers, a few per video: the aging video put '+10' (the counter again)
+    in every scene and 'LOOP' at the end."""
+    kept, last = 0, None
+    for pick in picks:
+        stat = pick["stat"]
+        if not any(ch.isdigit() for ch in stat) or stat == last or kept >= MAX_STATS:
+            pick["stat"], pick["trend"] = "", "none"
+            continue
+        kept, last = kept + 1, stat
+
+
 def _clean(pick: dict) -> dict:
     out = dict(pick)
     if out.get("recipe") not in BUILDERS:
@@ -216,6 +235,7 @@ def _clean(pick: dict) -> dict:
         ("room", ROOMS, "office"),
         ("subject", SUBJECTS, "sitting"),
         ("trend", TRENDS, "none"),
+        ("hands", HANDS, "normal"),
     ):
         if out.get(key) not in allowed:
             out[key] = default

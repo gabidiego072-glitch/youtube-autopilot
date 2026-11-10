@@ -92,6 +92,14 @@ COLD_OPEN_SECONDS = 1.6
 _STRIKING = ("collapse", "fire", "flood", "surge", "fling", "inertia_shock", "shatter_windows", "fall")
 
 
+def scene_hud(scenes: list[dict], i: int) -> str:
+    """The counter of scene i; a word like 'LOOP' is not a counter: keep the previous one on screen."""
+    hud = (scenes[i].get("hud") or "").strip()
+    if any(w in hud.upper() for w in ("LOOP", "BUCLE")):
+        return scene_hud(scenes, i - 1) if i > 0 else ""
+    return hud
+
+
 def cold_open_scene(specs: list[dict], selected: list[int]) -> int | None:
     """The most striking scene to open the video with (a chase, a collapse, a fire...), never the first."""
 
@@ -217,7 +225,7 @@ def produce_short(
                 speech[i],
                 rebased,
                 effects,
-                script["scenes"][i].get("hud", ""),
+                scene_hud(script["scenes"], i),
             )
         )
     total = edit_scenes[-1].slot.start + edit_scenes[-1].slot.duration

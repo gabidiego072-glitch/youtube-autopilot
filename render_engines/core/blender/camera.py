@@ -40,7 +40,7 @@ def build_camera(scene: bpy.types.Scene, ctx: RenderContext, camera_spec: dict, 
 
     rig = None
     if camera_spec.get("pov"):
-        rig = _pov_rig(cam, camera_spec.get("pov_item"))
+        rig = _pov_rig(cam, camera_spec.get("pov_item"), camera_spec.get("pov_hands", "normal"))
         camera_spec.setdefault("handheld", 0.02)  # a person's head never holds perfectly still
     if camera_spec.get("handheld", 0) > 0:
         add_noise(cam, "location", strength=camera_spec["handheld"], scale=40)
@@ -99,7 +99,7 @@ def _animate_target(target_obj, ctx: RenderContext, shots: list[dict], timeline:
     set_interpolation(target_obj, "LINEAR")
 
 
-def _pov_rig(cam, item: str | None = None) -> None:
+def _pov_rig(cam, item: str | None = None, hands: str = "normal") -> None:
     """First-person view: the viewer's own arms and hands at the bottom of the frame, optionally holding
     a phone (glowing map screen) or a flashlight. Parented to the camera (local -Z is forward, +Y up)."""
     import math
@@ -112,6 +112,12 @@ def _pov_rig(cam, item: str | None = None) -> None:
     cam.data.clip_start = 0.02
     sleeve = materials.principled("pov_sleeve", "#2f3440", roughness=0.85)
     skin = materials.principled("pov_skin", "#d9a27e", roughness=0.55, subsurface=0.15)
+    if hands == "old":  # your own hands, aged: paler, wrinkled, with age spots
+        skin = _old_skin()
+    elif hands == "glow":  # a power: your hands shine
+        skin = materials.principled(
+            "pov_skin_glow", "#bfe9ff", roughness=0.4, emission="#5fd0ff", emission_strength=4.0
+        )
     holder = objects.empty("pov_arms", parent=cam)
     arms = {}
     for sx in (-1, 1):
@@ -208,6 +214,9 @@ def _pov_rig(cam, item: str | None = None) -> None:
 
         beam = lights.point("pov_beam", (0, 0, -0.25), "#fff1d0", 120.0, radius=0.05, parent=torch)
         beam.data.shadow_soft_size = 0.05
+    if hands != "normal":  # you raise your hands and look at them
+        holder.location = (0.0, 0.18, -0.06)
+        holder.rotation_euler = (math.radians(6), 0, 0)
     # Arms sway a little with breathing and steps.
     holder.keyframe_insert("location", frame=1)
     add_noise(holder, "location", strength=0.012, scale=18)
@@ -253,3 +262,33 @@ def _pov_motion(cam, rig: dict, ctx: RenderContext, running: bool, pushes: list,
         key(arm, "location", frame, (base[0] * 0.4, base[1] + 0.12, base[2] - 0.28))  # thrust into the frame
         key(arm, "location", frame + 7, base)
         key(arm, "rotation_euler", frame, (math.radians(28), 0, 0))
+
+
+def _old_skin():
+    """Aged skin for the viewer's hands: pale, blotchy (age spots) and creased (bump)."""
+    import bpy
+
+    from render_engines.core.colors import hex_to_linear
+
+    mat = bpy.data.materials.new("pov_skin_old")
+    mat.use_nodes = True
+    nodes, links = mat.node_tree.nodes, mat.node_tree.links
+    bsdf = nodes["Principled BSDF"]
+    bsdf.inputs["Roughness"].default_value = 0.7
+    spots = nodes.new("ShaderNodeTexNoise")
+    spots.inputs["Scale"].default_value = 60.0
+    ramp = nodes.new("ShaderNodeValToRGB")
+    ramp.color_ramp.elements[0].position = 0.55
+    ramp.color_ramp.elements[0].color = hex_to_linear("#d8bfa8")
+    ramp.color_ramp.elements[1].position = 0.7
+    ramp.color_ramp.elements[1].color = hex_to_linear("#8f6a4c")
+    links.new(spots.outputs["Fac"], ramp.inputs["Fac"])
+    links.new(ramp.outputs["Color"], bsdf.inputs["Base Color"])
+    creases = nodes.new("ShaderNodeTexWave")
+    creases.inputs["Scale"].default_value = 90.0
+    creases.inputs["Distortion"].default_value = 6.0
+    bump = nodes.new("ShaderNodeBump")
+    bump.inputs["Strength"].default_value = 0.6
+    links.new(creases.outputs["Fac"], bump.inputs["Height"])
+    links.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
+    return mat

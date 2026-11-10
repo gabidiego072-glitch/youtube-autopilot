@@ -41,6 +41,7 @@ PEOPLE = ("busy", "empty", "rough_sleepers")  # who is on the street
 ITEMS = ("none", "phone", "key", "cup", "flashlight")  # what you hold in your hand
 ROOMS = ("living_room", "kitchen", "bedroom", "office", "classroom", "cafe", "hospital")
 TRENDS = ("none", "up", "down")
+HANDS = ("normal", "old", "glow")  # how YOUR hands look (you aged, you have a power)
 SUBJECTS = ("sitting", "standing")
 # Recipes whose hands are free to hold something (the others already hold a phone, a cup or a torch).
 FREE_HANDS = {"street_watch", "meet_person", "room_view", "waterfront", "park"}
@@ -103,6 +104,7 @@ def build(
     stat: str = "",
     trend: str = "none",
     obj: dict | None = None,
+    hands: str = "normal",
 ) -> dict:
     """One full scene spec from a recipe. Unknown recipes fall back to street_watch.
 
@@ -126,6 +128,8 @@ def build(
     )
     if item in ITEMS and item != "none" and recipe in FREE_HANDS and spec["camera"].get("pov"):
         spec["camera"].setdefault("pov_item", item)
+    if hands in HANDS and hands != "normal" and spec["camera"].get("pov"):
+        spec["camera"]["pov_hands"] = hands
     if obj and obj.get("parts") and recipe != "meet_person":  # there the person you meet fills the view
         _add_object(spec, obj)
     if stat and stat.strip():
@@ -836,7 +840,9 @@ Extra choices for any scene (they put the story's OWN things on screen, use them
   along the wall; street_watch with threat none).
 - item: what YOU hold (key, phone, cup, flashlight, or none) in street_watch, meet_person, room_view,
   waterfront, park.
-- stat: when the line gives a number or a fact, at most 12 characters shown big in 3D ("-40%", "0", "x2"),
+- hands: how YOUR own hands look: normal, old (you aged), glow (a power).
+- stat: only when the narration itself says a number (at most 3 scenes per video, never the counter again),
+  at most 12 characters shown big in 3D ("-40%", "0", "x2"),
   in the narration's language; trend up or down adds a green or red arrow.
 Rules: keep the story a journey through few places (2-4 recipes in a video, repeat a recipe rather than jumping
 everywhere); start with the most striking recipe of the story when it fits; use look xray when physics changes

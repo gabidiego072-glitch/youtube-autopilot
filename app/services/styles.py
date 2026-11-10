@@ -30,7 +30,8 @@ POV_SCRIPT_NOTE = """STYLE: first-person POV ("what if it were YOU"), written li
 - Each scene's 'hud' is the on-screen counter. It measures what the premise changes, plus the clock: the sea
   level ("+30 m · 11:00"), the temperature, your speed, the people helped ("1/1000"), the days ({example}).
   It grows every line, short, in the narration's language. Time only moves forward; jump hours and days to
-  keep the pace. For a counter in days the first scene starts at {first}.
+  keep the pace. For a counter in days the first scene starts at {first}. Never write words like LOOP or END
+  in it: the last scene shows the final value.
 - Escalate every line: a bigger number, a new place or a stranger event; never two lines that show the same
   thing. Around two thirds in, one turn ("and the worst hasn't come yet"), then the most extreme image.
 - Name real places of the city in at least half of the lines (its streets, landmarks, the river, the metro).

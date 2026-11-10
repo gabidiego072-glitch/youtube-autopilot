@@ -141,3 +141,24 @@ def test_a_failed_design_leaves_the_scene_without_the_object():
     ai = StubAIProvider([{"scenes": [{**_pick("park"), "object": "dragon"}]}, {"height": 3, "parts": []}])
     spec = plan_with_recipes(ai, scenes=[{"narration": "Un dragón."}], durations=[4], seed=1)[0]
     assert not any(p["type"] == "model" for p in spec["props"])
+
+
+def test_stats_are_real_numbers_and_few():
+    """The aging video showed '+10' (the counter again) in every scene and 'LOOP' at the end."""
+    picks = [_pick("street_watch", stat=s) for s in ("+10", "+10", "+20", "LOOP", "+30", "+80")]
+    specs = assemble(picks, [3.0] * 6, seed=1, city="new_york")
+    shown = [next((p["text"] for p in s["props"] if p["id"] == "stat"), "") for s in specs]
+    assert shown == ["+10", "", "+20", "", "+30", ""]
+
+
+def test_your_own_hands_can_change():
+    spec = build("street_watch", 4.0, seed=1, hands="old")
+    assert spec["camera"]["pov_hands"] == "old"
+    assert "pov_hands" not in build("space", 4.0, seed=1, hands="glow")["camera"]
+
+
+def test_a_loop_word_is_not_a_counter():
+    from app.services.production.short import scene_hud
+
+    scenes = [{"hud": "AGE +10 · 08:00"}, {"hud": "AGE +80 · 06:00"}, {"hud": "AGE +80 · LOOP"}]
+    assert scene_hud(scenes, 2) == "AGE +80 · 06:00" and scene_hud(scenes, 0) == "AGE +10 · 08:00"
