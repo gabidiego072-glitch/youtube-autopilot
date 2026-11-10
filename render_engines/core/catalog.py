@@ -136,7 +136,8 @@ CAMERA = (
     "changes; continue the previous scene's place and camera), "
     "sfx [{type: whoosh|impact|rumble|wind|chime, at}] in scene seconds. First-person view: camera.pov true "
     "shows the viewer's own arms at the bottom of the frame (the viewer IS the protagonist): put the shots at eye "
-    "height (z 1.6) where the protagonist is, lens 22-28, and optionally pov_item phone|flashlight|cup|key; "
+    "height (z 1.6) where the protagonist is, lens 22-28, and optionally pov_item phone|flashlight|cup|key "
+    "and pov_hands normal|old|glow; "
     "pov_run true when running (bobbing view, pumping arms); "
     "pov_pushes [seconds] when your hand shoves someone (pair it with that person's 'fall')."
 )
