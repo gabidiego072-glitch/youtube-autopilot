@@ -93,6 +93,8 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
         prop = PROP_BUILDERS[p["type"]](p["id"], tuple(p["location"]), p.get("facing", 0), **params)
         props[p["id"]] = prop
         timeline.register(p["id"], tuple(p["location"]), focus_height=getattr(prop, "focus_height", 1.0))
+        if hasattr(prop, "animate_scene"):  # props that move on their own (a dinosaur walking, roaring)
+            prop.animate_scene(ctx, timeline)
 
     if urban is not None and env.get("pedestrians"):
         import random as _random

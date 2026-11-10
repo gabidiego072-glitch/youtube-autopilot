@@ -93,8 +93,29 @@ def clean_design(data: dict) -> dict | None:
     return {"height": height, "parts": parts} if len(parts) >= 2 else None
 
 
+# Hand-made models that beat any design from shapes: names that ask for them use them.
+LIBRARY = (
+    (("t-rex", "t rex", "trex", "tyrannosaur", "dinosaur", "raptor", "allosaur"), {"kind": "trex", "height": 4.5}),
+    (
+        ("brachiosaur", "sauropod", "long-neck", "long neck", "diplodocus", "brontosaur", "apatosaur"),
+        {"kind": "sauropod", "height": 12.0},
+    ),
+)
+
+
+def library_model(name: str) -> dict | None:
+    low = name.lower()
+    for words, model in LIBRARY:
+        if any(w in low for w in words):
+            return {"name": name, "library": "dinosaur", **model}
+    return None
+
+
 def design_object(provider: AIProvider, name: str) -> dict | None:
     """A shape design for `name`, or None if the AI fails (the scene then simply goes without it)."""
+    known = library_model(name)
+    if known is not None:
+        return known
     try:
         result = provider.generate_json(system=SYSTEM_PROMPT, prompt=f"Object: {name}", schema=OBJECT_SCHEMA)
     except Exception as exc:  # noqa: BLE001 - an object is a bonus; the video must not fail for it
