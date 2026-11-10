@@ -130,7 +130,9 @@ def build(
         spec["camera"].setdefault("pov_item", item)
     if hands in HANDS and hands != "normal" and spec["camera"].get("pov"):
         spec["camera"]["pov_hands"] = hands
-    if obj and obj.get("parts") and recipe != "meet_person":  # there the person you meet fills the view
+    if (
+        obj and (obj.get("parts") or obj.get("library")) and recipe != "meet_person"
+    ):  # there the person you meet fills the view
         _add_object(spec, obj)
     if stat and stat.strip():
         _add_stat(spec, duration, stat.strip(), trend if trend in TRENDS else "none")
@@ -665,16 +667,15 @@ def _add_object(spec: dict, obj: dict, side: float = 0.0) -> None:
         if abs(last["location"][1]) > 3.0:  # step off the sidewalk: lamp posts and trees hide the view
             last["location"] = [last["location"][0], math.copysign(2.4, last["location"][1]), last["location"][2]]
     facing = math.degrees(math.atan2(-dy, -dx)) - 90  # its front (+y) towards the camera
-    spec["props"].append(
-        {
-            "id": "obj",
-            "type": "model",
-            "location": [round(v, 3) for v in at],
-            "facing": round(facing, 1),
-            "height": round(height, 3),
-            "parts": obj["parts"],
-        }
-    )
+    prop = {"id": "obj", "location": [round(v, 3) for v in at], "facing": round(facing, 1), "height": round(height, 3)}
+    if obj.get("library") == "dinosaur":  # the hand-made, animated dinosaurs
+        prop.update(type="dinosaur", kind=obj["kind"])
+        if obj["kind"] == "trex" and env_type != "interior":
+            d = spec["duration_seconds"]
+            prop.update(roars=[round(d * 0.35, 3)])
+    else:
+        prop.update(type="model", parts=obj["parts"])
+    spec["props"].append(prop)
     spec["object_name"] = obj.get("name", "")
     if env_type != "space":  # the scene ends looking at it: big things are framed from below
         spec["camera"]["shots"][-1]["target"] = [round(at[0], 3), round(at[1], 3), round(at[2] + height * 0.45, 3)]

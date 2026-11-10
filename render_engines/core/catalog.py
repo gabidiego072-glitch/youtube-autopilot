@@ -75,6 +75,9 @@ PROPS = {
     "facing (deg, where the sitting person faces), seed.",
     "model": "any other object, built from simple shapes. Params: location [x,y,z] (base), facing (deg), "
     "height (m), parts [{shape box|sphere|cylinder|cone, size [x,y,z], at [x,y,z], rotation [deg], color, glow}].",
+    "dinosaur": "an animated dinosaur at real size: kind trex (12 m long, walks, roars with the jaw open) | "
+    "sauropod (long neck up to 12 m, feeds from the treetops). Params: location [x,y,0], facing (deg), "
+    "walk_to [x,y], walk_start, walk_end (s), roars [s...], feeds (sauropod).",
     "wind": "Wind streaks and flying leaves/rocks (meadow), still until a 'wind' action. Params: location "
     "[x,y,z] (centre), direction_deg (0 = towards +x / east), count, debris.",
 }

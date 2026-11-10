@@ -162,3 +162,19 @@ def test_a_loop_word_is_not_a_counter():
 
     scenes = [{"hud": "AGE +10 · 08:00"}, {"hud": "AGE +80 · 06:00"}, {"hud": "AGE +80 · LOOP"}]
     assert scene_hud(scenes, 2) == "AGE +80 · 06:00" and scene_hud(scenes, 0) == "AGE +10 · 08:00"
+
+
+def test_dinosaurs_use_the_hand_made_models():
+    from tests.conftest import StubAIProvider
+
+    ai = StubAIProvider(
+        [{"scenes": [{**_pick("street_watch"), "object": "T-rex"}, {**_pick("park"), "object": "Brachiosaurus"}]}]
+    )
+    specs = plan_with_recipes(
+        ai, scenes=[{"narration": "A T-rex."}, {"narration": "A long neck."}], durations=[5, 5], seed=1
+    )
+    assert len(ai.calls) == 1  # no shape design needed
+    rex = next(p for p in specs[0]["props"] if p["id"] == "obj")
+    assert rex["type"] == "dinosaur" and rex["kind"] == "trex" and rex["roars"]
+    assert next(p for p in specs[1]["props"] if p["id"] == "obj")["kind"] == "sauropod"
+    validate_spec(specs[0])

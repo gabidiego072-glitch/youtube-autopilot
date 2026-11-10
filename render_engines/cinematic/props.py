@@ -288,6 +288,12 @@ def model(name: str, location, facing_deg: float = 0.0, *, parts=(), height: flo
     return Model(name, root, focus_height=max(0.3, float(height) * 0.6))
 
 
+def _dinosaur(name, location, facing_deg=0.0, **params):
+    from render_engines.cinematic.dinosaurs import dinosaur
+
+    return dinosaur(name, location, facing_deg, **params)
+
+
 PROP_BUILDERS = {
     "door": door,
     "theater_entrance": theater_entrance,
@@ -296,4 +302,5 @@ PROP_BUILDERS = {
     "planet": _planet,
     "bedroll": bedroll,
     "model": model,
+    "dinosaur": lambda name, location, facing_deg=0.0, **params: _dinosaur(name, location, facing_deg, **params),
 }
