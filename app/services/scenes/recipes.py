@@ -34,6 +34,7 @@ RECIPES = (
     "space",
     "meet_person",
     "room_view",
+    "hand_action",
 )
 INDOOR = {"wake_up", "cafe_news", "dark_room", "kitchen", "theater", "room_view"}
 THREATS = ("none", "zombies", "panic", "fire", "flood", "collapse")
@@ -111,6 +112,7 @@ def build(
     trend: str = "none",
     obj: dict | None = None,
     hands: str = "normal",
+    screens: str = "",
 ) -> dict:
     """One full scene spec from a recipe. Unknown recipes fall back to street_watch.
 
@@ -127,15 +129,21 @@ def build(
         threat=threat,
         time_of_day=time_of_day,
         door_out=door_out,
-        headline=headline,
+        headline=headline or screens,
         people=people if people in PEOPLE else "busy",
         room=room if room in ROOMS else "office",
         subject=subject if subject in SUBJECTS else "sitting",
     )
     if item in ITEMS and item != "none" and recipe in FREE_HANDS and spec["camera"].get("pov"):
         spec["camera"].setdefault("pov_item", item)
+    if screens and screens.strip() and spec["environment"].get("type") in ("city", "coast"):
+        spec["environment"]["screens"] = screens.strip()[:28]  # the story on every screen of the street
     if hands in HANDS and hands != "normal" and spec["camera"].get("pov"):
         spec["camera"]["pov_hands"] = hands
+    if recipe == "hand_action" and not (obj and obj.get("parts")):  # always something for your hand to work
+        from app.services.scenes.objects import library_model
+
+        obj = library_model("button")
     if (
         obj and (obj.get("parts") or obj.get("library")) and recipe != "meet_person"
     ):  # there the person you meet fills the view
@@ -670,6 +678,21 @@ def _add_object(spec: dict, obj: dict, side: float = 0.0) -> None:
     loc, dx, dy = _view(spec)
     env_type = spec["environment"].get("type")
     height = float(obj.get("height", 1.0))
+    if spec.get("object_spot"):  # the recipe has a place for it (on the wall at hand height)
+        x, y, z, biggest = spec["object_spot"]
+        spec["props"].append(
+            {
+                "id": "obj",
+                "type": "model",
+                "location": [x, y, z],
+                "facing": 180,
+                "height": round(min(height, biggest), 3),
+                "parts": obj.get("parts") or [],
+                "lit": True,
+            }
+        )
+        spec["object_name"] = obj.get("name", "")
+        return
     if env_type == "interior":
         height = min(height, 2.0)
         dist, ground = 1.9, 0.0
@@ -800,6 +823,31 @@ def meet_person(d, *, rng, seed, city, threat, time_of_day, subject, people, **_
     return spec
 
 
+def hand_action(d, *, rng, seed, city, time_of_day, people, **_):
+    """You walk up to a thing on a wall (the object of the line: a fire alarm, a button, a tap, a lever) and your
+    hand works it: pull, press, open."""
+    env = _street_env(city, time_of_day, "none")
+    env.update(crowd_side="south", onlookers=0, crowd=40, traffic=4)
+    _people(env, people)
+    spec = _base(d, seed, env)
+    x = -14.0  # a stretch of wall with no bench, tree, lamp or terrace in front, in every city style
+    reach = round(max(1.0, d * 0.6), 3)
+    spec["object_spot"] = [x, 7.3, 0.95, 0.6]  # on the facade, at hand height; at most 60 cm
+    spec["camera"] = {
+        "pov": True,
+        "handheld": 0.015,
+        "fstop": 2.8,
+        "pov_reach": [reach],
+        "shots": [
+            _shot(0, (x - 4.0, 5.2, 1.65), (x, 7.3, 1.2), 24),
+            _shot(max(0.5, reach - 0.4), (x - 0.1, 6.35, 1.6), (x, 7.3, 1.15), 24),
+            _shot(d, (x - 0.05, 6.4, 1.58), (x, 7.3, 1.12), 26),
+        ],
+    }
+    spec["sfx"] = [*_bed("steps", 0.0, max(0.1, reach - 0.6), 0.55), {"type": "impact", "at": reach}]
+    return spec
+
+
 def room_view(d, *, rng, seed, room, people, threat, time_of_day, **_):
     """You stand in a room the story talks about (an office, a hospital ward, a classroom...) and look around."""
     env = {"type": "interior", "room": room, "time_of_day": time_of_day}
@@ -837,6 +885,7 @@ BUILDERS = {
     "space": space,
     "meet_person": meet_person,
     "room_view": room_view,
+    "hand_action": hand_action,
 }
 
 RECIPE_GUIDE = """Scene recipes (pick one per scene; the camera is always YOUR eyes):
@@ -856,6 +905,8 @@ RECIPE_GUIDE = """Scene recipes (pick one per scene; the camera is always YOUR e
 - meet_person: you walk along the sidewalk to ONE person (subject sitting = someone sleeping rough on cardboard
   against the wall; standing = anyone) who looks up at you; your hand reaches out to them (item key: you hand
   them a key) and they take it; a sitting person then stands up. For meeting, helping or giving someone something.
+- hand_action: you walk to a thing on a wall and YOUR HAND works it (name it in object: fire alarm, button, tap,
+  lever, or anything else): you pull the alarm, press the button, open the tap.
 - room_view: you stand in a room the line talks about (room: office, hospital, classroom, living_room, bedroom,
   kitchen, cafe); people empty = nobody there.
 Extra choices for any scene (they put the story's OWN things on screen, use them):
@@ -864,6 +915,8 @@ Extra choices for any scene (they put the story's OWN things on screen, use them
 - item: what YOU hold (key, phone, cup, flashlight, or none) in street_watch, meet_person, room_view,
   waterfront, park.
 - hands: how YOUR own hands look: normal, old (you aged), glow (a power).
+- screens: 1-4 words the whole city shows on its billboards and screens when the story is public news
+  ("WANTED $1,000,000,000", "NO HAY AGUA", "EVACUATE"), in the narration's language; empty otherwise.
 - stat: only when the narration itself says a number (at most 3 scenes per video, never the counter again),
   at most 12 characters shown big in 3D ("-40%", "0", "x2"),
   in the narration's language; trend up or down adds a green or red arrow.

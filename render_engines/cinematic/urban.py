@@ -691,6 +691,18 @@ def build_city(env: dict, ctx, scene, seed: int) -> Urban:
             )
         urban.loose.append((c, 1200.0))
 
+    from render_engines.cinematic import texts
+
+    if texts.SCREEN and style != "new_york":  # the story on big screens, also where streets have no billboards
+        from render_engines.cinematic import ads
+
+        for k, x in enumerate((-44.0, -32.0, -20.0, -6.0, 8.0, 22.0, 36.0, 50.0)):
+            for side in (1, -1):
+                if (coast and side < 0) or (k + (side < 0)) % 2:
+                    continue
+                at = (x, side * (BUILDING_LINE - 1.6), 6.5)
+                holder = ads.billboard(f"story_screen_{k}_{side}", at, 7.0, 4.0, side, ads.story, col)
+                holder.rotation_euler[2] += -side * math.radians(40)  # turned towards someone looking up the street
     if style in FAMOUS_CITIES:
         from render_engines.cinematic import cities
 
@@ -845,7 +857,7 @@ def _street_details(urban, env, length, style, rng, col, coast) -> None:
 
 def _billboards(urban: Urban, name: str, x0: float, width: float, side: int, height: float, rng, col) -> None:
     """Times Square: stacked glowing billboards with modelled icons and bold text on the street side."""
-    from render_engines.cinematic import ads
+    from render_engines.cinematic import ads, texts
 
     face_y = side * (BUILDING_LINE - 0.08)
     level = 4.0
@@ -858,9 +870,11 @@ def _billboards(urban: Urban, name: str, x0: float, width: float, side: int, hei
         center = (cx, face_y, level + h / 2)
         if rng.random() < 0.4:  # a screen that changes every 2-3 seconds
             picks = rng.sample(ads.DESIGNS, 3)
+            if texts.SCREEN:  # it keeps coming back to the story
+                picks = [ads.story, picks[0], ads.story, ads.story]
             ads.switching_billboard(f"{name}_{k}", center, w, h, side, picks, rng.randint(48, 76), col=col)
         else:
-            ads.billboard(f"{name}_{k}", center, w, h, side, rng.choice(ads.DESIGNS), col)
+            ads.billboard(f"{name}_{k}", center, w, h, side, ads.designs_for_scene(rng), col)
         level += h + rng.uniform(0.5, 1.5)
 
 

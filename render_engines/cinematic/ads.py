@@ -213,7 +213,37 @@ def breaking(name, w, h, parent, col):
     return "#0b1d3a"
 
 
+def story(name, w, h, parent, col):
+    """The story on the city's screens: its text huge, like a public alert (one or two lines)."""
+    body = texts.SCREEN.upper()
+    if len(body) > 12 and "\n" not in body:
+        words = body.split()
+        half = max(1, len(words) // 2)
+        body = " ".join(words[:half]) + "\n" + " ".join(words[half:])
+    bar = glow("ad_story_bar", "#d7141a", 2.4)
+    _icon(
+        f"{name}_bars",
+        [
+            (objects.transform(objects.box(w * 0.96, 0.04, h * 0.08), Matrix.Translation((0, -0.1, h * 0.42))), bar),
+            (objects.transform(objects.box(w * 0.96, 0.04, h * 0.08), Matrix.Translation((0, -0.1, -h * 0.42))), bar),
+        ],
+        parent,
+        col,
+    )
+    lines = body.count("\n") + 1
+    size = min(h * (0.42 if lines == 1 else 0.3), w * 2.1 / max(4, max(len(t) for t in body.split("\n"))))
+    text(f"{name}_story", body, (0, -0.13, 0), size, "#ffe14d", parent, col, 3.2)
+    return "#0a0a10"
+
+
 DESIGNS = (burger, musical, alert, news, face, soda)
+
+
+def designs_for_scene(rng):
+    """Screens of this street: with a story text, most of them show it (the whole city talks about it)."""
+    if texts.SCREEN and rng.random() < 0.85:
+        return story
+    return rng.choice(DESIGNS)
 
 
 def switching_billboard(

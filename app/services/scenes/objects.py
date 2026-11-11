@@ -103,11 +103,85 @@ LIBRARY = (
 )
 
 
+RED, WHITE, STEEL, DARK = "#c4161c", "#f2f2f2", "#b8bcc2", "#2b2d33"
+# Small things your hand works (hand_action), built by hand from shapes: base at z=0, front = +y.
+HAND_THINGS = (
+    (
+        ("fire alarm", "alarm"),
+        {
+            "height": 0.34,
+            "parts": [
+                {"shape": "box", "size": [0.26, 0.08, 0.34], "at": [0, 0, 0.17], "color": RED},
+                {"shape": "box", "size": [0.2, 0.02, 0.07], "at": [0, 0.045, 0.27], "color": WHITE},
+                {"shape": "box", "size": [0.14, 0.07, 0.05], "at": [0, 0.07, 0.14], "color": WHITE},
+                {"shape": "box", "size": [0.16, 0.02, 0.04], "at": [0, 0.045, 0.06], "color": WHITE},
+            ],
+        },
+    ),
+    (
+        ("button",),
+        {
+            "height": 0.32,
+            "parts": [
+                {"shape": "box", "size": [0.32, 0.08, 0.32], "at": [0, 0, 0.16], "color": "#ffd23f"},
+                {
+                    "shape": "cylinder",
+                    "size": [0.2, 0.2, 0.08],
+                    "at": [0, 0.07, 0.16],
+                    "rotation": [90, 0, 0],
+                    "color": DARK,
+                },
+                {"shape": "sphere", "size": [0.17, 0.12, 0.17], "at": [0, 0.12, 0.16], "color": RED, "glow": 1.5},
+            ],
+        },
+    ),
+    (
+        ("tap", "faucet", "sink"),
+        {
+            "height": 0.35,
+            "parts": [
+                {"shape": "box", "size": [0.5, 0.35, 0.06], "at": [0, 0.15, 0.03], "color": WHITE},
+                {"shape": "cylinder", "size": [0.05, 0.05, 0.3], "at": [0, 0.0, 0.18], "color": STEEL},
+                {
+                    "shape": "cylinder",
+                    "size": [0.045, 0.045, 0.22],
+                    "at": [0, 0.1, 0.32],
+                    "rotation": [90, 0, 0],
+                    "color": STEEL,
+                },
+                {"shape": "cylinder", "size": [0.04, 0.04, 0.08], "at": [0, 0.2, 0.28], "color": STEEL},
+                {"shape": "box", "size": [0.16, 0.03, 0.03], "at": [0, 0.0, 0.34], "color": STEEL},
+            ],
+        },
+    ),
+    (
+        ("lever", "switch", "breaker"),
+        {
+            "height": 0.5,
+            "parts": [
+                {"shape": "box", "size": [0.3, 0.1, 0.4], "at": [0, 0, 0.2], "color": "#5c6066"},
+                {
+                    "shape": "cylinder",
+                    "size": [0.04, 0.04, 0.3],
+                    "at": [0, 0.12, 0.33],
+                    "rotation": [-35, 0, 0],
+                    "color": STEEL,
+                },
+                {"shape": "sphere", "size": [0.08, 0.08, 0.08], "at": [0, 0.2, 0.46], "color": RED},
+            ],
+        },
+    ),
+)
+
+
 def library_model(name: str) -> dict | None:
     low = name.lower()
     for words, model in LIBRARY:
         if any(w in low for w in words):
             return {"name": name, "library": "dinosaur", **model}
+    for words, design in HAND_THINGS:
+        if any(w in low for w in words):
+            return {"name": name, **design}
     return None
 
 

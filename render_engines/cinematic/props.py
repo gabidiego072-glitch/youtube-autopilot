@@ -245,7 +245,9 @@ MODEL_SHAPES = ("box", "sphere", "cylinder", "cone")
 MAX_MODEL_PARTS = 60
 
 
-def model(name: str, location, facing_deg: float = 0.0, *, parts=(), height: float = 1.0, **_) -> Model:
+def model(
+    name: str, location, facing_deg: float = 0.0, *, parts=(), height: float = 1.0, lit: bool = False, **_
+) -> Model:
     """Any object the engine has no hand-made model for (a rocket, a dinosaur, a bus stop), designed by the AI
     from simple shapes: parts [{shape box|sphere|cylinder|cone, size [x,y,z], at [x,y,z], rotation [deg x,y,z],
     color, glow}], in metres, +Y = its front, base at z=0. It is scaled to `height` metres and stands at
@@ -285,6 +287,17 @@ def model(name: str, location, facing_deg: float = 0.0, *, parts=(), height: flo
         obj.parent = root
         k = max(0.01, float(height)) / max(0.05, top)
         root.scale = (k, k, k)
+    if lit:  # a small light in front of it, so a thing on a shaded wall still reads
+        from render_engines.core.blender import lights
+
+        lights.point(
+            f"{name}_light",
+            (0, 0.9, float(height) * 0.6 / max(root.scale[0], 0.01)),
+            "#fff4e0",
+            60.0,
+            radius=0.2,
+            parent=root,
+        )
     return Model(name, root, focus_height=max(0.3, float(height) * 0.6))
 
 

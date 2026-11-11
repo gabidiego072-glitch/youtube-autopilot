@@ -178,3 +178,23 @@ def test_dinosaurs_use_the_hand_made_models():
     assert rex["type"] == "dinosaur" and rex["kind"] == "trex" and rex["roars"]
     assert next(p for p in specs[1]["props"] if p["id"] == "obj")["kind"] == "sauropod"
     validate_spec(specs[0])
+
+
+def test_your_hand_works_the_thing_the_line_talks_about():
+    """'So you pull the fire alarm': the hand reaches a fire alarm on the wall, lit, and stays on it."""
+    from app.services.scenes.objects import library_model
+
+    spec = build("hand_action", 4.0, seed=2, city="new_york", obj=library_model("fire alarm"))
+    validate_spec(spec)
+    thing = next(p for p in spec["props"] if p["id"] == "obj")
+    assert thing["type"] == "model" and thing["lit"] and thing["location"][2] == 0.95
+    assert spec["camera"]["pov_reach"]
+    plain = build("hand_action", 4.0, seed=2)  # nothing named: a big button, never an empty wall
+    assert any(p["id"] == "obj" for p in plain["props"])
+
+
+def test_the_story_is_on_every_screen():
+    spec = build("street_watch", 4.0, seed=3, city="paris", screens="WANTED $1,000,000,000")
+    assert spec["environment"]["screens"] == "WANTED $1,000,000,000"
+    news = build("cafe_news", 4.0, seed=3, screens="NO HAY AGUA")  # the café TV shows it too
+    assert "NO HAY AGUA" in str(news)
