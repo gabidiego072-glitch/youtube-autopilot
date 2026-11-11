@@ -24,8 +24,8 @@ class StubAIProvider:
         self.responses = list(responses or [])
         self.calls: list[dict] = []
 
-    def generate_json(self, *, system: str, prompt: str, schema: dict) -> GenerationResult:
-        self.calls.append({"system": system, "prompt": prompt, "schema": schema})
+    def generate_json(self, *, system: str, prompt: str, schema: dict, images=None) -> GenerationResult:
+        self.calls.append({"system": system, "prompt": prompt, "schema": schema, "images": images or []})
         return GenerationResult(data=self.responses.pop(0), provider=self.name, model=self.model)
 
 
@@ -37,6 +37,7 @@ def make_settings(**overrides) -> Settings:
         "planned_topics_enabled": False,
         "default_style": "classic",
         "recipes_enabled": False,
+        "scene_check_enabled": False,
     }
     return Settings(_env_file=None, **{**base, **overrides})
 

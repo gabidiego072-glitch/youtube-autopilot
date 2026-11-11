@@ -38,6 +38,7 @@ class Blender:
         threads: int = 0,
         resume: bool = False,
         motion_blur: bool = True,
+        stills: list[float] | None = None,
     ) -> list[str]:
         cmd = [
             self.binary,
@@ -70,7 +71,23 @@ class Blender:
             cmd.append("--resume")
         if not motion_blur:
             cmd.append("--no-motion-blur")
+        if stills:
+            cmd += ["--stills", ",".join(f"{f:.3f}" for f in stills)]
         return cmd
+
+    def render_stills(self, spec_path: Path, out_dir: Path, fractions, *, aspect: str = "9:16") -> list[Path]:
+        """A few small frames of a scene (to check it shows what the narration says) in seconds, not minutes."""
+        out_dir.mkdir(parents=True, exist_ok=True)
+        for old in out_dir.glob("still_*.png"):
+            old.unlink()
+        cmd = self.build_command(
+            spec_path, out_dir, aspect=aspect, quality="draft", scale=0.25, samples=6, stills=list(fractions)
+        )
+        try:
+            subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=600, check=False)
+        except subprocess.TimeoutExpired as exc:
+            raise RenderError("Blender took too long to render the check frames.") from exc
+        return sorted(p for p in out_dir.glob("still_*.png") if p.stat().st_size > 0)
 
     def render_frames(
         self, spec_path: Path, frames_dir: Path, *, log_path: Path | None = None, **options

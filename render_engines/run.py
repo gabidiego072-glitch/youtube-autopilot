@@ -32,6 +32,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--threads", type=int, default=0, help="CPU threads (0 = all)")
     parser.add_argument("--resume", action="store_true", help="keep frames that already exist (resume a render)")
     parser.add_argument("--no-motion-blur", action="store_true", help="disable motion blur (faster previews)")
+    parser.add_argument("--stills", help="only these moments, as fractions of the scene (e.g. 0.5,0.9): still_N.png")
     return parser.parse_args(argv)
 
 
@@ -67,6 +68,14 @@ def main() -> None:
     def on_frame(scn, _depsgraph=None):
         print(f"[autopilot] frame {scn.frame_current}/{scn.frame_end} ({time.time() - started:.0f}s)", flush=True)
 
+    if args.stills:  # a few frames to check the scene (what the viewer will see), not the whole clip
+        scene.render.use_motion_blur = False
+        for n, frac in enumerate(float(f) for f in args.stills.split(",")):
+            scene.frame_set(max(scene.frame_start, min(scene.frame_end, round(scene.frame_end * frac))))
+            scene.render.filepath = str(Path(args.frames_dir).resolve() / f"still_{n}.png")
+            bpy.ops.render.render(write_still=True)
+        print(f"[autopilot] stills done in {time.time() - started:.1f}s", flush=True)
+        return
     bpy.app.handlers.render_post.append(on_frame)
     render_animation()
     print(f"[autopilot] done in {time.time() - started:.1f}s", flush=True)

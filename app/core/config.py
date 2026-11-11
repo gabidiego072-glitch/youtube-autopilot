@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     # videos were made by hand; "classic" + recipes off = the older third-person, AI-placed storyboard.
     default_style: str = "pov"
     recipes_enabled: bool = True
+    scene_check_enabled: bool = True  # look at every scene before the render: does it show what the voice says?
     gemini_timeout_seconds: float = 300.0
 
     # --- AI provider: Claude (Anthropic), optional and paid -----------------

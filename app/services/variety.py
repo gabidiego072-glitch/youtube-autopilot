@@ -34,6 +34,8 @@ class RecentVideos:
     categories: list[str] = field(default_factory=list)  # newest first
     environments: Counter = field(default_factory=Counter)
     times_of_day: Counter = field(default_factory=Counter)
+    recipes: Counter = field(default_factory=Counter)  # scene recipes and choices the last videos used
+    objects: list[str] = field(default_factory=list)
 
     def script_note(self) -> str | None:
         if not self.titles:
@@ -42,6 +44,19 @@ class RecentVideos:
         return (
             "Recent videos on this channel (do NOT reuse their wording, hook structure or ending question; "
             "this video must feel clearly different):\n" + "\n".join(lines)
+        )
+
+    def recipe_note(self) -> str | None:
+        """For the recipe director: what the last videos already showed, so this one shows something else."""
+        if not self.recipes:
+            return None
+        used = ", ".join(f"{k} x{v}" for k, v in self.recipes.most_common())
+        note = f"NOVELTY: the last videos of this channel already showed: {used}."
+        if self.objects:
+            note += f" Objects already built: {', '.join(sorted(set(self.objects)))}."
+        return note + (
+            " Viewers notice repeats: use those recipes only where the line really needs them, prefer the ones "
+            "not listed (or other choices of people, room, time of day, item, hands), and add one new object."
         )
 
     def storyboard_note(self) -> str | None:
@@ -76,6 +91,16 @@ def recent_videos(db: Session, channel_id: uuid.UUID, limit: int = RECENT) -> Re
             detail = env.get("room") or env.get("style")
             recent.environments[f"{place}/{detail}" if detail else place] += 1
             recent.times_of_day[env.get("time_of_day", "day")] += 1
+            if spec.get("recipe"):
+                pick = spec.get("pick") or {}
+                key = spec["recipe"]
+                if key == "room_view" and pick.get("room"):
+                    key += f"/{pick['room']}"
+                if pick.get("people") not in (None, "busy"):
+                    key += f"/{pick['people']}"
+                recent.recipes[key] += 1
+            if spec.get("object_name"):
+                recent.objects.append(spec["object_name"])
     return recent
 
 

@@ -20,6 +20,8 @@ class AIProvider(Protocol):
     name: str
     model: str
 
-    def generate_json(self, *, system: str, prompt: str, schema: dict[str, Any]) -> GenerationResult:
-        """Return an object that matches `schema` (JSON Schema)."""
+    def generate_json(
+        self, *, system: str, prompt: str, schema: dict[str, Any], images: list[bytes] | None = None
+    ) -> GenerationResult:
+        """Return an object that matches `schema` (JSON Schema). `images` (PNG) are shown to the model."""
         ...
