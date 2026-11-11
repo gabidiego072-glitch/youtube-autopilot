@@ -8,6 +8,7 @@ same recipe reuse the same seed, so it is the same street or room.
 from __future__ import annotations
 
 import json
+import re
 
 from app.content.profile import CHANNEL_CONCEPT
 from app.core.errors import ProviderError
@@ -26,6 +27,7 @@ from app.services.scenes.recipes import (
     TRENDS,
     build,
 )
+from app.services.scripts.beats import beats_for
 from render_engines.core.spec import SpecError, validate_spec
 
 DOOR_EXITS = {"wake_up", "cafe_news", "street_run"}  # recipes that can end by opening a door
@@ -107,18 +109,75 @@ def plan_with_recipes(
     seed: int,
     city: str = "new_york",
     notes: str | None = None,
+    split: bool = True,
 ) -> list[dict]:
+    """One spec per narration line. With `split`, every line is cut into beats (one per sentence or clause) and
+    each beat gets its own scene: the line's spec then holds them in `parts`, played one after the other."""
     if len(scenes) != len(durations):
         raise ValueError("One duration per scene is required.")
+    beats = _beats(scenes, split)
+    beat_durations = [durations[b["line"]] * b["share"] for b in beats]
+    picks = _ask(provider, beats, beat_durations, city, notes)
+    return _by_line(picks, beats, beat_durations, seed=seed, city=city, provider=provider, lines=len(scenes))
+
+
+def _beats(scenes: list[dict], split: bool) -> list[dict]:
+    if not split:
+        return [
+            {
+                "line": i,
+                "narration": s.get("narration", ""),
+                "share": 1.0,
+                "hud": s.get("hud", ""),
+                "visual": s.get("visual", ""),
+            }
+            for i, s in enumerate(scenes)
+        ]
+    return beats_for(scenes)
+
+
+def _ask(provider, beats, beat_durations, city, notes, extra: str = "") -> list[dict]:
     prompt = f"City of this video: {city}.\n\nScenes (index, length, counter, narration, what it shows):\n"
-    prompt += _scene_list(scenes, durations)
+    prompt += _scene_list(beats, beat_durations)
+    if any(b["share"] < 1.0 for b in beats):
+        prompt += (
+            "\n\nScenes that are pieces of the same sentence follow each other in one shot of the voice: give "
+            "each piece its OWN picture of what that piece says (another recipe, place or choice), never the "
+            "same scene twice in a row."
+        )
+    if extra:
+        prompt += extra
     if notes:
         prompt += f"\n\n{notes}"
     result = provider.generate_json(system=SYSTEM_PROMPT, prompt=prompt, schema=RECIPE_SCHEMA)
     picks = result.data.get("scenes", [])
-    if len(picks) != len(scenes):
-        raise ProviderError(f"Recipe storyboard has {len(picks)} scenes; the script has {len(scenes)}.")
-    return assemble(picks, durations, seed=seed, city=city, objects=design_objects(provider, picks))
+    if len(picks) != len(beats):
+        raise ProviderError(f"Recipe storyboard has {len(picks)} scenes; the script has {len(beats)}.")
+    return picks
+
+
+def _by_line(picks, beats, beat_durations, *, seed, city, provider, lines) -> list[dict]:
+    specs = assemble(picks, beat_durations, seed=seed, city=city, objects=design_objects(provider, picks))
+    out = []
+    for i in range(lines):
+        idx = [k for k, b in enumerate(beats) if b["line"] == i]
+        parts = [specs[k] for k in idx]
+        line = dict(parts[0])
+        line["beats"] = [
+            {"narration": beats[k]["narration"], "share": beats[k]["share"], "pick": specs[k].get("pick", {})}
+            for k in idx
+        ]
+        if len(parts) > 1:
+            line["parts"] = [{k: v for k, v in p.items() if k != "transition"} for p in parts]
+            line["shares"] = [beats[k]["share"] for k in idx]
+            sfx, start = [], 0.0
+            for part in parts:  # the line's sounds, each at its moment in the line
+                sfx += [{**e, "at": round(e["at"] + start, 3)} for e in part.get("sfx", [])]
+                start += part["duration_seconds"]
+            line["sfx"] = sfx
+            line["duration_seconds"] = round(start, 3)
+        out.append(line)
+    return out
 
 
 def replan(
@@ -132,27 +191,38 @@ def replan(
     city: str = "new_york",
     notes: str | None = None,
 ) -> list[dict]:
-    """Plan again the scenes that do not show their line (feedback: what the check saw and what is missing),
-    keeping every other scene as it is."""
-    picks = [dict(s.get("pick") or {}) for s in specs]
-    prompt = f"City of this video: {city}.\n\nScenes (index, length, counter, narration, what it shows):\n"
-    prompt += _scene_list(scenes, durations)
-    prompt += "\n\nCurrent choices per scene:\n" + "\n".join(f"{i}. {json.dumps(p)}" for i, p in enumerate(picks))
-    prompt += (
+    """Plan again the lines whose scenes do not show what they say (feedback: what the check saw and what is
+    missing), keeping every other line's scenes as they are."""
+    beats, picks = [], []
+    for i, spec in enumerate(specs):
+        for b in spec.get("beats") or [
+            {"narration": scenes[i].get("narration", ""), "share": 1.0, "pick": spec.get("pick") or {}}
+        ]:
+            beats.append(
+                {
+                    "line": i,
+                    "narration": b["narration"],
+                    "share": b["share"],
+                    "hud": scenes[i].get("hud", ""),
+                    "visual": scenes[i].get("visual", ""),
+                }
+            )
+            picks.append(dict(b.get("pick") or {}))
+    beat_durations = [durations[b["line"]] * b["share"] for b in beats]
+    current = "\n\nCurrent choices per scene:\n" + "\n".join(f"{k}. {json.dumps(p)}" for k, p in enumerate(picks))
+    redo = sorted(k for k, b in enumerate(beats) if b["line"] in feedback)
+    extra = current + (
         "\n\nA reviewer looked at these scenes and they do NOT show what their line says. Choose again for every "
         "scene (return all of them, keep the others as they are), so the viewer SEES the line: another recipe, "
         "people, item, room, stat or an object to build.\n"
-        + "\n".join(f"Scene {i}: {text}" for i, text in sorted(feedback.items()))
+        + "\n".join(
+            f"Scenes {[k for k in redo if beats[k]['line'] == i]}: {text}" for i, text in sorted(feedback.items())
+        )
     )
-    if notes:
-        prompt += f"\n\n{notes}"
-    result = provider.generate_json(system=SYSTEM_PROMPT, prompt=prompt, schema=RECIPE_SCHEMA)
-    fresh = result.data.get("scenes", [])
-    if len(fresh) != len(picks):
-        raise ProviderError("The new storyboard does not have one choice per scene.")
-    for i in feedback:
-        picks[i] = fresh[i]
-    return assemble(picks, durations, seed=seed, city=city, objects=design_objects(provider, picks))
+    fresh = _ask(provider, beats, beat_durations, city, notes, extra)
+    for k in redo:
+        picks[k] = fresh[k]
+    return _by_line(picks, beats, beat_durations, seed=seed, city=city, provider=provider, lines=len(specs))
 
 
 MAX_OBJECTS = 3  # designs per video (one AI call each)
@@ -186,6 +256,7 @@ def assemble(
     _limit_space(picks, durations)
     _striking_start(picks)
     seeds: dict[str, int] = {}
+    takes: dict[str, int] = {}  # how many times each place was already shown: every take is framed anew
     specs = []
     for i, (pick, duration) in enumerate(zip(picks, durations, strict=True)):
         recipe = pick["recipe"]
@@ -210,8 +281,10 @@ def assemble(
             trend=pick["trend"],
             obj=(objects or {}).get(_object_name(pick.get("object"))),
             hands=pick["hands"],
+            take=takes.get(recipe, 0),
             screens=pick.get("screens", ""),
         )
+        takes[recipe] = takes.get(recipe, 0) + 1
         spec["pick"] = dict(pick)  # what the director chose, to plan this scene again if it fails the check
         if i:
             prev = picks[i - 1]
@@ -273,7 +346,8 @@ def _ration_stats(picks: list[dict]) -> None:
     kept, last = 0, None
     for pick in picks:
         stat = pick["stat"]
-        if not any(ch.isdigit() for ch in stat) or stat == last or kept >= MAX_STATS:
+        clock = re.fullmatch(r"\d{1,2}\s*[:.h]\s*\d{2}", stat)  # "08:00" is the counter's time, not a fact
+        if not any(ch.isdigit() for ch in stat) or clock or stat == last or kept >= MAX_STATS:
             pick["stat"], pick["trend"] = "", "none"
             continue
         kept, last = kept + 1, stat

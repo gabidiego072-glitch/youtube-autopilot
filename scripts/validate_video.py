@@ -11,7 +11,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.services.qa.video import check_video  # noqa: E402
+from app.core.config import get_settings  # noqa: E402
+from app.services.qa.video import QAError, check_video  # noqa: E402
 
 
 def main() -> int:
@@ -19,7 +20,12 @@ def main() -> int:
     parser.add_argument("video", type=Path)
     parser.add_argument("--frames", type=int, default=8)
     args = parser.parse_args()
-    result = check_video(args.video, args.frames)
+    settings = get_settings()
+    try:
+        result = check_video(args.video, args.frames, ffmpeg=settings.ffmpeg_binary, ffprobe=settings.ffprobe_binary)
+    except QAError as exc:
+        print(f"QA could not analyse the video: {exc}", file=sys.stderr)
+        return 2
     args.video.with_suffix(".qa.json").write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return 0 if result["passed"] else 1

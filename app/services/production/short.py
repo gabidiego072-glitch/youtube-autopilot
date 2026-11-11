@@ -135,6 +135,19 @@ def _timed_spec(spec: dict, slot, seed: int, mode: RenderMode) -> dict:
     timed = retime(full, slot.duration)
     timed["duration_seconds"] = round(slot.clip_length, 4)
     timed["motion_blur"] = bool(spec.get("motion_blur", False) and mode.motion_blur)
+    if spec.get("parts"):  # one sub-scene per beat of the line, each retimed to its share of the voice
+        shares = spec.get("shares") or [1 / len(spec["parts"])] * len(spec["parts"])
+        total = sum(shares) or 1.0
+        timed_parts = []
+        for j, (part, share) in enumerate(zip(spec["parts"], shares, strict=True)):
+            length = slot.duration * share / total
+            part_full = {"engine": "cinematic", "fps": 24, "seed": seed, "motion_blur": False, **part}
+            piece = retime(part_full, length)
+            if j == len(shares) - 1:  # the last piece also covers the transition into the next line
+                piece["duration_seconds"] = round(length + slot.clip_length - slot.duration, 4)
+            piece["motion_blur"] = timed["motion_blur"]
+            timed_parts.append(piece)
+        timed["parts"] = timed_parts
     return timed
 
 
@@ -332,6 +345,10 @@ def render_clip(
         return output, 0.0
     log(f"[produce] scene {index}: {slot.clip_length:.2f}s ({mode.name})")
     t0 = time.monotonic()
+    if timed.get("parts"):
+        _render_parts(timed, spec_path, output, aspect, mode, blender, ffmpeg, threads, out_dir, index)
+        _stamp(output, key)
+        return output, round(time.monotonic() - t0, 1)
     render_scene_video(
         spec_path,
         output,
@@ -346,6 +363,30 @@ def render_clip(
     )
     _stamp(output, key)
     return output, round(time.monotonic() - t0, 1)
+
+
+def _render_parts(timed, spec_path, output, aspect, mode, blender, ffmpeg, threads, out_dir, index) -> None:
+    """A line made of several beats: every sub-scene is rendered on its own, then they are cut together."""
+    work = out_dir / mode.name / "work" / f"scene_{index:02d}"
+    pieces = []
+    for j, part in enumerate(timed["parts"]):
+        part_spec = spec_path.with_name(f"scene_{index:02d}_part{j}.json")
+        part_spec.write_text(json.dumps(part, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
+        piece = work / f"part_{j}.mp4"
+        render_scene_video(
+            part_spec,
+            piece,
+            blender=blender,
+            ffmpeg=ffmpeg,
+            aspect=aspect,
+            quality=mode.quality,
+            subtitles=False,
+            threads=threads,
+            motion_blur=part["motion_blur"],
+            work_dir=work / f"part_{j}",
+        )
+        pieces.append(piece)
+    ffmpeg.concat_clips(pieces, output)
 
 
 def shard_scenes(count: int, shard: int, shards: int) -> list[int]:

@@ -51,6 +51,7 @@ def publish(project_id: uuid.UUID, db: DbSession, settings: SettingsDep, privacy
         privacy=privacy or PrivacyStatus(settings.youtube_default_privacy),
         thumbnail_path=thumb,
         comment=metadata.pinned_comment,
+        language=project.language,
     )
     publisher.check_privacy(request)
     job = PublishJob(project_id=project.id, metadata_id=metadata.id, privacy=request.privacy)
