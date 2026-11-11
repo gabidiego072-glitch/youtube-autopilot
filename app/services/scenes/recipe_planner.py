@@ -87,6 +87,9 @@ result gets a stat (the number itself, e.g. "-40%") and a trend.
 If the line talks about a THING none of the above shows (a rocket, a dinosaur, a vending machine, a tent, a
 giant coin...), name it in object (English, 1-3 words) and it will be built for that scene; leave object empty
 otherwise. Never ask for people, cars, buildings, streets or rooms as an object: the recipes already have them.
+An object is a concrete THING with a fixed shape that anyone recognises (a rocket, a tent, a fire hydrant, a
+vending machine, a lifeboat): never something changing or abstract ("soft glass", "melting tower", "rippling
+skyscraper", "warped windshield"): those cannot be built and come out as shapeless blobs.
 Never use the same recipe with the same choices in more than 2 scenes in a row: the picture must move on with
 the story. Every video must look NEW: when the notes list what recent videos already showed, prefer other
 recipes, rooms, times of day, items and objects, and give this video at least one thing never seen before on
@@ -228,12 +231,24 @@ def replan(
 MAX_OBJECTS = 3  # designs per video (one AI call each)
 
 
+CHANGING = re.compile(
+    r"\b(?:melt\w*|soft|rippl\w*|bend\w*|bent|warp\w*|sag\w*|flexible|rubbery|liquid\w*|droop\w*|"
+    r"twist\w*|deform\w*|stretch\w*|wobbl\w*|abstract|loop|invisible|glowing aura)\b"
+)
+
+
+def concrete(name: str) -> bool:
+    """A thing with a fixed shape; things changing ('melting office tower', 'soft glass window' on Nov 11) come
+    out as shapeless blobs that show nothing."""
+    return bool(name) and not CHANGING.search(name)
+
+
 def design_objects(provider: AIProvider, picks: list[dict]) -> dict[str, dict]:
     """Design every thing the storyboard asked for that the engine has no model of (a few per video)."""
     names: list[str] = []
     for pick in picks:
         name = _object_name(pick.get("object"))
-        if name and name not in names:
+        if name and concrete(name) and name not in names:
             names.append(name)
     designs = {}
     for name in names[:MAX_OBJECTS]:

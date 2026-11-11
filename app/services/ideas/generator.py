@@ -50,6 +50,7 @@ IDEA_SCHEMA = {
                     "visual_potential": {"type": "integer"},
                     "scientific_grounding": {"type": "integer"},
                     "evergreen": {"type": "integer"},
+                    "kind": {"type": "string", "enum": ["event", "property"]},
                 },
                 "required": [
                     "premise",
@@ -91,6 +92,11 @@ You propose premises for new videos. A strong premise:
 - passes the first-second test: the viewer instantly FEELS it in their own body or home (everyone falls
   asleep, the Earth brakes, friction vanishes). Abstract material or physics properties that need explaining
   before anything visible happens score low on curiosity and human_impact.
+- kind: "event" if something HAPPENS that you see at once in your street, home or body (a T-rex walks into
+  the city, everyone falls asleep, the sea rises, the Earth stops); "property" if a material or physical
+  property or constant changes (glass becomes flexible, water stops being wet, metals lose conductivity, gravity
+  drops 1%). Property premises are not used: the channel's data shows they get 3-10 times fewer views, and
+  what they change cannot be shown on screen. Propose events.
 Never propose anything about video games or gaming.
 
 {SCIENCE_RULES}
@@ -114,6 +120,33 @@ class IdeaDraft(BaseModel):
     score: float
     provider: str
     model: str
+
+
+# Premises about a material or physical property (Nov 7-11: metals 108 views, gravity -1% 299, trees/CO2 98;
+# water not wet and flexible glass needed things the 3D world cannot show). A backstop for when the AI labels
+# one as an event anyway.
+ABSTRACT_PATTERNS = (
+    r"\bdejar[aá]n? de mojar",
+    r"\bflexibles?\b",
+    r"\bconductiv",
+    r"\bpor ciento\b",
+    r"\bpercent\b",
+    r"%",
+    r"\bperdier[ae]n? su\b",
+    r"\blost? (?:its|their)\b",
+    r"\bdejar[aá]n? de absorber",
+    r"\bstopped? absorbing",
+    r"\bstopped? being wet",
+    r"\bbecame as \w+ as\b",
+    r"\bdensidad\b|\bdensity\b",
+    r"\bviscos",
+    r"\bmolecul|\bátomo|\batom",
+)
+
+
+def is_abstract_property(premise: str) -> bool:
+    low = premise.lower()
+    return any(re.search(p, low) for p in ABSTRACT_PATTERNS)
 
 
 def normalize(text: str) -> str:
@@ -227,6 +260,8 @@ def generate_ideas(
         text = " ".join((draft.premise, draft.hook, draft.angle))
         if is_off_topic(text) or not draft.premise.endswith("?") or is_duplicate(draft.premise, seen):
             continue
+        if item.get("kind") == "property" or is_abstract_property(draft.premise):
+            continue  # nobody can SEE it happen (water stops wetting, glass turns flexible): Nov 7-11 data
         if premise_words(draft.premise) > MAX_PREMISE_WORDS:  # long, technical titles get far fewer clicks
             draft.score = round(draft.score * 0.6, 2)
         seen.append(draft.premise)

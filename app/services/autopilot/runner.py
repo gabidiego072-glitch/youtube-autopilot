@@ -55,7 +55,7 @@ from app.models.enums import (
 from app.services.ai.base import AIProvider, GenerationResult
 from app.services.experiments import HOOKS, MUSIC, VOICES, choose_for_channel
 from app.services.factcheck.checker import fact_check
-from app.services.ideas.generator import generate_ideas
+from app.services.ideas.generator import generate_ideas, is_abstract_property
 from app.services.learning.feedback import category_weights, top_premises
 from app.services.metadata.generator import generate_metadata
 from app.services.production.formats import DEFAULT_TARGET_DURATION, get_format_spec
@@ -197,10 +197,15 @@ def _work_dir(services: Services, run: PipelineRun) -> Path:
     return Path(services.settings.media_root) / "autopilot" / str(run.id)
 
 
+def _usable(ideas) -> list:
+    """Stored ideas, without the abstract-property premises saved before that filter existed."""
+    return [i for i in ideas if not is_abstract_property(i.premise)]
+
+
 # --- steps ---------------------------------------------------------------------------
 def step_topic(db, run, services, ai) -> dict:
     channel = db.get(Channel, run.channel_id)
-    fresh = list(
+    fresh = _usable(
         db.scalars(
             select(Idea).where(Idea.channel_id == channel.id, Idea.status == IdeaStatus.NEW).order_by(Idea.score.desc())
         )
@@ -242,7 +247,7 @@ def step_topic(db, run, services, ai) -> dict:
         db.add_all([Idea(channel_id=channel.id, **d.model_dump()) for d in drafts])
         db.commit()
         generated = len(drafts)
-        fresh = list(
+        fresh = _usable(
             db.scalars(
                 select(Idea)
                 .where(Idea.channel_id == channel.id, Idea.status == IdeaStatus.NEW)
