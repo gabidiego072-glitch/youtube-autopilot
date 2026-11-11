@@ -63,9 +63,9 @@ from app.services.production.short import produce_short
 from app.services.qa.video import check_video
 from app.services.reporting.builder import performances
 from app.services.research.briefing import build_brief
-from app.services.scenes.check import check_scenes, rewrite_line
+from app.services.scenes.check import check_scenes
 from app.services.scenes.planner import plan_scenes
-from app.services.scenes.recipe_planner import assemble, design_objects, plan_with_recipes, replan
+from app.services.scenes.recipe_planner import plan_with_recipes, replan
 from app.services.scripts.generator import generate_script
 from app.services.styles import POV_STORYBOARD_NOTE, city_note, next_city, next_planned_topic, pov_script_note
 from app.services.thumbnails.generator import best_moment, generate_thumbnails
@@ -579,8 +579,7 @@ def _can_render(services) -> bool:
 
 
 def _show_what_is_said(db, run, services, ai, specs, durations, notes):
-    """Look at every scene before the long render: one that does not show its line is planned again; if it
-    still cannot, its line is rewritten (and voiced again) to describe what the viewer does see."""
+    """Look at every scene before the long render: one that does not show its line is planned again."""
     project = _project(db, run)
     script = project.scripts[-1]
     work = _work_dir(services, run) / "check"
@@ -595,7 +594,7 @@ def _show_what_is_said(db, run, services, ai, specs, durations, notes):
         if not v["shows_it"]
     }
     services.log(f"scene check: {len(first) - len(bad)}/{len(first)} scenes show what their line says")
-    report = {"first": {str(k): v for k, v in first.items()}, "replanned": sorted(bad), "rewritten": []}
+    report = {"first": {str(k): v for k, v in first.items()}, "replanned": sorted(bad)}
     if bad:
         try:
             specs = replan(
@@ -605,29 +604,12 @@ def _show_what_is_said(db, run, services, ai, specs, durations, notes):
             services.log(f"replanning failed ({exc}); keeping the first storyboard")
         again = check_scenes(ai, services.blender, specs, lines, work, seed, only=sorted(bad))
         report["second"] = {str(k): v for k, v in again.items()}
-        for i, verdict in again.items():
-            if verdict["shows_it"]:
-                continue
-            line = rewrite_line(ai, lines[i], verdict["seen"], project.language)
-            if line:
-                services.log(f"scene {i}: line rewritten to match the picture: {line}")
-                scenes[i]["narration"] = line
-                scenes[i].pop("subtitle", None)
-                report["rewritten"].append({"scene": i, "before": lines[i], "after": line})
-        if report["rewritten"]:
-            script.scenes = scenes
-            db.commit()
-            step_voice(db, run, services, ai)  # voices again only the lines that changed
-            durations = [
-                max(
-                    1.0,
-                    services.ffmpeg.probe(_work_dir(services, run) / "voice" / f"scene_{i:02d}.wav").duration_seconds
-                    + 0.3,
-                )
-                for i in range(len(scenes))
-            ]
-            picks = [s.get("pick") or {} for s in specs]
-            specs = assemble(picks, durations, seed=seed, city=city, objects=design_objects(ai, picks))
+        still = sorted(i for i, v in again.items() if not v["shows_it"])
+        report["still_failing"] = still
+        services.log(f"scene check after replanning: {len(again) - len(still)}/{len(again)} fixed")
+        # The lines are never rewritten to describe the picture: on Nov 11 that turned the story into
+        # "you see a room with a blue sofa". A scene that still fails keeps its line; the script prompt is
+        # what keeps lines filmable.
     work.mkdir(parents=True, exist_ok=True)
     (work / "scene_check.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     return specs, durations
