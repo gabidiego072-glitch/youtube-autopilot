@@ -81,7 +81,7 @@ class Blender:
         for old in out_dir.glob("still_*.png"):
             old.unlink()
         cmd = self.build_command(
-            spec_path, out_dir, aspect=aspect, quality="draft", scale=0.25, samples=6, stills=list(fractions)
+            spec_path, out_dir, aspect=aspect, quality="draft", scale=0.35, samples=6, stills=list(fractions)
         )
         try:
             subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=600, check=False)

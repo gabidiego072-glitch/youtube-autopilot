@@ -1,9 +1,9 @@
 """Every scene must SHOW what its narration says: scenes are looked at before the render, planned again when
-they do not, and as a last resort the line is rewritten to describe what the viewer sees."""
+they do not."""
 
 from pathlib import Path
 
-from app.services.scenes.check import check_scenes, rewrite_line
+from app.services.scenes.check import check_scenes
 from app.services.scenes.recipe_planner import assemble, replan
 from render_engines.core.spec import validate_spec
 from tests.conftest import StubAIProvider
@@ -61,13 +61,6 @@ def test_a_failed_scene_is_planned_again_and_the_others_kept():
     assert "it needs the hospital" in ai.calls[0]["prompt"]
     for spec in new:
         validate_spec(spec)
-
-
-def test_a_line_that_cannot_be_shown_is_rewritten():
-    ai = StubAIProvider([{"narration": "Ves las camas vacías del hospital: un 40 % menos de ingresos."}])
-    line = rewrite_line(ai, "Las urgencias registran una caída del 40 %.", "an empty hospital ward", "es")
-    assert line.startswith("Ves las camas") and "40" in line
-    assert rewrite_line(StubAIProvider([{"narration": "x"}]), "a b c", "seen", "es") is None  # nonsense: keep it
 
 
 def test_a_long_look_at_the_planet_becomes_a_street():

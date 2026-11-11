@@ -3,8 +3,8 @@
 The recipes guarantee well-made shots, not the right ones: the homeless video showed five empty streets while
 the voice talked about keys, hospitals and shelters. Here a couple of small frames of every scene are
 rendered in seconds and the AI looks at them next to the line. A scene that does not show its line is
-planned again with that feedback; if it still cannot be shown, the line is rewritten to describe what the
-scene does show (same facts, same numbers), so the voice never talks about something the viewer cannot see.
+planned again with that feedback. Lines are never rewritten to fit the picture (that broke a story once);
+the script prompt keeps them filmable.
 """
 
 from __future__ import annotations
@@ -35,16 +35,6 @@ shows_it: true only if the main thing the line says happens or is clearly visibl
 object, the event, the number). A generic street or room that merely could be where it happens is false. On-screen
 subtitles and the counter at the top do not count.
 missing: if false, what the picture would need to show the line (one short sentence); empty if true."""
-
-REWRITE_SCHEMA = {
-    "type": "object",
-    "properties": {"narration": {"type": "string"}},
-    "required": ["narration"],
-}
-REWRITE_SYSTEM = """You fix one narration line of a first-person YouTube Short so that it describes what the
-viewer SEES in the scene. Keep its role in the story, its fact and its numbers, the second person ("you") and
-the present tense; write in the same language; at most 16 words; no new claims. Only change the image it
-describes so it matches what the scene shows."""
 
 
 def stills_for(blender, spec: dict, folder: Path, seed: int) -> list[Path]:
@@ -88,17 +78,3 @@ def check_scenes(
         except Exception as exc:  # noqa: BLE001 - the check helps; it must never stop the day's video
             log.warning("scene %s could not be checked: %s", i, exc)
     return verdicts
-
-
-def rewrite_line(ai: AIProvider, narration: str, seen: str, language: str) -> str | None:
-    try:
-        result = ai.generate_json(
-            system=REWRITE_SYSTEM,
-            prompt=f"Language: {language}\nLine: {narration}\nWhat the scene shows: {seen}",
-            schema=REWRITE_SCHEMA,
-        )
-    except Exception as exc:  # noqa: BLE001
-        log.warning("could not rewrite a line: %s", exc)
-        return None
-    line = " ".join(str((result.data or {}).get("narration", "")).split())
-    return line if 3 <= len(line.split()) <= 22 else None
