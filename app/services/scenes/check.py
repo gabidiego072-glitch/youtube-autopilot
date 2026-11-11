@@ -3,8 +3,8 @@
 The recipes guarantee well-made shots, not the right ones: the homeless video showed five empty streets while
 the voice talked about keys, hospitals and shelters. Here a couple of small frames of every scene are
 rendered in seconds and the AI looks at them next to the line. A scene that does not show its line is
-planned again with that feedback; if it still cannot be shown, the line is rewritten to describe what the
-scene does show (same facts, same numbers), so the voice never talks about something the viewer cannot see.
+planned again with that feedback. Lines are never rewritten to fit the picture (that broke a story once);
+the script prompt keeps them filmable.
 """
 
 from __future__ import annotations
