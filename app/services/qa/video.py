@@ -78,6 +78,35 @@ def segments(log: str, start_key: str, end_key: str) -> list[tuple[float, float]
     return [(round(a, 2), round(b, 2)) for a, b in zip(starts, ends, strict=False)]
 
 
+FLAT_FPS = 2
+FLAT_RANGE = 35  # brightness range (YHIGH - YLOW) of the frame's middle; a real scene has 60-100
+FLAT_SECONDS = 1.5
+WASHED_AVG = 170  # very bright...
+WASHED_SAT = 8.0  # ...and almost colourless: washed out (pale sky/promenade ~5.7; a sunny park or a white
+# hospital room keeps 10-14 of saturation)
+
+
+def flat_segments(log: str) -> list[tuple[float, float]]:
+    """Stretches of at least FLAT_SECONDS whose middle is one flat colour (a dark wall) or washed out (a pale sky
+    over an empty promenade: the water video's first 3 s after the title, Nov 11), not a quick fade."""
+    times = [float(t) for t in re.findall(r"pts_time:([\d.]+)", log)]
+    lows = [float(v) for v in re.findall(r"signalstats\.YLOW=([\d.]+)", log)]
+    highs = [float(v) for v in re.findall(r"signalstats\.YHIGH=([\d.]+)", log)]
+    avgs = [float(v) for v in re.findall(r"signalstats\.YAVG=([\d.]+)", log)]
+    sats = [float(v) for v in re.findall(r"signalstats\.SATAVG=([\d.]+)", log)]
+    out, start = [], None
+    for t, low, high, avg, sat in zip(times, lows, highs, avgs, sats, strict=False):
+        if high - low < FLAT_RANGE or (avg >= WASHED_AVG and sat < WASHED_SAT):
+            start = t if start is None else start
+            continue
+        if start is not None and t - start >= FLAT_SECONDS:
+            out.append((round(start, 2), round(t, 2)))
+        start = None
+    if start is not None and times and times[-1] + 1 / FLAT_FPS - start >= FLAT_SECONDS:
+        out.append((round(start, 2), round(times[-1] + 1 / FLAT_FPS, 2)))
+    return out
+
+
 def check_video(
     video: Path,
     frames: int = 8,
@@ -110,6 +139,9 @@ def check_video(
         analyse("silence", ["-af", "silencedetect=n=-45dB:d=0.8", "-vn"]), "silence_start", "silence_end"
     )
     loud = analyse("loudness", ["-af", "ebur128=peak=true", "-vn"])
+    flat = flat_segments(
+        analyse("flat frames", ["-vf", f"fps={FLAT_FPS},crop=iw:ih*0.5:0:ih*0.25,signalstats,metadata=print", "-an"])
+    )
     integrated = re.findall(r"I:\s*(-?[\d.]+) LUFS", loud)
     true_peak = re.findall(r"Peak:\s*(-?[\d.]+) dBFS", loud)
 
@@ -166,6 +198,8 @@ def check_video(
         problems.append(f"frozen segments: {frozen}")
     if any(b - a > 1.2 for a, b in silence):
         problems.append(f"long silences: {silence}")
+    if flat:
+        problems.append(f"flat, washed-out or empty frames at {flat}")
     if subtitle_issues:
         problems.append(f"{len(subtitle_issues)} subtitle cues outside their voice line")
     result = {
@@ -176,6 +210,7 @@ def check_video(
         "black_segments": black,
         "frozen_segments": frozen,
         "silences": silence,
+        "flat_segments": flat,
         "subtitle_cues": cue_count,
         "subtitle_issues": subtitle_issues,
         "contact_sheet": None if sheet_error else str(sheet),

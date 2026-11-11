@@ -28,8 +28,9 @@ CHECK_SCHEMA = {
     "required": ["seen", "shows_it", "missing"],
 }
 CHECK_SYSTEM = """You review a first-person 3D animated YouTube Short before it is rendered. You get one narration
-line and two frames of the scene that will play while the line is spoken (stylised low-poly 3D, the viewer's own
-hands may be at the bottom). Be strict and literal, like a viewer who hears the line and looks at the screen.
+line and frames of the scene (or one frame of each of its short sub-scenes, in order) that will play while the
+line is spoken (stylised low-poly 3D, the viewer's own hands may be at the bottom). Be strict and literal,
+like a viewer who hears the line and looks at the screen.
 seen: what the frames actually show, in one sentence (place, people, objects, events, numbers on screen).
 shows_it: true only if the main thing the line says happens or is clearly visible (the person, the place, the
 object, the event, the number). A generic street or room that merely could be where it happens is false. On-screen
@@ -38,12 +39,24 @@ missing: if false, what the picture would need to show the line (one short sente
 
 
 def stills_for(blender, spec: dict, folder: Path, seed: int) -> list[Path]:
+    """Frames of the scene; a line made of several beats gives one frame of each of its sub-scenes."""
+    folder.mkdir(parents=True, exist_ok=True)
+    if spec.get("parts"):
+        frames = []
+        for j, part in enumerate(spec["parts"]):
+            frames += _render(blender, part, folder / f"part_{j}", seed, (0.6,))
+        return frames
+    return _render(blender, spec, folder, seed, STILLS)
+
+
+def _render(blender, spec: dict, folder: Path, seed: int, moments) -> list[Path]:
     folder.mkdir(parents=True, exist_ok=True)
     path = folder / "scene.json"
+    body = {k: v for k, v in spec.items() if k not in ("parts", "beats", "shares")}
     path.write_text(
-        json.dumps({"engine": "cinematic", "fps": 24, "seed": seed, "motion_blur": False, **spec}), encoding="utf-8"
+        json.dumps({"engine": "cinematic", "fps": 24, "seed": seed, "motion_blur": False, **body}), encoding="utf-8"
     )
-    return blender.render_stills(path, folder, STILLS)
+    return blender.render_stills(path, folder, moments)
 
 
 def check_scene(ai: AIProvider, narration: str, images: list[bytes]) -> dict:

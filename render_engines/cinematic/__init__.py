@@ -129,6 +129,8 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
     if urban is not None and (env.get("crowd") or env.get("panic")) and env_type in ("city", "coast"):
         from render_engines.cinematic import crowd
 
+        avoid = _camera_space(spec.get("camera", {}), ctx.duration_seconds)
+
         lane = env.get("keep_clear_y")  # e.g. the camera's running line
         clear = (lambda _x, y: lane is not None and abs(y - lane) < 0.9) if lane is not None else None
         n = int(env.get("crowd", 0))
@@ -136,7 +138,15 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
         side_walk = (urban_env.ROAD_HALF + 0.4, urban_env.BUILDING_LINE - 0.4)
         if env.get("crowd_side") != "south":  # 'south' keeps the north sidewalk free (someone sits there)
             crowd.walkers(
-                n // 2, (span, side_walk), 0, (0.9, 1.6), ctx.frame_start, ctx.frame_end, ctx.fps, ctx.seed + 1
+                n // 2,
+                (span, side_walk),
+                0,
+                (0.9, 1.6),
+                ctx.frame_start,
+                ctx.frame_end,
+                ctx.fps,
+                ctx.seed + 1,
+                avoid=avoid,
             )
         crowd.walkers(
             n // 2,
@@ -147,6 +157,7 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
             ctx.frame_end,
             ctx.fps,
             ctx.seed + 2,
+            avoid=avoid,
         )
         if env.get("panic"):  # people running for their lives down the road
             crowd.walkers(
@@ -159,6 +170,7 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
                 ctx.fps,
                 ctx.seed + 3,
                 keep_clear=clear,
+                avoid=avoid,
             )
         if env.get("onlookers"):  # people standing on the sidewalk staring at the screens
             zones = env.get("clear_zones", [])  # [[x0, x1, y0, y1], ...] where the camera passes
@@ -174,6 +186,7 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
                 ctx.fps,
                 ctx.seed + 4,
                 keep_clear=blocked,
+                avoid=avoid,
             )
 
     if urban is not None and env.get("traffic") and env_type in ("city", "coast"):
@@ -398,6 +411,33 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
         from render_engines.cinematic import looks
 
         looks.apply(spec["look"], scene)
+
+
+def _camera_space(camera: dict, duration: float, radius: float = 1.7, ahead: float = 2.2):
+    """A test for crowd placement: is (x, y) too close to the camera, or right in front of it, at that
+    fraction of the shot? People there would fill the frame."""
+    shots = sorted(camera.get("shots", []), key=lambda s: s["time"])
+    if not shots or not camera.get("pov", True):
+        return None
+
+    def at(t):
+        before = [s for s in shots if s["time"] <= t] or shots[:1]
+        after = [s for s in shots if s["time"] >= t] or shots[-1:]
+        a, b = before[-1], after[0]
+        span = b["time"] - a["time"]
+        k = (t - a["time"]) / span if span > 0 else 0.0
+        loc = [a["location"][i] + (b["location"][i] - a["location"][i]) * k for i in range(2)]
+        tgt = b["target"] if isinstance(b["target"], list) else b["location"]
+        return loc, tgt
+
+    def avoid(x, y, fraction):
+        loc, tgt = at(fraction * duration)
+        fx, fy = tgt[0] - loc[0], tgt[1] - loc[1]
+        n = math.hypot(fx, fy) or 1.0
+        front = (loc[0] + fx / n * ahead, loc[1] + fy / n * ahead)
+        return math.hypot(x - loc[0], y - loc[1]) < radius or math.hypot(x - front[0], y - front[1]) < radius
+
+    return avoid
 
 
 def _power_out(scene, frame: int) -> None:

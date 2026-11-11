@@ -85,3 +85,42 @@ def test_a_missing_executable_is_reported(video, tmp_path):
         broken = tmp_path / "broken.mp4"
         broken.write_bytes(b"not a video")
         check_video(broken, frames=2, ffmpeg=FFMPEG, ffprobe=FFPROBE)
+
+
+def test_washed_out_and_flat_frames_are_reported(tmp_path):
+    """The water video (Nov 11) opened on 3 s of pale sky and empty promenade after the title."""
+    clip = tmp_path / "washed.mp4"
+    subprocess.run(
+        [
+            FFMPEG,
+            "-loglevel",
+            "error",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "testsrc2=size=320x240:rate=24:duration=1",
+            "-f",
+            "lavfi",
+            "-i",
+            "color=c=0xd8dce0:size=320x240:rate=24:duration=2.5",
+            "-f",
+            "lavfi",
+            "-i",
+            "testsrc2=size=320x240:rate=24:duration=1",
+            "-filter_complex",
+            "[0][1][2]concat=n=3:v=1:a=0,noise=alls=6:allf=t",
+            "-pix_fmt",
+            "yuv420p",
+            str(clip),
+        ],
+        check=True,
+    )
+    result = check_video(clip, frames=2, ffmpeg=FFMPEG, ffprobe=FFPROBE)
+    assert result["flat_segments"] and result["flat_segments"][0][0] <= 1.5
+    assert any("washed-out" in p for p in result["problems"])
+
+
+def test_a_colourful_bright_scene_is_not_washed_out(video):
+    result = check_video(video, frames=2, ffmpeg=FFMPEG, ffprobe=FFPROBE)
+    assert result["flat_segments"] == []

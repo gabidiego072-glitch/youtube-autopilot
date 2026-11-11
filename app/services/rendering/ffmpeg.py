@@ -159,6 +159,31 @@ class FFmpeg:
         self.run(self.build_slideshow_command(scenes, spec, output_path, audio_path))
         return self.probe(output_path)
 
+    def concat_clips(self, clips: list[Path], output_path: Path) -> None:
+        """Silent clips with the same size and frame rate, one after the other (hard cuts), re-encoded once."""
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        args = [self.ffmpeg_binary, "-y", "-hide_banner", "-loglevel", "error"]
+        for clip in clips:
+            args += ["-i", str(clip)]
+        chain = "".join(f"[{i}:v]" for i in range(len(clips))) + f"concat=n={len(clips)}:v=1:a=0[v]"
+        args += [
+            "-filter_complex",
+            chain,
+            "-map",
+            "[v]",
+            "-c:v",
+            "libx264",
+            "-preset",
+            "medium",
+            "-crf",
+            "18",
+            "-pix_fmt",
+            "yuv420p",
+            "-an",
+            str(output_path),
+        ]
+        self.run(args)
+
     def encode_frames(
         self,
         frames_dir: Path,

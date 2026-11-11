@@ -112,6 +112,9 @@ def repair_ending(draft: ScriptDraft) -> None:
             draft.ending_type = "surprising_conclusion"
 
 
+MAX_LINE_WORDS = 20  # the prompt asks for 16; a little margin before a script is rejected
+
+
 def structure_problems(draft: ScriptDraft, video_format: VideoFormat) -> list[str]:
     """Checks the 'What would happen if' structure. Empty list = OK."""
     problems = []
@@ -126,6 +129,14 @@ def structure_problems(draft: ScriptDraft, video_format: VideoFormat) -> list[st
         problems.append(f"Needs at least {MIN_ESCALATIONS[video_format]} escalation scenes.")
     if len(draft.hook.split()) > HOOK_MAX_WORDS:
         problems.append(f"Hook is longer than {HOOK_MAX_WORDS} words.")
+    if video_format == VideoFormat.SHORT:  # one idea per line, said in a breath (Nov 11 audit: 18-27 words)
+        for index, scene in enumerate(draft.scenes):
+            words = len(scene.narration.split())
+            if words > MAX_LINE_WORDS:
+                problems.append(
+                    f"Scene {index} narration has {words} words; at most {MAX_LINE_WORDS} (one thing you see "
+                    "happen per line: split it or cut it)."
+                )
     if draft.ending_type not in ("question", "surprising_conclusion"):
         problems.append("Unknown ending type.")
     if draft.ending_type == "question" and not draft.ending_line.rstrip().endswith("?"):

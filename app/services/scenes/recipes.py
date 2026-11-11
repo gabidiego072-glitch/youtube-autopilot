@@ -113,13 +113,14 @@ def build(
     obj: dict | None = None,
     hands: str = "normal",
     screens: str = "",
+    take: int = 0,
 ) -> dict:
     """One full scene spec from a recipe. Unknown recipes fall back to street_watch.
 
     people, item, room, subject, stat and trend put the story's own things in the scene: people sleeping
     rough or an empty street, a key in your hand, the hospital the narration mentions, the person you meet,
     a big number (with an arrow up or down) for a fact."""
-    rng = random.Random(seed)
+    rng = random.Random(seed + 7919 * take)  # the place comes from `seed`; each take of it is framed anew
     maker = BUILDERS.get(recipe, street_watch)
     spec = maker(
         duration,
@@ -150,11 +151,41 @@ def build(
         _add_object(spec, obj)
     if stat and stat.strip():
         _add_stat(spec, duration, stat.strip(), trend if trend in TRENDS else "none")
+    seated = any(c.get("pose") == "sit" for c in spec["characters"])  # people at the wall stay where they are
+    if take and recipe in SHIFTABLE and not door_out and not spec.get("object_spot") and not seated:
+        _shift(spec, TAKE_SHIFTS[take % len(TAKE_SHIFTS)])
     _fit(spec, duration)
     if look and look != "normal":
         spec["look"] = look
     spec["recipe"] = recipe
     return spec
+
+
+SHIFTABLE = {"street_watch", "street_run", "waterfront", "park"}
+TAKE_SHIFTS = (0.0, 9.0, -9.0, 18.0)  # metres along the street: the same place, another stretch of it
+
+
+def _shift(spec: dict, dx: float) -> None:
+    """Move the whole scene (camera, people, props, events) along the street by dx metres."""
+    for shot in spec["camera"]["shots"]:
+        shot["location"][0] = round(shot["location"][0] + dx, 3)
+        if isinstance(shot["target"], list):
+            shot["target"][0] = round(shot["target"][0] + dx, 3)
+    for c in spec["characters"]:
+        c["start"][0] = round(c["start"][0] + dx, 3)
+    for p in spec["props"]:
+        p["location"][0] = round(p["location"][0] + dx, 3)
+    for a in spec["actions"]:
+        for k in ("location", "from", "to"):
+            if isinstance(a.get(k), list):
+                a[k][0] = round(a[k][0] + dx, 3)
+        if "x" in a:
+            a["x"] = round(a["x"] + dx, 3)
+    env = spec["environment"]
+    if "chasers_from" in env:
+        env["chasers_from"] = round(env["chasers_from"] + dx, 3)
+    for zone in env.get("clear_zones", []):
+        zone[0], zone[1] = zone[0] + dx, zone[1] + dx
 
 
 def _bed(kind: str, start: float, end: float, every: float = 2.0) -> list[dict]:
@@ -541,7 +572,8 @@ def street_watch(d, *, rng, seed, city, threat, time_of_day, people="busy", **_)
 
 def waterfront(d, *, rng, seed, city, threat, time_of_day, **_):
     """The river or the sea: you look at the water, then turn to what is coming."""
-    env = {"type": "coast", "style": city, "time_of_day": time_of_day, "parked_cars": 6}
+    env = {"type": "coast", "style": city, "time_of_day": time_of_day, "parked_cars": 6, "crowd": 50, "onlookers": 14}
+    env["clear_zones"] = [[-3.0, 4.0, -8.0, -4.0]]  # nobody stands where you stand
     if threat == "zombies":
         env["zombies"] = 22
     elif threat == "flood":
@@ -557,11 +589,14 @@ def waterfront(d, *, rng, seed, city, threat, time_of_day, **_):
         "pov": True,
         "handheld": 0.015,
         "fstop": 5.6,
+        # Along the promenade, not out to sea: the quay, the railing, the water AND the city in one shot (looking
+        # straight at the sea gave flat, almost white frames in the water and homeless videos), then up the
+        # street over the parked cars.
         "shots": [
-            _shot(0, (0, -5.8, 1.75), (1.5, -40, -2.5)),
-            _shot(turn - 0.3, (0.3, -6.4, 1.75), (-1.5, -40, -2.5)),
-            _shot(turn + 0.6, (0.3, -6.5, 1.75), (-3.0, 4.0, 1.4)),
-            _shot(d, (0.3, -6.6, 1.75), (-1.0, 3.0, 1.5), 30),
+            _shot(0, (0, -5.8, 1.75), (30.0, -7.0, 2.6)),
+            _shot(turn - 0.3, (0.6, -6.2, 1.75), (30.0, -11.0, 2.8)),
+            _shot(turn + 0.6, (0.6, -6.3, 1.75), (18.0, 6.0, 4.0)),
+            _shot(d, (0.8, -6.4, 1.75), (16.0, 7.0, 4.6), 26),
         ],
         "shakes": [{"start": turn + 0.4, "end": turn + 0.7, "strength": 0.02}],
     }
@@ -742,7 +777,7 @@ def _add_stat(spec: dict, d: float, text: str, trend: str) -> None:
     dist, size = (2.3, 0.4) if indoor else (8.0, 1.1)
     text = text[:12]
     size = min(size, 0.7 * dist / max(1, len(text)))  # the whole text fits in the vertical frame
-    at = [loc[0] + dx * dist, loc[1] + dy * dist, loc[2] + (0.5 if indoor else 1.4)]
+    at = [loc[0] + dx * dist, loc[1] + dy * dist, loc[2] + (0.22 if indoor else 1.4)]  # whole in the frame
     model = next((p for p in spec["props"] if p.get("id") == "obj"), None)
     if model is not None and model["height"] >= 3.0 and not indoor:  # below a big one, not over it
         at[2] = loc[2] - 0.1

@@ -158,8 +158,11 @@ def walkers(
     col=None,
     zombie: bool = False,
     keep_clear=None,
+    avoid=None,
 ) -> list:
-    """People moving across a rectangle area ((x0, x1), (y0, y1)) along a direction, at random speeds."""
+    """People moving across a rectangle area ((x0, x1), (y0, y1)) along a direction, at random speeds.
+    `avoid(x, y, fraction)` says whether a point is too close to the camera at that moment of the shot: anyone
+    whose walk passes there is left out (they filled the frame in the Nov 10-11 videos)."""
     rng = random.Random(seed)
     heading = math.radians(direction_deg)
     duration = (frame_end - frame_start) / fps
@@ -170,6 +173,10 @@ def walkers(
         if keep_clear and keep_clear(x, y):
             continue
         v = rng.uniform(*speed)
+        if avoid is not None:
+            ddx, ddy = math.cos(heading) * v * duration, math.sin(heading) * v * duration
+            if any(avoid(x + ddx * f, y + ddy * f, f) for f in (0.0, 0.2, 0.4, 0.6, 0.8, 1.0)):
+                continue
         root, limbs = crowd_person(
             f"cw_{seed}_{i}", (x, y, 0), heading - math.pi / 2, rng, rng.uniform(0.92, 1.08), col, zombie
         )
@@ -197,6 +204,7 @@ def standers(
     look_up: float = 0.3,
     face_deg: float | None = None,
     keep_clear=None,
+    avoid=None,
 ) -> list:
     """People standing around (idle sway); some look up at the screens, a few point."""
     rng = random.Random(seed)
@@ -204,6 +212,8 @@ def standers(
     for i in range(count):
         x, y = rng.uniform(*area[0]), rng.uniform(*area[1])
         if keep_clear and keep_clear(x, y):
+            continue
+        if avoid is not None and any(avoid(x, y, f) for f in (0.0, 0.5, 1.0)):
             continue
         heading = math.radians(face_deg if face_deg is not None else rng.uniform(0, 360))
         root, limbs = crowd_person(f"cs_{seed}_{i}", (x, y, 0), heading, rng, rng.uniform(0.92, 1.08), col)
