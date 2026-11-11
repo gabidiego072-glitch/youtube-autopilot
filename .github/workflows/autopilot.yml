@@ -19,14 +19,15 @@ name: Autopilot
 
 on:
   schedule:
-    # Daily at 04:17 UTC (05:17 in Spain in winter): GitHub often starts scheduled runs hours late, so the
-    # first try is early enough for the video to be ready in the morning even when it is delayed.
-    - cron: "17 4 * * *"
+    # Tuesdays, Thursdays and Saturdays at 04:17 UTC (05:17 in Spain in winter): three better videos a week
+    # instead of one a day (Nov 11: daily videos plateaued at ~1,000 views). GitHub often starts scheduled runs
+    # hours late, so the first try is early enough for the video to be ready in the morning.
+    - cron: "17 4 * * 2,4,6"
     # Safety retries: they only make a video if today's has not been made yet (late start, Gemini failure).
-    - cron: "47 5 * * *"
-    - cron: "17 7 * * *"
-    - cron: "47 9 * * *"
-    - cron: "17 12 * * *"
+    - cron: "47 5 * * 2,4,6"
+    - cron: "17 7 * * 2,4,6"
+    - cron: "47 9 * * 2,4,6"
+    - cron: "17 12 * * 2,4,6"
   workflow_dispatch:
     inputs:
       command:
@@ -109,7 +110,8 @@ jobs:
           # home-PC setup made hand-started videos render on one machine for hours).
           SHARDS=$(( SHARDS < 4 ? 4 : SHARDS ))
           # Scheduled daily video: light quality, split across four GitHub-hosted machines.
-          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event_name }}" = "push" ]; then MODE=lite; SHARDS=4; fi
+          # Three videos a week: publishable quality (720p), split over eight machines so it takes no longer.
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event_name }}" = "push" ]; then MODE=hd; SHARDS=8; fi
           # Your own PC (self-hosted runner): one machine, so one shard (the shards would only queue).
           if [ "${{ runner.environment }}" != "github-hosted" ]; then SHARDS=1; fi
           echo "shards=$(python -c "print(list(range(max(1, min(8, int('$SHARDS'))))))")" >> "$GITHUB_OUTPUT"
