@@ -60,7 +60,7 @@ from app.services.learning.feedback import category_weights, top_premises
 from app.services.metadata.generator import generate_metadata
 from app.services.production.formats import DEFAULT_TARGET_DURATION, get_format_spec
 from app.services.production.short import produce_short
-from app.services.qa.video import check_video
+from app.services.qa.video import QAError, check_video
 from app.services.reporting.builder import performances
 from app.services.research.briefing import build_brief
 from app.services.scenes.check import check_scenes
@@ -672,12 +672,17 @@ def step_qa(db, run, services, ai) -> dict:
     script = project.scripts[-1]
     output = _render_output(_step(run, "render")["detail"])
     work = _work_dir(services, run)
-    result = check_video(
-        output,
-        frames=8,
-        report_path=output.with_suffix(".report.json"),
-        srt=work / run.render_mode / "edit" / "subtitles.srt",
-    )
+    try:
+        result = check_video(
+            output,
+            frames=8,
+            report_path=output.with_suffix(".report.json"),
+            srt=work / run.render_mode / "edit" / "subtitles.srt",
+            ffmpeg=services.ffmpeg.ffmpeg_binary,  # the same executables the render used
+            ffprobe=services.ffmpeg.ffprobe_binary,
+        )
+    except QAError as exc:
+        raise StepBlocked(f"Video QA could not analyse the video: {exc}") from exc
     scales = scale_problems([(s.get("scale", "street"), s["duration_seconds"]) for s in script.scenes])
     problems = result["problems"] + scales
     if problems:

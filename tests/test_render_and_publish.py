@@ -36,8 +36,8 @@ def test_render_job_is_queued_with_format_dimensions(make_client, channel):
     assert len(client.get(f"/api/v1/projects/{short['id']}/renders").json()) == 1
 
 
-def _approved_project(client, db_session_factory, channel) -> dict:
-    project = create_project(client, channel["id"])
+def _approved_project(client, db_session_factory, channel, **overrides) -> dict:
+    project = create_project(client, channel["id"], **overrides)
     script = client.post(f"/api/v1/projects/{project['id']}/scripts/generate").json()
     job = client.post(f"/api/v1/projects/{project['id']}/renders", json={}).json()
     client.post(f"/api/v1/projects/{project['id']}/metadata/generate")
@@ -117,3 +117,21 @@ def test_private_upload_records_the_video(make_client, db_session_factory, chann
     assert sent[0].privacy.value == "private"
     body = client.get(f"/api/v1/projects/{project['id']}").json()
     assert body["status"] == "published" and body["youtube_video_id"] == "vid99"
+
+
+def test_manual_upload_sends_the_project_language(make_client, db_session_factory, channel, monkeypatch):
+    """An English video published by hand must reach YouTube as English, not the default Spanish."""
+    from app.services.youtube.base import UploadResult
+    from app.services.youtube.data_api import YouTubeDataAPIPublisher
+
+    sent = []
+    monkeypatch.setattr(
+        YouTubeDataAPIPublisher, "upload", lambda self, request: sent.append(request) or UploadResult("v1", "private")
+    )
+    settings = make_settings(
+        youtube_publishing_enabled=True, youtube_client_id="a", youtube_client_secret="b", youtube_refresh_token="c"
+    )
+    client = make_client(settings, ai=StubAIProvider(list(PIPELINE)))
+    project = _approved_project(client, db_session_factory, channel, language="en")
+    assert client.post(f"/api/v1/projects/{project['id']}/publish").status_code == 200
+    assert sent[0].language == "en"
