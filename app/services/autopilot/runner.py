@@ -63,8 +63,9 @@ from app.services.production.short import produce_short
 from app.services.qa.video import check_video
 from app.services.reporting.builder import performances
 from app.services.research.briefing import build_brief
+from app.services.scenes.check import check_scenes, rewrite_line
 from app.services.scenes.planner import plan_scenes
-from app.services.scenes.recipe_planner import plan_with_recipes
+from app.services.scenes.recipe_planner import assemble, design_objects, plan_with_recipes, replan
 from app.services.scripts.generator import generate_script
 from app.services.styles import POV_STORYBOARD_NOTE, city_note, next_city, next_planned_topic, pov_script_note
 from app.services.thumbnails.generator import best_moment, generate_thumbnails
@@ -103,8 +104,11 @@ class UsageTracker:
         self.step = "unknown"
         self.by_step: dict[str, dict[str, int]] = {}
 
-    def generate_json(self, *, system: str, prompt: str, schema: dict) -> GenerationResult:
-        result = self._provider.generate_json(system=system, prompt=prompt, schema=schema)
+    def generate_json(self, *, system: str, prompt: str, schema: dict, images=None) -> GenerationResult:
+        if images:
+            result = self._provider.generate_json(system=system, prompt=prompt, schema=schema, images=images)
+        else:
+            result = self._provider.generate_json(system=system, prompt=prompt, schema=schema)
         bucket = self.by_step.setdefault(self.step, {"calls": 0, "input_tokens": 0, "output_tokens": 0})
         bucket["calls"] += 1
         bucket["input_tokens"] += result.usage.get("input_tokens", 0)
@@ -496,6 +500,7 @@ def step_storyboard(db, run, services, ai) -> dict:
     ]
     features = project.features or {}
     specs = None
+    recipe_notes = "\n\n".join(n for n in (project.notes, _recent(db, project).recipe_note()) if n) or None
     if services.settings.recipes_enabled and features.get("style") == "pov":
         try:  # hand-made scene recipes: the AI only picks one per line
             specs = plan_with_recipes(
@@ -504,10 +509,12 @@ def step_storyboard(db, run, services, ai) -> dict:
                 durations=durations,
                 seed=int(project.id.int % 100_000),
                 city=features.get("city_style") or "new_york",
-                notes=project.notes,
+                notes=recipe_notes,
             )
         except Exception as exc:  # noqa: BLE001 - never lose the day's video: fall back to the old storyboard
             services.log(f"recipe storyboard failed ({exc}); using the free-form storyboard")
+    if specs and services.settings.scene_check_enabled and _can_render(services):
+        specs, durations = _show_what_is_said(db, run, services, ai, specs, durations, recipe_notes)
     script.scene_specs = specs or plan_scenes(
         ai,
         scenes=script.scenes,
@@ -562,6 +569,68 @@ def step_storyboard(db, run, services, ai) -> dict:
     (work / "production.json").write_text(json.dumps(production, ensure_ascii=False, indent=2), encoding="utf-8")
     envs = sorted({s["environment"]["type"] for s in script.scene_specs})
     return {"scenes": len(script.scene_specs), "environments": envs}
+
+
+def _can_render(services) -> bool:
+    try:
+        return bool(services.blender and services.blender.is_available())
+    except Exception:  # noqa: BLE001
+        return False
+
+
+def _show_what_is_said(db, run, services, ai, specs, durations, notes):
+    """Look at every scene before the long render: one that does not show its line is planned again; if it
+    still cannot, its line is rewritten (and voiced again) to describe what the viewer does see."""
+    project = _project(db, run)
+    script = project.scripts[-1]
+    work = _work_dir(services, run) / "check"
+    seed = int(project.id.int % 100_000)
+    city = (project.features or {}).get("city_style") or "new_york"
+    scenes = [dict(s) for s in script.scenes]
+    lines = [s["narration"] for s in scenes]
+    first = check_scenes(ai, services.blender, specs, lines, work, seed)
+    bad = {
+        i: f'the line says "{lines[i]}"; the scene shows: {v["seen"]}; it needs: {v["missing"]}'
+        for i, v in first.items()
+        if not v["shows_it"]
+    }
+    services.log(f"scene check: {len(first) - len(bad)}/{len(first)} scenes show what their line says")
+    report = {"first": {str(k): v for k, v in first.items()}, "replanned": sorted(bad), "rewritten": []}
+    if bad:
+        try:
+            specs = replan(
+                ai, specs=specs, scenes=scenes, durations=durations, feedback=bad, seed=seed, city=city, notes=notes
+            )
+        except Exception as exc:  # noqa: BLE001 - keep the first storyboard rather than lose the video
+            services.log(f"replanning failed ({exc}); keeping the first storyboard")
+        again = check_scenes(ai, services.blender, specs, lines, work, seed, only=sorted(bad))
+        report["second"] = {str(k): v for k, v in again.items()}
+        for i, verdict in again.items():
+            if verdict["shows_it"]:
+                continue
+            line = rewrite_line(ai, lines[i], verdict["seen"], project.language)
+            if line:
+                services.log(f"scene {i}: line rewritten to match the picture: {line}")
+                scenes[i]["narration"] = line
+                scenes[i].pop("subtitle", None)
+                report["rewritten"].append({"scene": i, "before": lines[i], "after": line})
+        if report["rewritten"]:
+            script.scenes = scenes
+            db.commit()
+            step_voice(db, run, services, ai)  # voices again only the lines that changed
+            durations = [
+                max(
+                    1.0,
+                    services.ffmpeg.probe(_work_dir(services, run) / "voice" / f"scene_{i:02d}.wav").duration_seconds
+                    + 0.3,
+                )
+                for i in range(len(scenes))
+            ]
+            picks = [s.get("pick") or {} for s in specs]
+            specs = assemble(picks, durations, seed=seed, city=city, objects=design_objects(ai, picks))
+    work.mkdir(parents=True, exist_ok=True)
+    (work / "scene_check.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    return specs, durations
 
 
 def step_render(db, run, services, ai) -> dict:

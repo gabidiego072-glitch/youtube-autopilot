@@ -34,12 +34,23 @@ class ClaudeProvider:
         self._max_tokens = settings.claude_max_tokens
         self._fallbacks = settings.claude_server_fallbacks
 
-    def generate_json(self, *, system: str, prompt: str, schema: dict[str, Any]) -> GenerationResult:
+    def generate_json(
+        self, *, system: str, prompt: str, schema: dict[str, Any], images: list[bytes] | None = None
+    ) -> GenerationResult:
+        content: Any = prompt
+        if images:
+            content = [
+                *(
+                    {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": _b64(i)}}
+                    for i in images
+                ),
+                {"type": "text", "text": prompt},
+            ]
         params: dict[str, Any] = {
             "model": self.model,
             "max_tokens": self._max_tokens,
             "system": system,
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": [{"role": "user", "content": content}],
             "thinking": {"type": "adaptive"},
             "output_config": {
                 "effort": self._effort,
@@ -80,3 +91,9 @@ class ClaudeProvider:
         }
         logger.info("claude generation model=%s usage=%s", response.model, usage)
         return GenerationResult(data=data, provider=self.name, model=response.model, usage=usage)
+
+
+def _b64(data: bytes) -> str:
+    import base64
+
+    return base64.b64encode(data).decode()

@@ -11,6 +11,7 @@ sends public-knowledge material (ideas, scripts, fact checks), never credentials
 
 from __future__ import annotations
 
+import base64
 import json
 import logging
 import re
@@ -61,10 +62,15 @@ class GeminiProvider:
         return f"GeminiProvider(model={self.model!r})"
 
     # --- public -------------------------------------------------------------------------
-    def generate_json(self, *, system: str, prompt: str, schema: dict[str, Any]) -> GenerationResult:
+    def generate_json(
+        self, *, system: str, prompt: str, schema: dict[str, Any], images: list[bytes] | None = None
+    ) -> GenerationResult:
+        parts: list[dict] = [{"text": prompt}]
+        for image in images or []:  # PNG frames the model looks at (e.g. to check a scene)
+            parts.append({"inlineData": {"mimeType": "image/png", "data": base64.b64encode(image).decode()}})
         body = {
             "systemInstruction": {"parts": [{"text": system}]},
-            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+            "contents": [{"role": "user", "parts": parts}],
             "generationConfig": {
                 "responseMimeType": "application/json",
                 "responseJsonSchema": schema,

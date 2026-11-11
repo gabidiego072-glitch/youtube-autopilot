@@ -425,4 +425,8 @@ def test_recipe_storyboard_writes_a_production_that_renders(db, tmp_path):
     assert run.status != RunStatus.FAILED, run.error
     production = load_production(tmp_path / "media" / "autopilot" / str(run.id) / "production.json")
     assert production["scenes"][0]["recipe"] == "street_watch"
-    assert production["scenes"][-1]["camera"]["pov"] is False  # no hands floating in space
+    last = production["scenes"][-1]
+    if last["recipe"] == "space":
+        assert last["camera"]["pov"] is False  # no hands floating in space
+    else:  # too long a look at the planet for the human-impact rule: it became a street (Nov 11 failure)
+        assert last["recipe"] == "street_watch"

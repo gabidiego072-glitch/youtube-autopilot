@@ -7,6 +7,8 @@ same recipe reuse the same seed, so it is the same street or room.
 
 from __future__ import annotations
 
+import json
+
 from app.content.profile import CHANNEL_CONCEPT
 from app.core.errors import ProviderError
 from app.services.ai.base import AIProvider
@@ -83,7 +85,9 @@ If the line talks about a THING none of the above shows (a rocket, a dinosaur, a
 giant coin...), name it in object (English, 1-3 words) and it will be built for that scene; leave object empty
 otherwise. Never ask for people, cars, buildings, streets or rooms as an object: the recipes already have them.
 Never use the same recipe with the same choices in more than 2 scenes in a row: the picture must move on with
-the story."""
+the story. Every video must look NEW: when the notes list what recent videos already showed, prefer other
+recipes, rooms, times of day, items and objects, and give this video at least one thing never seen before on
+the channel (an object, a room, a moment)."""
 
 
 def _scene_list(scenes: list[dict], durations: list[float]) -> str:
@@ -116,6 +120,40 @@ def plan_with_recipes(
     return assemble(picks, durations, seed=seed, city=city, objects=design_objects(provider, picks))
 
 
+def replan(
+    provider: AIProvider,
+    *,
+    specs: list[dict],
+    scenes: list[dict],
+    durations: list[float],
+    feedback: dict[int, str],
+    seed: int,
+    city: str = "new_york",
+    notes: str | None = None,
+) -> list[dict]:
+    """Plan again the scenes that do not show their line (feedback: what the check saw and what is missing),
+    keeping every other scene as it is."""
+    picks = [dict(s.get("pick") or {}) for s in specs]
+    prompt = f"City of this video: {city}.\n\nScenes (index, length, counter, narration, what it shows):\n"
+    prompt += _scene_list(scenes, durations)
+    prompt += "\n\nCurrent choices per scene:\n" + "\n".join(f"{i}. {json.dumps(p)}" for i, p in enumerate(picks))
+    prompt += (
+        "\n\nA reviewer looked at these scenes and they do NOT show what their line says. Choose again for every "
+        "scene (return all of them, keep the others as they are), so the viewer SEES the line: another recipe, "
+        "people, item, room, stat or an object to build.\n"
+        + "\n".join(f"Scene {i}: {text}" for i, text in sorted(feedback.items()))
+    )
+    if notes:
+        prompt += f"\n\n{notes}"
+    result = provider.generate_json(system=SYSTEM_PROMPT, prompt=prompt, schema=RECIPE_SCHEMA)
+    fresh = result.data.get("scenes", [])
+    if len(fresh) != len(picks):
+        raise ProviderError("The new storyboard does not have one choice per scene.")
+    for i in feedback:
+        picks[i] = fresh[i]
+    return assemble(picks, durations, seed=seed, city=city, objects=design_objects(provider, picks))
+
+
 MAX_OBJECTS = 3  # designs per video (one AI call each)
 
 
@@ -144,6 +182,7 @@ def assemble(
     """Build every scene from its recipe, with doors, flashes and shared places between scenes."""
     picks = [_clean(p) for p in picks]
     _ration_stats(picks)
+    _limit_space(picks, durations)
     _striking_start(picks)
     seeds: dict[str, int] = {}
     specs = []
@@ -171,6 +210,7 @@ def assemble(
             obj=(objects or {}).get(_object_name(pick.get("object"))),
             hands=pick["hands"],
         )
+        spec["pick"] = dict(pick)  # what the director chose, to plan this scene again if it fails the check
         if i:
             prev = picks[i - 1]
             through_door = prev["recipe"] in DOOR_EXITS and prev["recipe"] != recipe
@@ -202,6 +242,24 @@ def _striking_start(picks: list[dict]) -> None:
         picks[0] = {**subject, "stat": "", "trend": "none"}
     else:
         picks[0] = {**picks[0], "recipe": "street_watch", "people": "busy"}
+
+
+MAX_GLOBAL_SHARE = 0.14  # just under the human-impact rule (15%): the planet is a short moment, never more
+
+
+def _limit_space(picks: list[dict], durations: list[float]) -> None:
+    """At most one look at the whole planet, and only if it is short: the script check refuses more (a video
+    failed on Nov 11 with 16% of planet shots after the storyboard had been made)."""
+    total = sum(durations) or 1.0
+    kept = False
+    for pick, d in zip(picks, durations, strict=True):
+        if pick["recipe"] != "space":
+            continue
+        if not kept and d / total <= MAX_GLOBAL_SHARE:
+            kept = True
+            continue
+        pick["recipe"] = "street_watch"
+        pick["people"] = "busy" if pick["people"] == "rough_sleepers" else pick["people"]
 
 
 MAX_STATS = 3

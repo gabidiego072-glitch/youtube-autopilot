@@ -48,6 +48,12 @@ FREE_HANDS = {"street_watch", "meet_person", "room_view", "waterfront", "park"}
 # Spots along the north wall that no bench, tree, lamp or café terrace takes, in every city style.
 WALL_SPOTS = (-14.0, -6.0, 2.0)
 WALL_Y = 6.95
+# Other ways to stand in the street (camera from/to at the start and the end): in the middle of the road
+# looking down the avenue, and on the north sidewalk along the shop fronts.
+STREET_VIEWS = {
+    1: (((-24.0, -0.3, 1.6), (20.0, 0.0, 3.0)), ((-21.0, -0.3, 1.6), (24.0, 1.5, 4.5))),
+    2: (((-26.0, 5.6, 1.65), (0.0, 2.0, 3.0)), ((-23.0, 5.4, 1.65), (6.0, 3.0, 4.0))),
+}
 DOOR_Y = 7.27  # a door on the north facade of the street (BUILDING_LINE - 0.13)
 CROSS_STREET = (5.0, 15.0)
 
@@ -495,6 +501,22 @@ def street_watch(d, *, rng, seed, city, threat, time_of_day, people="busy", **_)
         focus = (10.0, 0.0, 0.6)
     elif threat == "zombies":
         focus = (12.0, 0.0, 1.5)
+    variant = rng.choice((0, 1, 1, 2)) if threat in ("none", "panic", "zombies") else 0
+    if variant:  # the same street seen from elsewhere, so two videos never open on the same shot
+        start, end = STREET_VIEWS[variant]
+        if variant == 2:  # walking along the shop fronts: nobody walks into the camera
+            env.update(crowd_side="south", onlookers=0)
+        spec["camera"] = {
+            "pov": True,
+            "handheld": 0.02,
+            "fstop": 5.6,
+            "shots": [
+                _shot(0, start[0], start[1], 24),
+                _shot(d, end[0], end[1] if threat == "none" else (focus[0], focus[1], focus[2] + 1.5), 26),
+            ],
+            "shakes": [],
+        }
+        return spec
     spec["camera"] = {
         "pov": True,
         "handheld": 0.02,
