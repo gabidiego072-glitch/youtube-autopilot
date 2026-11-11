@@ -46,6 +46,18 @@ def build_camera(scene: bpy.types.Scene, ctx: RenderContext, camera_spec: dict, 
         add_noise(cam, "location", strength=camera_spec["handheld"], scale=40)
     if camera_spec.get("shakes"):
         _add_shakes(cam, ctx, camera_spec["shakes"])
+    if rig is not None and camera_spec.get("pov_reach"):  # your hand goes to the thing and stays on it
+        import math
+
+        arm = rig["arms"].get(1) or next(iter(rig["arms"].values()))
+        base = tuple(arm.location)
+        for at in camera_spec["pov_reach"]:
+            frame = ctx.frame(float(at))
+            key(arm, "location", frame - 8, base)
+            key(arm, "location", frame, (base[0] * 0.35, base[1] + 0.2, base[2] - 0.3))
+            key(arm, "rotation_euler", frame - 8, tuple(arm.rotation_euler))
+            key(arm, "rotation_euler", frame, (math.radians(40), 0, 0))
+            key(arm, "location", frame + 6, (base[0] * 0.35, base[1] + 0.14, base[2] - 0.3))  # pull / press
     if rig is not None and (camera_spec.get("pov_run") or camera_spec.get("pov_pushes") or camera_spec.get("pov_sips")):
         _pov_motion(
             cam,

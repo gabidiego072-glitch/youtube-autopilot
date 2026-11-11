@@ -39,10 +39,17 @@ POV_SCRIPT_NOTE = """STYLE: first-person POV ("what if it were YOU"), written li
   video can be watched again and again.
 - Keep the science: each decision is explained in half a sentence with a real fact (how fast an outbreak
   spreads, how long the water and the power last without workers, how long a person lasts without water).
-- The 'visual' describes what YOU see in first person (your hands, what you hold, the person in front of you,
-  the room, the street), with things the 3D world has: city streets (busy, empty, people sleeping rough),
-  rooms (home, kitchen, office, hospital ward, classroom, café, theatre), the sea, parks, fire, floods,
-  collapses, crowds, zombies, the Earth from space; any other object is named plainly (a rocket, a tent)."""
+- WRITE ONLY WHAT THE 3D WORLD CAN SHOW. Every line is one of these moments, and the 'visual' names it:
+  you walk, run or stand in a city street (busy, empty, people sleeping rough, panic, a fire, a flood, a
+  building collapsing, a zombie horde, the story's text on every screen and billboard); you meet one person and
+  hand them something; your hand works a thing on a wall (pull an alarm, press a button, open a tap, pull a
+  lever); a room (home, kitchen, office, hospital ward, classroom, café with the TV news, theatre); the river
+  or the sea rising; a park; dinosaurs; the Earth from space; your own hands changing (old, glowing); a big
+  number floating in the air; any object, named plainly (a rocket, a tent, a vending machine).
+- NEVER narrate what cannot be filmed in that world: liquids or materials behaving strangely, what happens
+  inside your body (cells, organs, pain, thirst, hunger, feelings), smells, sounds, temperatures, microscopic
+  or invisible things, abstract statistics. Show their visible consequence instead ("the tap gives nothing",
+  "people queue at the hospital", "every screen says NO WATER")."""
 
 POV_STORYBOARD_NOTE = """STYLE: first-person POV. In EVERY scene set camera.pov true: the camera is the viewer's
 eyes at height 1.6 standing where the protagonist is, lens 22-28, moving a little forward as if walking. Use

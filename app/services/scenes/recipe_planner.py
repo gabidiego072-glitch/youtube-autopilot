@@ -51,6 +51,7 @@ RECIPE_SCHEMA = {
                     "hands": {"type": "string", "enum": list(HANDS)},
                     "headline": {"type": "string"},
                     "object": {"type": "string"},
+                    "screens": {"type": "string"},
                 },
                 "required": ["recipe", "threat", "time_of_day", "look", "people", "item", "stat", "trend", "hands"],
                 "additionalProperties": False,
@@ -209,6 +210,7 @@ def assemble(
             trend=pick["trend"],
             obj=(objects or {}).get(_object_name(pick.get("object"))),
             hands=pick["hands"],
+            screens=pick.get("screens", ""),
         )
         spec["pick"] = dict(pick)  # what the director chose, to plan this scene again if it fails the check
         if i:
@@ -298,4 +300,5 @@ def _clean(pick: dict) -> dict:
         if out.get(key) not in allowed:
             out[key] = default
     out["stat"] = str(out.get("stat") or "").strip()[:12]
+    out["screens"] = str(out.get("screens") or "").strip()[:28]
     return out

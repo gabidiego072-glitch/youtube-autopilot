@@ -24,6 +24,7 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
 
     texts.LANG = spec.get("language", "es")  # billboards, TV and menu texts
     texts.HEADLINE = (spec.get("environment") or {}).get("headline", "")
+    texts.SCREEN = (spec.get("environment") or {}).get("screens", "")  # the story on every screen
     from render_engines.cinematic import urban as urban_env
     from render_engines.cinematic.environment import sun_path
     from render_engines.cinematic.explainers import start_wind
