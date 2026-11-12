@@ -105,6 +105,7 @@ ACTIONS = {
     "surge": "coast only: the sea rises and floods into the street: start, end, height (m), inland (m)",
     "lights_on": "city: street lamps and random windows switch on: start, end",
     "stand_up": "a sitting character gets up: character, start, end",
+    "touch_throat": "character puts a hand to the throat (cannot swallow or breathe): character, side, start, end",
     "reach": "character holds a hand out in front (to take something): character, side, start, end",
     "cover": "character crouches and covers the head: character, start, end",
     "fall": "character falls over: character, start, direction_deg",

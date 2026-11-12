@@ -215,6 +215,15 @@ class CinematicCharacter:
             key(self.legs[side], "rotation_euler", end, (0, 0, 0))
         self.sitting = False
 
+    def touch_throat(self, start: int, end: int, side: str = "R") -> None:
+        """A hand to the throat (can't swallow, can't breathe, shock), held until `end`."""
+        arm = self.arms[side]
+        inward = math.radians(48 if side == "R" else -48)
+        key(arm, "rotation_euler", start, tuple(arm.rotation_euler))
+        key(arm, "rotation_euler", start + 8, (math.radians(122), 0, inward))
+        key(arm, "rotation_euler", end, (math.radians(122), 0, inward))
+        key(self.neck, "rotation_euler", start + 8, (math.radians(-10), 0, 0))
+
     def reach(self, start: int, end: int, side: str = "R", hold: int = 24) -> None:
         """Hold a hand out in front (to take something, to shake hands)."""
         arm = self.arms[side]

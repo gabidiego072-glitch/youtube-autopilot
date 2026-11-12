@@ -360,6 +360,8 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
             _effect(kind, action, start, end, ctx, urban, env)
         elif kind == "cover":
             char.cover(start, end)
+        elif kind == "touch_throat":
+            char.touch_throat(start, end, "R" if action.get("side", "right") == "right" else "L")
         elif kind == "stand_up":
             char.stand_up(start, end)
         elif kind == "reach":

@@ -107,7 +107,7 @@ RED, WHITE, STEEL, DARK = "#c4161c", "#f2f2f2", "#b8bcc2", "#2b2d33"
 # Small things your hand works (hand_action), built by hand from shapes: base at z=0, front = +y.
 HAND_THINGS = (
     (
-        ("fire alarm", "alarm"),
+        ("fire alarm", "fire-alarm"),
         {
             "height": 0.34,
             "parts": [
@@ -174,12 +174,71 @@ HAND_THINGS = (
 )
 
 
+# Things that lie on a table in a 'reaction' scene (what the line is about), hand-built.
+CROISSANT = [
+    {"shape": "cylinder", "size": [0.34, 0.34, 0.02], "at": [0, 0, 0.01], "color": "#f4f1ea"},
+    {"shape": "sphere", "size": [0.075, 0.075, 0.06], "at": [-0.097, -0.034, 0.05], "color": "#c47a2c"},
+    {"shape": "sphere", "size": [0.095, 0.095, 0.076], "at": [-0.077, 0.004, 0.05], "color": "#e8a64a"},
+    {"shape": "sphere", "size": [0.11, 0.11, 0.088], "at": [-0.042, 0.031, 0.05], "color": "#c47a2c"},
+    {"shape": "sphere", "size": [0.11, 0.11, 0.088], "at": [0.0, 0.04, 0.05], "color": "#e8a64a"},
+    {"shape": "sphere", "size": [0.11, 0.11, 0.088], "at": [0.042, 0.031, 0.05], "color": "#c47a2c"},
+    {"shape": "sphere", "size": [0.095, 0.095, 0.076], "at": [0.077, 0.004, 0.05], "color": "#e8a64a"},
+    {"shape": "sphere", "size": [0.075, 0.075, 0.06], "at": [0.097, -0.034, 0.05], "color": "#c47a2c"},
+]
+TABLE_THINGS = (
+    (("croissant", "pastry", "bread"), {"height": 0.09, "parts": CROISSANT}),
+    (
+        ("empty glass", "glass of water", "glass", "cup"),
+        {
+            "height": 0.14,
+            "parts": [
+                {"shape": "cylinder", "size": [0.08, 0.08, 0.13], "at": [0, 0, 0.065], "color": "#cfe6f2"},
+                {"shape": "cylinder", "size": [0.085, 0.085, 0.01], "at": [0, 0, 0.005], "color": "#9cc3d8"},
+            ],
+        },
+    ),
+    (
+        ("bottle",),
+        {
+            "height": 0.3,
+            "parts": [
+                {"shape": "cylinder", "size": [0.08, 0.08, 0.22], "at": [0, 0, 0.11], "color": "#7fb8d9"},
+                {"shape": "cone", "size": [0.08, 0.08, 0.05], "at": [0, 0, 0.245], "color": "#7fb8d9"},
+                {"shape": "cylinder", "size": [0.03, 0.03, 0.04], "at": [0, 0, 0.29], "color": "#1f5fa8"},
+                {"shape": "cylinder", "size": [0.082, 0.082, 0.07], "at": [0, 0, 0.12], "color": "#f2f2f2"},
+            ],
+        },
+    ),
+    (
+        ("letter", "envelope", "note", "paper"),
+        {
+            "height": 0.03,
+            "parts": [
+                {"shape": "box", "size": [0.24, 0.16, 0.01], "at": [0, 0, 0.005], "color": "#f4efe2"},
+                {"shape": "box", "size": [0.05, 0.04, 0.012], "at": [0.08, 0.04, 0.006], "color": "#c4161c"},
+            ],
+        },
+    ),
+    (
+        ("pill", "medicine"),
+        {
+            "height": 0.1,
+            "parts": [
+                {"shape": "cylinder", "size": [0.07, 0.07, 0.09], "at": [0, 0, 0.045], "color": "#e67e22"},
+                {"shape": "cylinder", "size": [0.075, 0.075, 0.025], "at": [0, 0, 0.1], "color": "#f2f2f2"},
+                {"shape": "sphere", "size": [0.03, 0.015, 0.015], "at": [0.08, 0.02, 0.008], "color": "#f2f2f2"},
+            ],
+        },
+    ),
+)
+
+
 def library_model(name: str) -> dict | None:
     low = name.lower()
     for words, model in LIBRARY:
         if any(w in low for w in words):
             return {"name": name, "library": "dinosaur", **model}
-    for words, design in HAND_THINGS:
+    for words, design in (*TABLE_THINGS, *HAND_THINGS):
         if any(w in low for w in words):
             return {"name": name, **design}
     return None
