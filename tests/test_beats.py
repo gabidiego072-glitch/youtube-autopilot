@@ -62,7 +62,8 @@ def test_the_same_place_is_framed_anew_every_time():
     assert len(shots) == 4  # ...never the same shot
 
 
-def test_clock_times_are_not_facts():
+def test_clock_times_are_not_facts(monkeypatch):
+    monkeypatch.setattr("app.services.scenes.recipe_planner.SIGNS", True)  # signs are off by default
     specs = assemble(
         [_pick("street_watch", stat="08:00"), _pick("street_watch", stat="11h15"), _pick("street_watch", stat="-40%")],
         [3.0] * 3,

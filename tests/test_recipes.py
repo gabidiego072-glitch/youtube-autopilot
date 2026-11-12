@@ -59,8 +59,9 @@ def _pick(recipe, **extra):
     return {"recipe": recipe, "threat": "none", "time_of_day": "day", "look": "normal", **extra}
 
 
-def test_the_story_own_things_are_on_screen():
+def test_the_story_own_things_are_on_screen(monkeypatch):
     """The homeless video showed five empty streets: now the scenes carry the people, the key and the numbers."""
+    monkeypatch.setattr("app.services.scenes.recipe_planner.SIGNS", True)  # signs are off by default
     picks = [
         _pick("street_watch", people="rough_sleepers"),
         _pick("meet_person", subject="sitting", item="key"),
@@ -143,8 +144,9 @@ def test_a_failed_design_leaves_the_scene_without_the_object():
     assert not any(p["type"] == "model" for p in spec["props"])
 
 
-def test_stats_are_real_numbers_and_few():
+def test_stats_are_real_numbers_and_few(monkeypatch):
     """The aging video showed '+10' (the counter again) in every scene and 'LOOP' at the end."""
+    monkeypatch.setattr("app.services.scenes.recipe_planner.SIGNS", True)  # signs are off by default
     picks = [_pick("street_watch", stat=s) for s in ("+10", "+10", "+20", "LOOP", "+30", "+80")]
     specs = assemble(picks, [3.0] * 6, seed=1, city="new_york")
     shown = [next((p["text"] for p in s["props"] if p["id"] == "stat"), "") for s in specs]
@@ -198,3 +200,9 @@ def test_the_story_is_on_every_screen():
     assert spec["environment"]["screens"] == "WANTED $1,000,000,000"
     news = build("cafe_news", 4.0, seed=3, screens="NO HAY AGUA")  # the café TV shows it too
     assert "NO HAY AGUA" in str(news)
+
+
+def test_no_signs_floating_in_the_picture_by_default():
+    """Nov 12: the owner found the 3D numbers and the story text on the facades out of place."""
+    specs = assemble([_pick("street_watch", stat="-40%", screens="NO HAY AGUA")], [3.0], seed=1, city="paris")
+    assert not any(p["id"] == "stat" for p in specs[0]["props"]) and "screens" not in specs[0]["environment"]
