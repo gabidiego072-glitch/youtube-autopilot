@@ -68,6 +68,7 @@ def beats_for(scenes: list[dict]) -> list[dict]:
                     "share": len(piece.split()) / total,
                     "hud": scene.get("hud", ""),
                     "visual": scene.get("visual", ""),
+                    "speaker": scene.get("speaker", ""),
                 }
             )
     return beats

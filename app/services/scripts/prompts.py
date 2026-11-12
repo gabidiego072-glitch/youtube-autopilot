@@ -36,6 +36,8 @@ SCRIPT_SCHEMA = {
                     "human_subject": {"type": "string"},
                     "consequence": {"type": "string"},
                     "hud": {"type": "string"},
+                    "speaker": {"type": "string"},
+                    "phone": {"type": "string"},
                     "claims": {
                         "type": "array",
                         "items": {
@@ -80,8 +82,28 @@ SCRIPT_SCHEMA = {
                 },
                 "palette": {"type": "string"},
                 "camera_language": {"type": "string"},
+                "companion": {
+                    "type": "object",
+                    "properties": {
+                        "name": {"type": "string"},
+                        "gender": {"type": "string", "enum": ["female", "male"]},
+                        "relation": {"type": "string"},
+                    },
+                    "required": ["name", "gender", "relation"],
+                    "additionalProperties": False,
+                },
+                "choice": {
+                    "type": "object",
+                    "properties": {
+                        "question": {"type": "string"},
+                        "a": {"type": "string"},
+                        "b": {"type": "string"},
+                    },
+                    "required": ["question", "a", "b"],
+                    "additionalProperties": False,
+                },
             },
-            "required": ["look", "recurring_subjects", "palette", "camera_language"],
+            "required": ["look", "recurring_subjects", "palette", "camera_language", "companion", "choice"],
             "additionalProperties": False,
         },
     },

@@ -75,6 +75,8 @@ class EditScene:
     slot: SceneSlot
     sfx: list = field(default_factory=list)  # [(path, kind, at_seconds_in_scene)]
     hud: str = ""  # counter shown at the top for the whole scene (POV videos)
+    companion: bool = False  # this line is said by the companion (own voice, own subtitle colour)
+    phone: str = ""  # a text message from the companion, shown on your phone during the line
 
 
 @dataclass(frozen=True)
@@ -147,11 +149,107 @@ def subtitle_cues(scenes: list[EditScene], words_per_cue: int) -> list[dict]:
         chunks = [" ".join(words[i : i + words_per_cue]) for i in range(0, len(words), words_per_cue)]
         total = sum(len(c) + 1 for c in chunks)
         t = scene.slot.start + VOICE_LEAD
+        colour = COMPANION_COLOUR if scene.companion else ""
         for chunk in chunks:
             length = scene.speech * (len(chunk) + 1) / total
-            cues.append({"start": round(t, 3), "end": round(t + length, 3), "text": chunk})
+            text = f"{colour}{chunk}</font>" if colour else chunk
+            cues.append({"start": round(t, 3), "end": round(t + length, 3), "text": text})
             t += length
     return cues
+
+
+STORY_WORDS = {
+    "es": {"message": "Mensaje", "now": "ahora", "or": "o", "comment": "Comenta A o B · parte 2"},
+    "en": {"message": "Message", "now": "now", "or": "or", "comment": "Comment A or B · part 2"},
+}
+COMPANION_COLOUR = '<font color="#FFD27F">'  # the companion's words in warm yellow, the narrator's in white
+
+
+def story_overlays(
+    scenes: list[EditScene],
+    lead: float,
+    companion: str,
+    choice: dict | None,
+    path: Path,
+    portrait: bool = True,
+    language: str = "es",
+) -> Path | None:
+    """The personal story on screen: the companion's texts as phone notifications, and the viewer's choice at
+    the end ('WHAT WOULD YOU DO? A or B - comment for part 2'), like the reference videos."""
+    w, h = (1080, 1920) if portrait else (1920, 1080)
+    words = STORY_WORDS.get((language or "es").split("-")[0], STORY_WORDS["es"])
+    events = []
+
+    def t(seconds: float) -> str:
+        seconds = max(0.0, seconds)
+        return f"{int(seconds // 3600)}:{int(seconds % 3600 // 60):02d}:{seconds % 60:05.2f}"
+
+    def clean(text: str) -> str:
+        return " ".join(str(text).replace("{", "(").replace("}", ")").split())
+
+    for scene in scenes:
+        if not scene.phone.strip():
+            continue
+        start, end = scene.slot.start + lead + 0.15, scene.slot.start + scene.slot.duration + lead
+        name = clean(companion or words["message"])
+        events.append(
+            f"Dialogue: 1,{t(start)},{t(end)},PhoneHead,,0,0,0,,{{\\pos({w // 2},{int(h * 0.2)})\\fad(150,150)}}"
+            f"{name}  ·  {words['now']}"
+        )
+        events.append(
+            f"Dialogue: 1,{t(start)},{t(end)},Phone,,0,0,0,,{{\\pos({w // 2},{int(h * 0.245)})\\fad(150,150)}}"
+            f"{clean(scene.phone)}"
+        )
+    if choice and choice.get("a") and choice.get("b") and scenes:
+        last = scenes[-1]
+        end = last.slot.start + last.slot.duration + lead
+        start = max(last.slot.start + lead, end - 3.2)
+        rows = (
+            ("Ask", 0.3, clean(choice.get("question") or "?").upper()),
+            ("OptA", 0.4, f"A  ·  {clean(choice['a'])}"),
+            ("Or", 0.455, words["or"]),
+            ("OptB", 0.51, f"B  ·  {clean(choice['b'])}"),
+            ("Or", 0.585, words["comment"]),
+        )
+        for style, y, text in rows:
+            place = f"{{\\pos({w // 2},{int(h * y)})\\fad(200,0)}}"
+            events.append(f"Dialogue: 2,{t(start)},{t(end)},{style},,0,0,0,,{place}{text}")
+    if not events:
+        return None
+    styles = [
+        # name, size, text colour, box colour (BorderStyle 3 = opaque box), bold
+        ("PhoneHead", 34, "&H00785AE6", "&H00FFFFFF", 1),
+        ("Phone", 44, "&H00202020", "&H00FFFFFF", 0),
+        ("Ask", 78, "&H00FFFFFF", "&H00101010", 1),
+        ("OptA", 54, "&H00FFFFFF", "&H003C9B1E", 1),
+        ("OptB", 54, "&H00FFFFFF", "&H002A2AD0", 1),
+        ("Or", 38, "&H00FFFFFF", "&H00101010", 1),
+    ]
+    lines = [
+        "[Script Info]",
+        "ScriptType: v4.00+",
+        f"PlayResX: {w}",
+        f"PlayResY: {h}",
+        "",
+        "[V4+ Styles]",
+        "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, "
+        "Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, "
+        "MarginR, MarginV, Encoding",
+    ]
+    for name, size, colour, box, bold in styles:
+        boxed = name not in ("Ask", "Or")
+        lines.append(
+            f"Style: {name},DejaVu Sans,{size},{colour},{colour},{box},{box},{bold},0,0,0,100,100,0,0,"
+            f"{3 if boxed else 1},{14 if boxed else 4},0,5,40,40,0,1"
+        )
+    lines += [
+        "",
+        "[Events]",
+        "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text",
+        *events,
+    ]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return path
 
 
 def subtitle_style(portrait: bool) -> str:
@@ -183,6 +281,9 @@ def assemble_video(
     crf: int = 18,
     preset: str = "medium",
     cold_open: ColdOpen | None = None,
+    companion: str = "",
+    choice: dict | None = None,
+    language: str = "es",
 ) -> ProbeResult:
     if not scenes:
         raise ValueError("Nothing to assemble.")
@@ -246,6 +347,12 @@ def assemble_video(
         )
     else:
         graph.append(f"[{current}]null[vout]")
+    overlays = story_overlays(
+        scenes, lead, companion, choice, work_dir / "story.ass", portrait=h > w, language=language
+    )
+    if overlays is not None:  # phone notifications and the final choice, on top of everything
+        graph[-1] = graph[-1][: graph[-1].rindex("[vout]")] + "[subbed]"
+        graph.append(f"[subbed]subtitles=filename={escape_filter_value(str(overlays))}[vout]")
 
     # --- audio: voices on their exact times, effects on cue, ducked music --
     index = len(scenes) + (1 if cold_open else 0)
