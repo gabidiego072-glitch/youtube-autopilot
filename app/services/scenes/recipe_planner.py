@@ -16,6 +16,7 @@ from app.services.ai.base import AIProvider
 from app.services.scenes.objects import design_object
 from app.services.scenes.recipes import (
     BUILDERS,
+    GESTURES,
     HANDS,
     ITEMS,
     PEOPLE,
@@ -51,11 +52,23 @@ RECIPE_SCHEMA = {
                     "stat": {"type": "string"},
                     "trend": {"type": "string", "enum": list(TRENDS)},
                     "hands": {"type": "string", "enum": list(HANDS)},
+                    "gesture": {"type": "string", "enum": list(GESTURES)},
                     "headline": {"type": "string"},
                     "object": {"type": "string"},
                     "screens": {"type": "string"},
                 },
-                "required": ["recipe", "threat", "time_of_day", "look", "people", "item", "stat", "trend", "hands"],
+                "required": [
+                    "recipe",
+                    "threat",
+                    "time_of_day",
+                    "look",
+                    "people",
+                    "item",
+                    "stat",
+                    "trend",
+                    "hands",
+                    "gesture",
+                ],
                 "additionalProperties": False,
             },
         }
@@ -74,6 +87,10 @@ Choices per scene: recipe; threat (none|zombies|panic|fire|flood|collapse) = wha
 time_of_day (dawn|day|golden|dusk|night) following the story's clock (the on-screen counter); look (normal, or
 xray when the narration says the world itself changes how it looks); headline only for cafe_news (2-5 words in
 the narration's language, e.g. the news the TV shows).
+IT MUST HAPPEN ON SCREEN, LIVE: if a line says someone can't swallow, the viewer sees them put a hand to the
+throat with the croissant on the table; if a line says they hide, they cover their head. Never a scene where
+people only talk about it. Use reaction (a person across the table DOING it, the object on the table) and
+gesture (what the person in front of you does) for the moments of the story.
 THE VIEWER MUST SEE WHAT THE NARRATION SAYS. A street where nothing related happens is a failure: every scene
 shows the line's own subject (the person, the place, the object, the number).
 Scene 0 is the hook: the most striking picture of the story (a threat if there is one: street_run,
@@ -333,6 +350,7 @@ def assemble(
             take=takes.get(recipe, 0),
             companion=companion if speaking and speaking[i] else None,
             screens=pick.get("screens", ""),
+            gesture=pick["gesture"],
         )
         takes[recipe] = takes.get(recipe, 0) + 1
         spec["pick"] = dict(pick)
@@ -423,6 +441,7 @@ def _clean(pick: dict) -> dict:
         ("subject", SUBJECTS, "sitting"),
         ("trend", TRENDS, "none"),
         ("hands", HANDS, "normal"),
+        ("gesture", GESTURES, "none"),
     ):
         if out.get(key) not in allowed:
             out[key] = default

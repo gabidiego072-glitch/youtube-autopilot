@@ -64,3 +64,27 @@ def test_videos_use_the_illustrated_look_and_lens():
     from app.services.editing.assembler import FISHEYE
 
     assert FISHEYE.startswith("lenscorrection=k1=-")  # barrel: lines bow outwards like the references
+
+
+def test_the_story_happens_in_front_of_you():
+    """'Lucía can't swallow either': across the table she puts a hand to her throat, the croissant on the plate."""
+    from app.services.scenes.objects import library_model
+    from render_engines.core.spec import validate_spec
+
+    spec = build(
+        "reaction", 4.0, seed=8, room="cafe", companion=LUCIA, gesture="throat", obj=library_model("croissant")
+    )
+    validate_spec(spec)
+    lucia = next(c for c in spec["characters"] if c["id"] == "companion")
+    assert lucia["palette"] == companion_palette("Lucía")
+    assert any(a["type"] == "touch_throat" and a["character"] == "companion" for a in spec["actions"])
+    croissant = next(p for p in spec["props"] if p["id"] == "obj")
+    assert croissant["location"][2] > 0.7  # on the table, not on the floor
+    assert sum(c["id"] == "companion" for c in spec["characters"]) == 1  # not added twice
+
+
+def test_gestures_reach_the_person_in_front_of_you():
+    spec = build("room_view", 4.0, seed=1, room="office", companion=LUCIA, gesture="cover")
+    assert any(a["type"] == "cover" and a["character"] == "companion" for a in spec["actions"])
+    nobody = build("space", 4.0, seed=1, gesture="wave")  # no one to do it: nothing breaks
+    assert not any(a["type"] == "wave" for a in nobody["actions"])

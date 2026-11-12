@@ -36,6 +36,7 @@ RECIPES = (
     "meet_person",
     "room_view",
     "hand_action",
+    "reaction",
 )
 INDOOR = {"wake_up", "cafe_news", "dark_room", "kitchen", "theater", "room_view"}
 THREATS = ("none", "zombies", "panic", "fire", "flood", "collapse")
@@ -46,7 +47,8 @@ TRENDS = ("none", "up", "down")
 HANDS = ("normal", "old", "glow")  # how YOUR hands look (you aged, you have a power)
 SUBJECTS = ("sitting", "standing")
 # Recipes whose hands are free to hold something (the others already hold a phone, a cup or a torch).
-FREE_HANDS = {"street_watch", "meet_person", "room_view", "waterfront", "park"}
+FREE_HANDS = {"street_watch", "meet_person", "room_view", "waterfront", "park", "reaction"}
+GESTURES = ("none", "throat", "cover", "point", "wave", "reach", "jump", "fall")
 # Spots along the north wall that no bench, tree, lamp or café terrace takes, in every city style.
 WALL_SPOTS = (-14.0, -6.0, 2.0)
 WALL_Y = 6.95
@@ -116,6 +118,7 @@ def build(
     screens: str = "",
     take: int = 0,
     companion: dict | None = None,
+    gesture: str = "none",
 ) -> dict:
     """One full scene spec from a recipe. Unknown recipes fall back to street_watch.
 
@@ -136,6 +139,7 @@ def build(
         people=people if people in PEOPLE else "busy",
         room=room if room in ROOMS else "office",
         subject=subject if subject in SUBJECTS else "sitting",
+        companion=companion,
     )
     if item in ITEMS and item != "none" and recipe in FREE_HANDS and spec["camera"].get("pov"):
         spec["camera"].setdefault("pov_item", item)
@@ -151,8 +155,11 @@ def build(
         obj and (obj.get("parts") or obj.get("library")) and recipe != "meet_person"
     ):  # there the person you meet fills the view
         _add_object(spec, obj)
-    if companion and companion.get("name") and spec["camera"].get("pov") and recipe not in ("space", "street_run"):
+    no_room = ("space", "street_run", "reaction")  # reaction places the companion itself, across the table
+    if companion and companion.get("name") and spec["camera"].get("pov") and recipe not in no_room:
         _add_companion(spec, companion, duration, recipe)
+    if gesture in GESTURES and gesture != "none":
+        _gesture(spec, gesture, duration)
     if stat and stat.strip():
         _add_stat(spec, duration, stat.strip(), trend if trend in TRENDS else "none")
     seated = any(c.get("pose") == "sit" for c in spec["characters"])  # people at the wall stay where they are
@@ -932,6 +939,81 @@ def hand_action(d, *, rng, seed, city, time_of_day, people, **_):
     return spec
 
 
+# A table to sit at in each room: where you sit and look, where the object of the line lies, where the person
+# across the table stands. (The Nov 12 saliva frame: Lucía can't swallow, the croissant on the plate.)
+TABLES = {
+    "cafe": {
+        "eye": (0.25, -2.0, 1.45),
+        "look": (-0.35, 1.6, 1.0),
+        "thing": (-0.02, -0.62, 0.765),
+        "friend": (-0.3, 0.2),
+    },
+    "kitchen": {"eye": (1.6, -2.35, 1.4), "look": (1.4, 1.2, 1.0), "thing": (1.55, -0.95, 0.78), "friend": (1.45, 0.0)},
+    "living_room": {
+        "eye": (-0.4, -1.95, 1.25),
+        "look": (-0.75, 1.7, 0.9),
+        "thing": (-0.6, 0.45, 0.45),
+        "friend": (-0.95, 1.25),
+    },
+}
+
+
+def reaction(d, *, rng, seed, room, people, time_of_day, companion=None, **_):
+    """The story happening in front of you: you sit at a table, the person with you reacts to what the line says
+    (a gesture: a hand to the throat, covering their head, pointing...) and the thing it is about lies on the
+    table (the croissant nobody can swallow, an empty glass, a letter). Named in pick: gesture and object."""
+    room = room if room in TABLES else "cafe"
+    t = TABLES[room]
+    env = {"type": "interior", "room": room, "time_of_day": time_of_day}
+    spec = _base(d, seed, env)
+    palette = (
+        companion_palette(companion["name"]) if companion and companion.get("name") else dict(rng.choice(PALETTES))
+    )
+    fx, fy = t["friend"]
+    facing = math.degrees(math.atan2(t["eye"][1] - fy, t["eye"][0] - fx)) - 90
+    spec["characters"].append(
+        {"id": "companion", "start": [fx, fy], "facing": round(facing, 1), "palette": palette, "hat": False}
+    )
+    spec["actions"].append({"type": "look_at", "character": "companion", "target": "camera", "start": 0.1})
+    if room == "cafe" and people != "empty":  # other customers in the back
+        for k, (x, y, f) in enumerate(((-1.7, 1.5, 200), (1.6, 1.2, 160))):
+            spec["characters"].append(_person(f"r{k}", (x, y), f, rng))
+            spec["actions"].append({"type": "look_at", "character": f"r{k}", "target": "camera", "start": d * 0.5})
+    spec["object_spot"] = [*t["thing"], 0.35]  # the line's object lies on the table
+    ex, ey, ez = t["eye"]
+    lx, ly, lz = t["look"]
+    spec["camera"] = {
+        "pov": True,
+        "handheld": 0.012,
+        "fstop": 4.0,
+        "shots": [
+            _shot(0, (ex + 0.1, ey - 0.15, ez), (lx + 0.2, ly, lz + 0.1), 22),
+            _shot(d, (ex, ey, ez), (lx, ly, lz), 22),
+        ],
+    }
+    return spec
+
+
+def _gesture(spec: dict, gesture: str, d: float) -> None:
+    """What the person in front of you DOES while the line is said: the companion, or else the nearest person."""
+    who = next((c["id"] for c in spec["characters"] if c["id"] == "companion"), None)
+    who = who or next((c["id"] for c in spec["characters"] if not c.get("zombie") and c.get("pose") != "sit"), None)
+    if who is None:
+        return
+    start = round(min(0.3, d * 0.1), 3)
+    moves = {
+        "throat": {"type": "touch_throat", "side": "right", "start": start, "end": d},
+        "cover": {"type": "cover", "start": start, "end": d},
+        "point": {"type": "raise_arm", "side": "right", "start": start, "end": start + 0.5, "hold": d},
+        "wave": {"type": "wave", "side": "right", "start": start, "end": round(d * 0.8, 3)},
+        "reach": {"type": "reach", "side": "right", "start": start, "end": start + 0.5},
+        "jump": {"type": "jump", "start": round(d * 0.4, 3), "height": 0.4},
+        "fall": {"type": "fall", "start": round(d * 0.5, 3), "direction_deg": 90},
+    }
+    spec["actions"] = [a for a in spec["actions"] if not (a.get("character") == who and a["type"] == "raise_arm")]
+    spec["actions"].append({**moves[gesture], "character": who})
+
+
 def room_view(d, *, rng, seed, room, people, threat, time_of_day, **_):
     """You stand in a room the story talks about (an office, a hospital ward, a classroom...) and look around."""
     env = {"type": "interior", "room": room, "time_of_day": time_of_day}
@@ -970,6 +1052,7 @@ BUILDERS = {
     "meet_person": meet_person,
     "room_view": room_view,
     "hand_action": hand_action,
+    "reaction": reaction,
 }
 
 RECIPE_GUIDE = """Scene recipes (pick one per scene; the camera is always YOUR eyes):
@@ -991,6 +1074,11 @@ RECIPE_GUIDE = """Scene recipes (pick one per scene; the camera is always YOUR e
   them a key) and they take it; a sitting person then stands up. For meeting, helping or giving someone something.
 - hand_action: you walk to a thing on a wall and YOUR HAND works it (name it in object: fire alarm, button, tap,
   lever, or anything else): you pull the alarm, press the button, open the tap.
+- reaction: THE STORY HAPPENING IN FRONT OF YOU. You sit at a table (room cafe, kitchen or living_room) with the
+  companion (or a friend) across it, who DOES what the line says (gesture: throat = can't swallow or breathe,
+  cover = protects their head, point = points at something, wave, reach = holds a hand out, jump, fall), and
+  the thing the line is about lies on the table (object: croissant, empty glass, letter, phone, pill box...).
+  Example: "Lucía can't swallow either" -> reaction, room cafe, gesture throat, object croissant.
 - room_view: you stand in a room the line talks about (room: office, hospital, classroom, living_room, bedroom,
   kitchen, cafe); people empty = nobody there.
 Extra choices for any scene (they put the story's OWN things on screen, use them):
