@@ -335,7 +335,9 @@ def assemble(
             screens=pick.get("screens", ""),
         )
         takes[recipe] = takes.get(recipe, 0) + 1
-        spec["pick"] = dict(pick)  # what the director chose, to plan this scene again if it fails the check
+        spec["pick"] = dict(pick)
+        if not spec.get("look"):  # the illustrated look of the reference videos, unless the story asks for x-ray
+            spec["look"] = "toon"  # what the director chose, to plan this scene again if it fails the check
         if i:
             prev = picks[i - 1]
             through_door = prev["recipe"] in DOOR_EXITS and prev["recipe"] != recipe

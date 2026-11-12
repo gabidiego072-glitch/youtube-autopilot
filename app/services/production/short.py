@@ -296,6 +296,7 @@ def produce_short(
         companion=companion.get("name", ""),
         choice=(script.get("visual_bible") or {}).get("choice") or None,
         language=production.get("language", "es"),
+        fisheye=any(s.get("look") == "toon" for s in specs),
     )
     report = {
         "cold_open": {"clip": str(opening.clip), "start": opening.start} if opening else None,

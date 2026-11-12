@@ -1,4 +1,7 @@
-"""Looks: the same scene drawn in another way, for "what if physics changed" moments.
+"""Looks: the same scene drawn in another way.
+
+- toon: the illustrated style of the reference videos (flat colours with a hard shadow edge, thin dark
+  outlines); every automatic video uses it.
 
 - xray: everything turns into glowing outlines on black (the scene's edges drawn as light, Freestyle),
   surfaces become nearly invisible dark glass, and the ground is a field of tiny sparkling points (atoms).
@@ -18,6 +21,70 @@ GROUND_NAMES = ("Road", "Sidewalk", "Plinth", "Ground", "ground", "t_floor", "Pr
 def apply(look: str, scene, color: str = "#bcd7ff") -> None:
     if look == "xray":
         xray(scene, color)
+    elif look == "toon":
+        toon(scene)
+
+
+OUTLINE = "#23232e"
+
+
+def _base_color(bsdf):
+    """The colour a Principled material shows: its input value, or the node that feeds it."""
+    socket = bsdf.inputs["Base Color"]
+    return (socket.links[0].from_socket if socket.links else None), tuple(socket.default_value)
+
+
+def toon(scene, bands: float = 0.55) -> None:
+    """The illustrated look of the reference videos: flat colours with a hard light/shadow edge, soft ambient
+    so shadows never go black, and a thin dark outline on every edge (Freestyle). Glowing things (screens,
+    lamps, signs) keep their glow."""
+    done = set()
+    for mat in bpy.data.materials:
+        if not mat.use_nodes or mat.name in done or mat.name.startswith("look_"):
+            continue
+        nodes, links = mat.node_tree.nodes, mat.node_tree.links
+        bsdf = next((n for n in nodes if n.type == "BSDF_PRINCIPLED"), None)
+        out = next((n for n in nodes if n.type == "OUTPUT_MATERIAL"), None)
+        if bsdf is None or out is None:
+            continue
+        strength = bsdf.inputs["Emission Strength"].default_value
+        if strength > 0.05 or bsdf.inputs["Transmission Weight"].default_value > 0.5:
+            continue  # screens, lamps and glass stay as they are
+        source, colour = _base_color(bsdf)
+        shade = nodes.new("ShaderNodeBsdfToon")
+        shade.component = "DIFFUSE"
+        shade.inputs["Size"].default_value = bands
+        shade.inputs["Smooth"].default_value = 0.04
+        flat = nodes.new("ShaderNodeEmission")  # the colour itself, so the shadow side stays readable
+        flat.inputs["Strength"].default_value = 0.45
+        for target in (shade.inputs["Color"], flat.inputs["Color"]):
+            if source is not None:
+                links.new(source, target)
+            else:
+                target.default_value = colour
+        mix = nodes.new("ShaderNodeAddShader")
+        links.new(shade.outputs[0], mix.inputs[0])
+        links.new(flat.outputs[0], mix.inputs[1])
+        for link in list(out.inputs["Surface"].links):
+            links.remove(link)
+        links.new(mix.outputs[0], out.inputs["Surface"])
+        done.add(mat.name)
+    scene.render.use_freestyle = True
+    scene.render.line_thickness_mode = "ABSOLUTE"
+    scene.render.line_thickness = max(1.2, scene.render.resolution_y / 560)
+    layer = scene.view_layers[0]
+    layer.use_freestyle = True
+    settings = layer.freestyle_settings
+    settings.crease_angle = 2.4  # about 137 degrees: real corners, not the facets of round shapes
+    lineset = settings.linesets[0] if settings.linesets else settings.linesets.new("toon")
+    lineset.select_by_visibility = True
+    lineset.select_by_edge_types = True
+    lineset.select_silhouette = lineset.select_border = lineset.select_crease = True
+    style = lineset.linestyle or bpy.data.linestyles.new("toon_lines")
+    lineset.linestyle = style
+    style.color = hex_to_linear(OUTLINE)[:3]
+    style.thickness = 1.0
+    style.alpha = 0.9
 
 
 def _xray_surface(color: str):
