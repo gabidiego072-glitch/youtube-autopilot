@@ -371,6 +371,7 @@ def _striking_start(picks: list[dict]) -> None:
         picks[0] = {**picks[0], "recipe": "street_watch", "people": "busy"}
 
 
+SIGNS = False  # 3D numbers and story screens are off; the code stays for videos that want them
 MAX_GLOBAL_SHARE = 0.14  # just under the human-impact rule (15%): the planet is a short moment, never more
 
 
@@ -425,6 +426,8 @@ def _clean(pick: dict) -> dict:
     ):
         if out.get(key) not in allowed:
             out[key] = default
-    out["stat"] = str(out.get("stat") or "").strip()[:12]
-    out["screens"] = str(out.get("screens") or "").strip()[:28]
+    # No signs floating in the picture (big 3D numbers, the story's text on every facade): the owner found them
+    # out of place on Nov 12, and the reference videos tell everything with the scene itself.
+    out["stat"] = str(out.get("stat") or "").strip()[:12] if SIGNS else ""
+    out["screens"] = str(out.get("screens") or "").strip()[:28] if SIGNS else ""
     return out
