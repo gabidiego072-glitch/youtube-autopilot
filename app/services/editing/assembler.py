@@ -158,6 +158,7 @@ def subtitle_cues(scenes: list[EditScene], words_per_cue: int) -> list[dict]:
     return cues
 
 
+FISHEYE = "lenscorrection=k1=-0.18:k2=-0.02:i=bilinear"  # barrel: straight lines bow outwards at the edges
 STORY_WORDS = {
     "es": {"message": "Mensaje", "now": "ahora", "or": "o", "comment": "Comenta A o B · parte 2"},
     "en": {"message": "Message", "now": "now", "or": "or", "comment": "Comment A or B · part 2"},
@@ -284,6 +285,7 @@ def assemble_video(
     companion: str = "",
     choice: dict | None = None,
     language: str = "es",
+    fisheye: bool = False,
 ) -> ProbeResult:
     if not scenes:
         raise ValueError("Nothing to assemble.")
@@ -295,10 +297,11 @@ def assemble_video(
     graph = []
 
     # --- video: normalise every clip, then chain the transitions ----------
+    lens = f"{FISHEYE}," if fisheye else ""  # the wide, curved lens of the illustrated reference videos
     for i, scene in enumerate(scenes):
         args += ["-i", str(scene.clip)]
         graph.append(
-            f"[{i}:v]scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h},fps={fps},setsar=1,"
+            f"[{i}:v]scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h},{lens}fps={fps},setsar=1,"
             f"format=yuv420p,tpad=stop_mode=clone:stop_duration=2,trim=duration={scene.slot.clip_length:.4f},"
             f"setpts=PTS-STARTPTS[c{i}]"
         )
@@ -313,7 +316,7 @@ def assemble_video(
     if cold_open:  # the striking excerpt with the title, then a white flash into the story
         args += ["-i", str(cold_open.clip)]
         graph.append(
-            f"[{len(scenes)}:v]scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h},fps={fps},setsar=1,"
+            f"[{len(scenes)}:v]scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h},{lens}fps={fps},setsar=1,"
             f"format=yuv420p,tpad=stop_mode=clone:stop_duration=3,trim=start={cold_open.start:.4f}:"
             f"duration={cold_open.length:.4f},setpts=PTS-STARTPTS[co]"
         )

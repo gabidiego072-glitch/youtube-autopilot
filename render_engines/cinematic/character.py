@@ -283,6 +283,66 @@ def _hat(name: str, accent, neck, col) -> None:
     )
 
 
+TROUSERS = ("#2b3a55", "#3a3a3f", "#5a4a3a", "#1f2d3d", "#4b5563", "#6b5b4b")
+HAIRSTYLES = ("short", "bun", "curly", "long", "short", "curly")
+
+
+def _seed(name: str) -> int:
+    return sum(ord(c) * (i + 1) for i, c in enumerate(name))
+
+
+def _trousers(name: str) -> str:
+    return TROUSERS[_seed(name) % len(TROUSERS)]
+
+
+def _hairstyle(name: str, hair, neck, col, zombie: bool) -> None:
+    """Short, a bun, curls or long hair: chosen from the name, so a person keeps theirs in every scene."""
+    style = "short" if zombie else HAIRSTYLES[_seed(name) // 7 % len(HAIRSTYLES)]
+    if style == "curly":
+        for k, (x, y, z) in enumerate(
+            (
+                (0, -0.02, 0.33),
+                (0.08, 0.0, 0.31),
+                (-0.08, 0.0, 0.31),
+                (0.1, -0.07, 0.24),
+                (-0.1, -0.07, 0.24),
+                (0, -0.1, 0.29),
+                (0.05, 0.06, 0.31),
+                (-0.05, 0.06, 0.31),
+                (0, -0.13, 0.19),
+            )
+        ):
+            objects.mesh_object(
+                f"{name}_curl_{k}", objects.sphere(0.065, 12, 8), hair, True, (x, y, z), parent=neck, col=col
+            )
+        return
+    objects.mesh_object(
+        f"{name}_hair",
+        objects.sphere(0.162, 32, 16),
+        hair,
+        True,
+        (0, -0.02, 0.24),
+        scale=(1.04, 1.04, 0.8),
+        parent=neck,
+        col=col,
+    )
+    if style == "bun":
+        objects.mesh_object(
+            f"{name}_bun", objects.sphere(0.07, 16, 10), hair, True, (0, -0.1, 0.34), parent=neck, col=col
+        )
+    elif style == "long":
+        objects.mesh_object(
+            f"{name}_long",
+            objects.sphere(0.15, 24, 12),
+            hair,
+            True,
+            (0, -0.1, 0.13),
+            scale=(0.95, 0.5, 1.25),
+            parent=neck,
+            col=col,
+        )
+
+
 def build_character(
     name: str,
     palette: dict | None = None,
@@ -310,76 +370,110 @@ def build_character(
     root.scale = (scale, scale, scale)
     hips = objects.empty(f"{name}_hips", location=(0, 0, HIP_HEIGHT), parent=root, col=col)
 
+    # Proportions of the illustrated reference videos: a normal-sized head (no bobble head), shirt and trousers
+    # in different colours, no nose, big round eyes, a hairstyle of its own.
+    trousers = materials.principled(f"{name}_trousers", p.get("legs") or _trousers(name), roughness=0.85)
     objects.mesh_object(
-        f"{name}_pelvis", objects.sphere(0.2), body, True, (0, 0, 0.02), scale=(1.1, 0.85, 0.7), parent=hips, col=col
-    )
-    torso = objects.mesh_object(
-        f"{name}_torso", objects.sphere(0.26), body, True, (0, 0, 0.32), scale=(1.0, 0.78, 1.25), parent=hips, col=col
-    )
-    objects.mesh_object(
-        f"{name}_belt",
-        objects.cone(0.215, 0.215, 0.06, 32, False),
-        boots,
+        f"{name}_pelvis",
+        objects.sphere(0.17),
+        trousers,
         True,
-        (0, 0, 0.1),
-        scale=(1.0, 0.82, 1),
+        (0, 0, 0.02),
+        scale=(1.08, 0.8, 0.62),
         parent=hips,
         col=col,
     )
-
-    neck = objects.empty(f"{name}_neck", location=(0, 0, 0.64), parent=hips, col=col)
-    objects.mesh_object(
-        f"{name}_scarf", objects.cone(0.15, 0.13, 0.09, 32, False), accent, True, (0, 0, 0.0), parent=neck, col=col
+    # A rounded body with shoulders, its shape baked into the mesh (the breathing animation scales the
+    # object, which used to undo an object scale and leave a ball).
+    torso = objects.mesh_object(
+        f"{name}_torso",
+        objects.transform(objects.capsule(0.19, 0.6), Matrix.Diagonal((1.12, 0.68, 1.0, 1))),
+        body,
+        True,
+        (0, 0, 0.6),
+        parent=hips,
+        col=col,
     )
+    neck = objects.empty(f"{name}_neck", location=(0, 0, 0.62), parent=hips, col=col)
+    objects.mesh_object(
+        f"{name}_neck_m", objects.cone(0.05, 0.05, 0.1, 16, False), skin, True, (0, 0, 0.03), parent=neck, col=col
+    )
+    if hat and not zombie:
+        objects.mesh_object(
+            f"{name}_scarf",
+            objects.cone(0.11, 0.1, 0.07, 32, False),
+            accent,
+            True,
+            (0, 0, 0.0),
+            parent=neck,
+            col=col,
+        )
     objects.mesh_object(
         f"{name}_head",
-        objects.sphere(0.23, 32, 16),
+        objects.sphere(0.155, 32, 16),
         skin,
         True,
-        (0, 0.0, 0.24),
-        scale=(1, 0.95, 1.02),
+        (0, 0.0, 0.18),
+        scale=(0.95, 0.95, 1.08),
         parent=neck,
         col=col,
     )
-    objects.mesh_object(
-        f"{name}_hair",
-        objects.sphere(0.235, 32, 16),
-        hair,
-        True,
-        (0, -0.03, 0.29),
-        scale=(1.03, 0.98, 0.85),
-        parent=neck,
-        col=col,
-    )
-    objects.mesh_object(f"{name}_nose", objects.sphere(0.04), skin, True, (0, 0.225, 0.22), parent=neck, col=col)
+    _hairstyle(name, hair, neck, col, zombie)
     if hat and not zombie:
         _hat(name, accent, neck, col)
     eyes = []
     for sx in (-1, 1):
         eye = objects.mesh_object(
-            f"{name}_eye_{sx}", objects.sphere(0.05), eye_white, True, (0.085 * sx, 0.19, 0.27), parent=neck, col=col
+            f"{name}_eye_{sx}",
+            objects.sphere(0.046),
+            eye_white,
+            True,
+            (0.058 * sx, 0.128, 0.19),
+            scale=(1.0, 0.55, 1.12),
+            parent=neck,
+            col=col,
         )
         objects.mesh_object(
-            f"{name}_pupil_{sx}", objects.sphere(0.028), eye_dark, True, (0, 0.035, 0.0), parent=eye, col=col
+            f"{name}_pupil_{sx}", objects.sphere(0.022), eye_dark, True, (0, 0.03, -0.004), parent=eye, col=col
         )
         eyes.append(eye)
+    mouth = materials.principled("mouth_dark", "#5a2a2a", roughness=0.6)
+    objects.mesh_object(
+        f"{name}_mouth",
+        objects.sphere(0.02),
+        mouth,
+        True,
+        (0, 0.142, 0.1),
+        scale=(1.8, 0.6, 0.55),
+        parent=neck,
+        col=col,
+    )
 
     arms = {}
     for side, sx in (("L", -1), ("R", 1)):
-        shoulder = objects.empty(f"{name}_shoulder_{side}", location=(0.3 * sx, 0, 0.5), parent=hips, col=col)
-        objects.mesh_object(f"{name}_arm_{side}", objects.capsule(0.075, 0.5), body, True, parent=shoulder, col=col)
+        shoulder = objects.empty(f"{name}_shoulder_{side}", location=(0.25 * sx, 0, 0.5), parent=hips, col=col)
+        objects.mesh_object(f"{name}_arm_{side}", objects.capsule(0.066, 0.3), body, True, parent=shoulder, col=col)
         objects.mesh_object(
-            f"{name}_hand_{side}", objects.sphere(0.075), skin, True, (0, 0, -0.5), parent=shoulder, col=col
+            f"{name}_forearm_{side}",
+            objects.capsule(0.052, 0.24),
+            skin,
+            True,
+            (0, 0, -0.27),
+            parent=shoulder,
+            col=col,
+        )
+        objects.mesh_object(
+            f"{name}_hand_{side}", objects.sphere(0.056), skin, True, (0, 0, -0.5), parent=shoulder, col=col
         )
         arms[side] = shoulder
 
     legs = {}
     for side, sx in (("L", -1), ("R", 1)):
-        hip = objects.empty(f"{name}_hip_{side}", location=(0.11 * sx, 0, 0.0), parent=hips, col=col)
-        objects.mesh_object(f"{name}_leg_{side}", objects.capsule(0.09, 0.7), body, True, parent=hip, col=col)
+        hip = objects.empty(f"{name}_hip_{side}", location=(0.1 * sx, 0, 0.0), parent=hips, col=col)
+        objects.mesh_object(f"{name}_leg_{side}", objects.capsule(0.08, 0.7), trousers, True, parent=hip, col=col)
         objects.mesh_object(
             f"{name}_boot_{side}",
-            objects.transform(objects.sphere(0.1), Matrix.Diagonal((1, 1.5, 0.6, 1))),
+            objects.transform(objects.sphere(0.085), Matrix.Diagonal((1, 1.6, 0.6, 1))),
             boots,
             True,
             (0, 0.05, -0.72),
