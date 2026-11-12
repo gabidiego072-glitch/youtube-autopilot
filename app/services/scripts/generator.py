@@ -36,6 +36,8 @@ class SceneDraft(BaseModel):
     consequence: str = ""
     claims: list[ClaimDraft] = Field(default_factory=list)
     hud: str = ""  # on-screen counter for POV videos ("DÍA 1 · 07:42")
+    speaker: str = ""  # "" or "narrator" = the narrator (you); otherwise the companion's name: their own voice
+    phone: str = ""  # a text message from the companion shown on your phone during this line
 
 
 class VisualBible(BaseModel):
@@ -43,6 +45,8 @@ class VisualBible(BaseModel):
     recurring_subjects: list[dict] = Field(default_factory=list)
     palette: str = ""
     camera_language: str = ""
+    companion: dict = Field(default_factory=dict)  # {name, gender, relation}: who lives the story with you
+    choice: dict = Field(default_factory=dict)  # {question, a, b}: the viewer's choice at the end
 
 
 class ScriptDraft(BaseModel):

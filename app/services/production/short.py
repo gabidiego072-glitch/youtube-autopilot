@@ -92,6 +92,15 @@ COLD_OPEN_SECONDS = 1.6
 _STRIKING = ("collapse", "fire", "flood", "surge", "fling", "inertia_shock", "shatter_windows", "fall")
 
 
+def _is_companion(scene: dict, companion: dict) -> bool:
+    speaker = (scene.get("speaker") or "").strip().lower()
+    return (
+        bool(speaker)
+        and speaker not in ("narrator", "narrador", "you", "tú")
+        and (not companion.get("name") or speaker == companion["name"].strip().lower())
+    )
+
+
 def scene_hud(scenes: list[dict], i: int) -> str:
     """The counter of scene i; a word like 'LOOP' is not a counter: keep the previous one on screen."""
     hud = (scenes[i].get("hud") or "").strip()
@@ -225,6 +234,7 @@ def produce_short(
         )
 
     # 4. Sound effects and music (generated, cached).
+    companion = (script.get("visual_bible") or {}).get("companion") or {}  # who lives the story with you
     edit_scenes, offset = [], selected and slots[selected[0]].start
     for i in selected:
         effects = scene_effects(ffmpeg, specs[i], slots[i], out_dir / "sfx") if mode.sfx else []
@@ -241,6 +251,8 @@ def produce_short(
                 rebased,
                 effects,
                 scene_hud(script["scenes"], i),
+                companion=_is_companion(script["scenes"][i], companion),
+                phone=str(script["scenes"][i].get("phone") or ""),
             )
         )
     total = edit_scenes[-1].slot.start + edit_scenes[-1].slot.duration
@@ -281,6 +293,9 @@ def produce_short(
         crf=mode.crf,
         preset=mode.preset,
         cold_open=opening,
+        companion=companion.get("name", ""),
+        choice=(script.get("visual_bible") or {}).get("choice") or None,
+        language=production.get("language", "es"),
     )
     report = {
         "cold_open": {"clip": str(opening.clip), "start": opening.start} if opening else None,

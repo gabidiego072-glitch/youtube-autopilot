@@ -11,6 +11,7 @@ Every recipe takes the scene duration (the length of its voice line) and lays ou
 
 from __future__ import annotations
 
+import math
 import random
 
 PALETTES = (
@@ -114,6 +115,7 @@ def build(
     hands: str = "normal",
     screens: str = "",
     take: int = 0,
+    companion: dict | None = None,
 ) -> dict:
     """One full scene spec from a recipe. Unknown recipes fall back to street_watch.
 
@@ -149,6 +151,8 @@ def build(
         obj and (obj.get("parts") or obj.get("library")) and recipe != "meet_person"
     ):  # there the person you meet fills the view
         _add_object(spec, obj)
+    if companion and companion.get("name") and spec["camera"].get("pov") and recipe not in ("space", "street_run"):
+        _add_companion(spec, companion, duration, recipe)
     if stat and stat.strip():
         _add_stat(spec, duration, stat.strip(), trend if trend in TRENDS else "none")
     seated = any(c.get("pose") == "sit" for c in spec["characters"])  # people at the wall stay where they are
@@ -759,6 +763,51 @@ def _add_object(spec: dict, obj: dict, side: float = 0.0) -> None:
     spec["object_name"] = obj.get("name", "")
     if env_type != "space":  # the scene ends looking at it: big things are framed from below
         spec["camera"]["shots"][-1]["target"] = [round(at[0], 3), round(at[1], 3), round(at[2] + height * 0.45, 3)]
+
+
+def companion_palette(name: str) -> dict:
+    """The companion always wears the same clothes: a palette chosen from their name."""
+    rng = random.Random(sum(ord(c) * (i + 1) for i, c in enumerate(name.lower())))
+    palette = dict(rng.choice(PALETTES))
+    palette["body"] = rng.choice(("#c0392b", "#2e86c1", "#d4ac0d", "#8e44ad", "#16a085", "#e67e22"))
+    return palette
+
+
+def _add_companion(spec: dict, companion: dict, d: float, recipe: str) -> None:
+    """The companion is with you while they speak: in front of you, a little to the side, looking at you."""
+    if recipe == "meet_person" and spec["characters"]:  # the person you meet IS the companion
+        spec["characters"][0]["palette"] = companion_palette(companion["name"])
+        return
+    loc, dx, dy = _view(spec)
+    indoor = spec["environment"].get("type") == "interior"
+    dist = 2.0 if indoor else 3.0  # whole in the frame, not a face filling it
+    right = (dy, -dx)
+    at = (loc[0] + dx * dist + right[0] * 0.3, loc[1] + dy * dist + right[1] * 0.3)
+    if indoor:
+        at = (max(-2.4, min(2.4, at[0])), max(-2.0, min(2.0, at[1])))
+    if math.hypot(at[0] - loc[0], at[1] - loc[1]) < 1.6:  # no room in front of you: they speak off-screen
+        return
+    facing = math.degrees(math.atan2(-dy, -dx)) - 90
+    spec["characters"].append(
+        {
+            "id": "companion",
+            "start": [round(at[0], 3), round(at[1], 3)],
+            "facing": round(facing, 1),
+            "palette": companion_palette(companion["name"]),
+            "hat": False,
+        }
+    )
+    spec["actions"] += [
+        {"type": "look_at", "character": "companion", "target": "camera", "start": 0.1},
+        {
+            "type": "raise_arm",
+            "character": "companion",
+            "side": "right",
+            "start": round(d * 0.3, 3),
+            "end": round(d * 0.3 + 0.4, 3),
+            "hold": 0.4,
+        },
+    ]
 
 
 def _add_stat(spec: dict, d: float, text: str, trend: str) -> None:

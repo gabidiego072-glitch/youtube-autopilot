@@ -98,8 +98,13 @@ the channel (an object, a room, a moment)."""
 
 def _scene_list(scenes: list[dict], durations: list[float]) -> str:
     return "\n".join(
-        f"{i}. ({durations[i]:.1f}s) counter {s.get('hud', '') or '-'} | {s.get('narration', '')} | shows: "
-        f"{s.get('visual', '')}"
+        f"{i}. ({durations[i]:.1f}s) counter {s.get('hud', '') or '-'} | "
+        + (
+            f"{s['speaker']} says: "
+            if s.get("speaker") and s["speaker"].lower() not in ("narrator", "narrador")
+            else ""
+        )
+        + f"{s.get('narration', '')} | shows: {s.get('visual', '')}"
         for i, s in enumerate(scenes)
     )
 
@@ -113,6 +118,7 @@ def plan_with_recipes(
     city: str = "new_york",
     notes: str | None = None,
     split: bool = True,
+    companion: dict | None = None,
 ) -> list[dict]:
     """One spec per narration line. With `split`, every line is cut into beats (one per sentence or clause) and
     each beat gets its own scene: the line's spec then holds them in `parts`, played one after the other."""
@@ -121,7 +127,9 @@ def plan_with_recipes(
     beats = _beats(scenes, split)
     beat_durations = [durations[b["line"]] * b["share"] for b in beats]
     picks = _ask(provider, beats, beat_durations, city, notes)
-    return _by_line(picks, beats, beat_durations, seed=seed, city=city, provider=provider, lines=len(scenes))
+    return _by_line(
+        picks, beats, beat_durations, seed=seed, city=city, provider=provider, lines=len(scenes), companion=companion
+    )
 
 
 def _beats(scenes: list[dict], split: bool) -> list[dict]:
@@ -133,6 +141,7 @@ def _beats(scenes: list[dict], split: bool) -> list[dict]:
                 "share": 1.0,
                 "hud": s.get("hud", ""),
                 "visual": s.get("visual", ""),
+                "speaker": s.get("speaker", ""),
             }
             for i, s in enumerate(scenes)
         ]
@@ -159,8 +168,17 @@ def _ask(provider, beats, beat_durations, city, notes, extra: str = "") -> list[
     return picks
 
 
-def _by_line(picks, beats, beat_durations, *, seed, city, provider, lines) -> list[dict]:
-    specs = assemble(picks, beat_durations, seed=seed, city=city, objects=design_objects(provider, picks))
+def _by_line(picks, beats, beat_durations, *, seed, city, provider, lines, companion=None) -> list[dict]:
+    speaking = [_speaks(b, companion) for b in beats]
+    specs = assemble(
+        picks,
+        beat_durations,
+        seed=seed,
+        city=city,
+        objects=design_objects(provider, picks),
+        companion=companion,
+        speaking=speaking,
+    )
     out = []
     for i in range(lines):
         idx = [k for k, b in enumerate(beats) if b["line"] == i]
@@ -193,6 +211,7 @@ def replan(
     seed: int,
     city: str = "new_york",
     notes: str | None = None,
+    companion: dict | None = None,
 ) -> list[dict]:
     """Plan again the lines whose scenes do not show what they say (feedback: what the check saw and what is
     missing), keeping every other line's scenes as they are."""
@@ -208,6 +227,7 @@ def replan(
                     "share": b["share"],
                     "hud": scenes[i].get("hud", ""),
                     "visual": scenes[i].get("visual", ""),
+                    "speaker": scenes[i].get("speaker", ""),
                 }
             )
             picks.append(dict(b.get("pick") or {}))
@@ -225,7 +245,9 @@ def replan(
     fresh = _ask(provider, beats, beat_durations, city, notes, extra)
     for k in redo:
         picks[k] = fresh[k]
-    return _by_line(picks, beats, beat_durations, seed=seed, city=city, provider=provider, lines=len(specs))
+    return _by_line(
+        picks, beats, beat_durations, seed=seed, city=city, provider=provider, lines=len(specs), companion=companion
+    )
 
 
 MAX_OBJECTS = 3  # designs per video (one AI call each)
@@ -262,8 +284,20 @@ def _object_name(value) -> str:
     return " ".join(str(value or "").lower().split())[:40]
 
 
+def _speaks(beat: dict, companion: dict | None) -> bool:
+    speaker = (beat.get("speaker") or "").strip().lower()
+    return bool(companion and companion.get("name")) and speaker == companion["name"].strip().lower()
+
+
 def assemble(
-    picks: list[dict], durations: list[float], *, seed: int, city: str, objects: dict[str, dict] | None = None
+    picks: list[dict],
+    durations: list[float],
+    *,
+    seed: int,
+    city: str,
+    objects: dict[str, dict] | None = None,
+    companion: dict | None = None,
+    speaking: list[bool] | None = None,
 ) -> list[dict]:
     """Build every scene from its recipe, with doors, flashes and shared places between scenes."""
     picks = [_clean(p) for p in picks]
@@ -297,6 +331,7 @@ def assemble(
             obj=(objects or {}).get(_object_name(pick.get("object"))),
             hands=pick["hands"],
             take=takes.get(recipe, 0),
+            companion=companion if speaking and speaking[i] else None,
             screens=pick.get("screens", ""),
         )
         takes[recipe] = takes.get(recipe, 0) + 1

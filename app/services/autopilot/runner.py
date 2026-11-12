@@ -470,13 +470,18 @@ def step_voice(db, run, services, ai) -> dict:
         if features.get("voice"):
             features["voice"] = DEFAULT_VOICE
             project.features = features
+    companion = (script.visual_bible or {}).get("companion") or {}
+    friend_voice = companion_voice(project.language, companion.get("gender", ""), features.get("voice", ""))
+    friend_tts = services.voices(friend_voice) if services.voices and friend_voice else None
     durations = []
     for i, scene in enumerate(script.scenes):
         wav = work / "voice" / f"scene_{i:02d}.wav"
-        key = hashlib.sha256(f"{features.get('voice', '')}|{scene['narration']}".encode()).hexdigest()
+        speaks = is_companion_line(scene, companion) and friend_tts is not None
+        voice_name = friend_voice if speaks else features.get("voice", "")
+        key = hashlib.sha256(f"{voice_name}|{scene['narration']}".encode()).hexdigest()
         stamp = wav.with_suffix(".wav.key")
         if not (wav.is_file() and stamp.is_file() and stamp.read_text() == key):
-            tts.synthesize(scene["narration"], wav)
+            (friend_tts if speaks else tts).synthesize(scene["narration"], wav)
             stamp.write_text(key)
             db.add(
                 MediaAsset(
@@ -493,6 +498,27 @@ def step_voice(db, run, services, ai) -> dict:
         durations.append(services.ffmpeg.probe(wav).duration_seconds)
     db.commit()
     return {"scenes": len(durations), "voice_seconds": round(sum(durations), 2)}
+
+
+# The companion's own voice: the other gender's Kokoro voice of the language, never the narrator's.
+COMPANION_VOICES = {
+    "es": {"female": ("kokoro_dora",), "male": ("kokoro_alex",)},
+    "en": {"female": ("kokoro_heart",), "male": ("kokoro_michael", "kokoro_onyx")},
+}
+
+
+def companion_voice(language: str, gender: str, narrator: str) -> str:
+    options = COMPANION_VOICES.get((language or "es").split("-")[0], COMPANION_VOICES["es"]).get(gender, ())
+    return next((v for v in options if v != narrator), "")
+
+
+def is_companion_line(scene: dict, companion: dict) -> bool:
+    speaker = (scene.get("speaker") or "").strip().lower()
+    return (
+        bool(speaker)
+        and speaker not in ("narrator", "narrador", "you", "tú")
+        and (not companion.get("name") or speaker == companion["name"].strip().lower())
+    )
 
 
 def step_storyboard(db, run, services, ai) -> dict:
@@ -515,6 +541,7 @@ def step_storyboard(db, run, services, ai) -> dict:
                 seed=int(project.id.int % 100_000),
                 city=features.get("city_style") or "new_york",
                 notes=recipe_notes,
+                companion=(script.visual_bible or {}).get("companion") or None,
             )
         except Exception as exc:  # noqa: BLE001 - never lose the day's video: fall back to the old storyboard
             services.log(f"recipe storyboard failed ({exc}); using the free-form storyboard")
@@ -603,7 +630,15 @@ def _show_what_is_said(db, run, services, ai, specs, durations, notes):
     if bad:
         try:
             specs = replan(
-                ai, specs=specs, scenes=scenes, durations=durations, feedback=bad, seed=seed, city=city, notes=notes
+                ai,
+                specs=specs,
+                scenes=scenes,
+                durations=durations,
+                feedback=bad,
+                seed=seed,
+                city=city,
+                notes=notes,
+                companion=(script.visual_bible or {}).get("companion") or None,
             )
         except Exception as exc:  # noqa: BLE001 - keep the first storyboard rather than lose the video
             services.log(f"replanning failed ({exc}); keeping the first storyboard")

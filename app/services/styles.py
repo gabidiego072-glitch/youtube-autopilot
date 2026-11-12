@@ -38,8 +38,16 @@ POV_SCRIPT_NOTE = """STYLE: first-person POV ("what if it were YOU"), written li
 - Escalate every line: a bigger number, a new place or a stranger event; never two lines that show the same
   thing. Around two thirds in, one turn ("and the worst hasn't come yet"), then the most extreme image.
 - Name real places of the city in at least half of the lines (its streets, landmarks, the river, the metro).
-- The last line closes a loop: it leads straight back into the first line (e.g. it ends {loop}), so the
-  video can be watched again and again.
+- A PERSONAL STORY, not a list of facts: you live it with ONE companion (visual_bible.companion: a common
+  first name in the narration's language, gender, relation: best friend, sister, dad, flatmate...). The
+  companion SPEAKS 2-4 lines in their own voice: that scene's 'speaker' is their name and its narration is what
+  they say, natural and short ("No abras la puerta.", "Te lo dije."). Every other line has speaker "narrator"
+  (second person). Most of the story happens in one or two places with the same people.
+- Your phone: 2-3 lines carry a text message from the companion in 'phone' (at most 8 words, like a real
+  chat: lowercase, no full stop, e.g. "estoy en el súper. no queda agua"); empty otherwise.
+- The ending is the viewer's CHOICE (this video is part 1): visual_bible.choice = question (at most 6 words)
+  and two tempting options a and b (at most 4 words each). The last line asks it in the story ("¿Abres la
+  puerta o esperas?") and ending_type is "question".
 - Keep the science: each decision is explained in half a sentence with a real fact (how fast an outbreak
   spreads, how long the water and the power last without workers, how long a person lasts without water).
 - WRITE ONLY WHAT THE 3D WORLD CAN SHOW. Every line is one of these moments, and the 'visual' names it:
