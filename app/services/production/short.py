@@ -111,7 +111,9 @@ def cold_open_scene(specs: list[dict], selected: list[int]) -> int | None:
         points += 4 * bool(kinds & set(_STRIKING[:5])) + 2 * ("fall" in kinds)
         points += 3 * bool(env.get("chasers") or env.get("zombies")) + 2 * bool(env.get("panic"))
         points += 2 * bool(spec.get("look"))
-        points += 4 * (spec.get("recipe") == "meet_person")  # the story's own moment (meeting someone)
+        # the story's own moment (handing a key to someone sleeping rough), not a stranger's face in close-up
+        seated = any(c.get("pose") == "sit" for c in spec.get("characters", []))
+        points += 4 * (spec.get("recipe") == "meet_person" and seated)
         points += 3 * any(c.get("pose") == "sit" for c in spec.get("characters", []))
         points += 1 * any(p.get("id") == "stat" for p in spec.get("props", []))
         return points

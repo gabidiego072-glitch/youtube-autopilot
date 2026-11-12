@@ -21,6 +21,8 @@ POV_SCRIPT_NOTE = """STYLE: first-person POV ("what if it were YOU"), written li
 - The FIRST line drops the viewer into the most dramatic moment of the story (in medias res): never start by
   waking up, a calm room or an explanation. TikTok data: viewers who see nothing happen leave within 7 seconds.
 - Narrate in second person, present tense, as a JOURNEY with decisions: {lines}.
+- Words a 10-year-old understands, in the narration and on screen: never medical or scientific jargon
+  ("xerostomía", "enzimas salivales", "modulus"); say what it means ("tu boca se queda seca").
 - ONE LINE = ONE THING YOU SEE HAPPEN in front of you, in at most 16 words: a person, a place, an object, a
   change you could film. Never abstract sentences ("studies show...", "the economy...", "this means...",
   "experts estimate..."): turn every fact into an image you see, with its number ("The ER waiting room is

@@ -95,8 +95,9 @@ You propose premises for new videos. A strong premise:
 - kind: "event" if something HAPPENS that you see at once in your street, home or body (a T-rex walks into
   the city, everyone falls asleep, the sea rises, the Earth stops); "property" if a material or physical
   property or constant changes (glass becomes flexible, water stops being wet, metals lose conductivity, gravity
-  drops 1%). Property premises are not used: the channel's data shows they get 3-10 times fewer views, and
-  what they change cannot be shown on screen. Propose events.
+  drops 1%) or something happens INSIDE the body (saliva, cells, hormones, digestion). Property premises are not
+  used: the channel's data shows they get 3-10 times fewer views, and what they change cannot be shown on
+  screen. Propose events.
 Never propose anything about video games or gaming.
 
 {SCIENCE_RULES}
@@ -141,6 +142,19 @@ ABSTRACT_PATTERNS = (
     r"\bdensidad\b|\bdensity\b",
     r"\bviscos",
     r"\bmolecul|\bátomo|\batom",
+    # Inside the body: nothing on screen can show it (Nov 12, 'your body stopped producing saliva': 0 of 7
+    # scenes showed their line, even after replanning).
+    r"\b(?:tu|el) cuerpo dejar[aá]",
+    r"\byour body (?:stopped|stops|could not|couldn't)",
+    r"\bsaliva\b",
+    r"\benzim|\benzym",
+    r"\bcélula|\bcell(?:s|ular)?\b",
+    r"\bhormon",
+    r"\bneuron",
+    r"\badn\b|\bdna\b",
+    r"\bdigesti",
+    r"\binmun|\bimmun",
+    r"\bbacteri",
 )
 
 
