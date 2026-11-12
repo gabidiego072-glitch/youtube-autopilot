@@ -42,3 +42,20 @@ def test_only_things_with_a_fixed_shape_are_built():
     picks = [{"object": "sagging glass bridge"}, {"object": "soft glass window loop"}, {"object": "T-rex"}]
     designs = design_objects(ai, picks)
     assert list(designs) == ["t-rex"] and not ai.calls
+
+
+def test_what_happens_inside_the_body_is_not_a_topic():
+    """Nov 12: 'your body stopped producing saliva': not one of 7 scenes could show its line."""
+    assert is_abstract_property("¿Qué pasaría si tu cuerpo dejara de producir saliva desde hoy?")
+    assert is_abstract_property("What if your body stopped making new cells?")
+    assert not is_abstract_property("¿Qué pasaría si dejaras de dormir?")
+
+
+def test_the_opening_is_not_a_strangers_face():
+    from app.services.production.short import cold_open_scene
+
+    stranger = {"recipe": "meet_person", "characters": [{"id": "p"}], "environment": {}, "actions": []}
+    sleeper = {"recipe": "meet_person", "characters": [{"id": "p", "pose": "sit"}], "environment": {}, "actions": []}
+    calm = {"recipe": "street_watch", "characters": [], "environment": {}, "actions": []}
+    assert cold_open_scene([calm, stranger, calm], [0, 1, 2]) is None
+    assert cold_open_scene([calm, sleeper, calm], [0, 1, 2]) == 1
