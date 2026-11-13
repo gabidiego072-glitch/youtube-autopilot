@@ -84,8 +84,8 @@ for each narration line you pick one of the hand-made scene recipes below and a 
 {RECIPE_GUIDE}
 
 Choices per scene: recipe; threat (none|zombies|panic|fire|flood|collapse) = what the scene shows happening;
-time_of_day (dawn|day|golden|dusk|night) following the story's clock (the on-screen counter); look (normal, or
-xray when the narration says the world itself changes how it looks); headline only for cafe_news (2-5 words in
+time_of_day (dawn|day|golden|dusk|night) following the story's clock (the on-screen counter); look (always
+normal); headline only for cafe_news (2-5 words in
 the narration's language, e.g. the news the TV shows).
 IT MUST HAPPEN ON SCREEN, LIVE: if a line says someone can't swallow, the viewer sees them put a hand to the
 throat with the croissant on the table; if a line says they hide, they cover their head. Never a scene where
@@ -432,8 +432,9 @@ def _clean(pick: dict) -> dict:
         out["threat"] = "none"
     if out.get("time_of_day") not in TIMES:
         out["time_of_day"] = "day"
-    if out.get("look") not in ("normal", "xray"):
-        out["look"] = "normal"
+    # The dark wireframe x-ray look is gone: it does not fit the illustrated style of the reference videos, and in
+    # the power-cut room (Nov 13, English) it left 6 s of black screen that the video QA rightly refused.
+    out["look"] = "normal"
     for key, allowed, default in (
         ("people", PEOPLE, "busy"),
         ("item", ITEMS, "none"),
