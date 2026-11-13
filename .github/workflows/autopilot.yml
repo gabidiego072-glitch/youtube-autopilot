@@ -83,7 +83,7 @@ jobs:
   prepare:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[one-shot-video]'))
     runs-on: ${{ fromJSON(vars.AUTOPILOT_RUNS_ON || '"ubuntu-latest"') }}
-    timeout-minutes: 60
+    timeout-minutes: 120  # the scene check on slower fallback models took 45 min (Nov 13)
     outputs:
       run_id: ${{ steps.plan.outputs.run_id }}
       shards: ${{ steps.plan.outputs.shards }}
