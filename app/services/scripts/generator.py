@@ -116,6 +116,7 @@ def repair_ending(draft: ScriptDraft) -> None:
             draft.ending_type = "surprising_conclusion"
 
 
+MIN_COMPANION_LINES = 2  # Nov 13 (English): Kenji said one line, the story felt like narration again
 MAX_LINE_WORDS = 20  # the prompt asks for 16; a little margin before a script is rejected
 
 
@@ -141,6 +142,14 @@ def structure_problems(draft: ScriptDraft, video_format: VideoFormat) -> list[st
                     f"Scene {index} narration has {words} words; at most {MAX_LINE_WORDS} (one thing you see "
                     "happen per line: split it or cut it)."
                 )
+    name = str((draft.visual_bible.companion or {}).get("name", "")).strip()
+    if video_format == VideoFormat.SHORT and name:  # a personal story: the companion talks, not only the narrator
+        spoken = sum(1 for scene in draft.scenes if (scene.speaker or "").strip().lower() == name.lower())
+        if spoken < MIN_COMPANION_LINES:
+            problems.append(
+                f"{name} speaks {spoken} line(s); give {name} {MIN_COMPANION_LINES}-4 short lines of their own "
+                f'(speaker "{name}"), reacting to what happens, like a real conversation.'
+            )
     if draft.ending_type not in ("question", "surprising_conclusion"):
         problems.append("Unknown ending type.")
     if draft.ending_type == "question" and not draft.ending_line.rstrip().endswith("?"):

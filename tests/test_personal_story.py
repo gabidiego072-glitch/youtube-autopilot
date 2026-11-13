@@ -88,3 +88,18 @@ def test_gestures_reach_the_person_in_front_of_you():
     assert any(a["type"] == "cover" and a["character"] == "companion" for a in spec["actions"])
     nobody = build("space", 4.0, seed=1, gesture="wave")  # no one to do it: nothing breaks
     assert not any(a["type"] == "wave" for a in nobody["actions"])
+
+
+def test_the_companion_must_really_talk():
+    from app.models.enums import VideoFormat
+    from app.services.scripts.generator import ScriptDraft, structure_problems
+    from tests.conftest import SCRIPT_RESPONSE
+
+    data = {**SCRIPT_RESPONSE, "scenes": [dict(s) for s in SCRIPT_RESPONSE["scenes"]]}
+    data["visual_bible"] = {**data["visual_bible"], "companion": {"name": "Kenji", "gender": "male", "relation": "x"}}
+    data["scenes"][1]["speaker"] = "Kenji"
+    one = ScriptDraft(**data, provider="t", model="t")
+    assert any("Kenji speaks 1 line" in p for p in structure_problems(one, VideoFormat.SHORT))  # Nov 13
+    data["scenes"][2]["speaker"] = "kenji"
+    two = ScriptDraft(**data, provider="t", model="t")
+    assert not any("speaks" in p for p in structure_problems(two, VideoFormat.SHORT))
