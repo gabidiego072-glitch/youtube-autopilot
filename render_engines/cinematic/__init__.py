@@ -9,6 +9,7 @@ from render_engines.core.spec import RenderContext
 from render_engines.core.timeline import Timeline
 
 ACTION_TYPES = tuple(ACTIONS)
+PROP_ACTIONS = ("light_on", "spin", "wind", "migrate_oceans", "open_door")  # actions that move one of the props
 
 
 def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
@@ -267,6 +268,11 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
         start = ctx.frame(action.get("start", action.get("at", 0)))
         end = ctx.frame(action.get("end", action.get("start", 0) + 1))
         char = characters.get(action.get("character"))
+        if kind in PROP_ACTIONS and action.get("prop") not in props:
+            # An AI-planned action on a prop that is not in the scene (Nov 13: "wind" with no prop) is skipped:
+            # one missing detail must not stop the whole video.
+            print(f"[cinematic] skipping '{kind}': prop {action.get('prop')!r} is not in the scene")
+            continue
         if kind == "walk":
             char.walk(
                 start,
