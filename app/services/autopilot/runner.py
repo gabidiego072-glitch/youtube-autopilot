@@ -610,6 +610,9 @@ def _can_render(services) -> bool:
         return False
 
 
+MIN_SHOWN_SHARE = 0.5  # at least half of the scenes must show what the voice says, or the topic is dropped
+
+
 def _show_what_is_said(db, run, services, ai, specs, durations, notes):
     """Look at every scene before the long render: one that does not show its line is planned again."""
     project = _project(db, run)
@@ -652,6 +655,14 @@ def _show_what_is_said(db, run, services, ai, specs, durations, notes):
         # what keeps lines filmable.
     work.mkdir(parents=True, exist_ok=True)
     (work / "scene_check.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    failing = report.get("still_failing", [])
+    shown = len(first) - len(failing)
+    if len(first) >= 4 and shown < MIN_SHOWN_SHARE * len(first):
+        # A topic the scenes cannot show makes a video that does not make sense (saliva, Nov 12: 0/7; echo,
+        # Nov 13: 3/7). Stop before the long render: the next scheduled retry makes the video of another topic.
+        raise StepBlocked(
+            f"Only {shown}/{len(first)} scenes show what their line says: this topic cannot be filmed well."
+        )
     return specs, durations
 
 

@@ -70,3 +70,33 @@ def test_a_long_look_at_the_planet_becomes_a_street():
     assert [s["recipe"] for s in specs].count("space") == 0  # 5 s of 30 s is too long for one look
     short = assemble([_pick("street_watch")] * 6 + [_pick("space")], [5.0] * 6 + [3.0], seed=1, city="tokyo")
     assert short[-1]["recipe"] == "space"
+
+
+def test_a_topic_whose_scenes_cannot_be_shown_is_dropped_before_the_render(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    import pytest
+
+    from app.services.autopilot import runner
+
+    script = SimpleNamespace(scenes=[{"narration": f"line {i}"} for i in range(6)], visual_bible={})
+    project = SimpleNamespace(id=SimpleNamespace(int=5), features={}, scripts=[script])
+    monkeypatch.setattr(runner, "_project", lambda db, run: project)
+    monkeypatch.setattr(runner, "_work_dir", lambda services, run: tmp_path)
+    monkeypatch.setattr(runner, "replan", lambda ai, **kw: kw["specs"])
+    services = SimpleNamespace(blender=None, log=lambda *_: None)
+
+    def verdicts(passing):
+        def fake(ai, blender, specs, lines, work, seed, only=None):
+            return {i: {"seen": "", "shows_it": i in passing, "missing": ""} for i in (only or range(len(specs)))}
+
+        return fake
+
+    monkeypatch.setattr(runner, "check_scenes", verdicts({0, 1}))  # 2/6 even after replanning
+    with pytest.raises(runner.StepBlocked):
+        runner._show_what_is_said(None, None, services, None, [{}] * 6, [3.0] * 6, "")
+    assert (tmp_path / "check" / "scene_check.json").exists()  # the report is kept to see why
+
+    monkeypatch.setattr(runner, "check_scenes", verdicts({0, 1, 2, 3}))  # 4/6: good enough, it is made
+    specs, _ = runner._show_what_is_said(None, None, services, None, [{}] * 6, [3.0] * 6, "")
+    assert len(specs) == 6

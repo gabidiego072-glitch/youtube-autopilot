@@ -30,7 +30,7 @@ def test_leaving_a_place_opens_a_door_and_flashes_into_the_next():
     assert any(a["type"] == "open_door" for a in specs[0]["actions"])
     assert specs[1]["transition"] == "flash" and specs[1]["environment"]["style"] == "tokyo"
     assert specs[1]["seed"] == specs[2]["seed"]  # same recipe, same street
-    assert specs[2]["look"] == "xray" and specs[2]["transition"] == "flash"
+    assert specs[2]["look"] == "toon"  # no dark x-ray look any more
     assert specs[3]["recipe"] == "street_watch"  # unknown picks are repaired
 
 

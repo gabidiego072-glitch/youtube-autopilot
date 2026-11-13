@@ -60,7 +60,7 @@ def test_videos_use_the_illustrated_look_and_lens():
     from app.services.scenes.recipe_planner import assemble
 
     specs = assemble([_pick("street_watch"), _pick("street_watch", look="xray")], [3.0, 3.0], seed=1, city="paris")
-    assert specs[0]["look"] == "toon" and specs[1]["look"] == "xray"  # x-ray when the story asks for it
+    assert specs[0]["look"] == specs[1]["look"] == "toon"  # the dark x-ray look left black screens (Nov 13)
     from app.services.editing.assembler import FISHEYE
 
     assert FISHEYE.startswith("lenscorrection=k1=-")  # barrel: lines bow outwards like the references
