@@ -76,6 +76,7 @@ def toon(scene, bands: float = 0.55) -> None:
     layer.use_freestyle = True
     settings = layer.freestyle_settings
     settings.crease_angle = 2.4  # about 137 degrees: real corners, not the facets of round shapes
+    settings.use_culling = True  # only edges in view: a full city made Freestyle take minutes per frame
     lineset = settings.linesets[0] if settings.linesets else settings.linesets.new("toon")
     lineset.select_by_visibility = True
     lineset.select_by_edge_types = True

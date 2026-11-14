@@ -206,3 +206,12 @@ def test_no_signs_floating_in_the_picture_by_default():
     """Nov 12: the owner found the 3D numbers and the story text on the facades out of place."""
     specs = assemble([_pick("street_watch", stat="-40%", screens="NO HAY AGUA")], [3.0], seed=1, city="paris")
     assert not any(p["id"] == "stat" for p in specs[0]["props"]) and "screens" not in specs[0]["environment"]
+
+
+def test_illustrated_streets_keep_crowds_small_enough_to_render():
+    from app.services.scenes.recipe_planner import TOON_CROWD_CAPS, assemble
+
+    pick = {"recipe": "street_watch", "threat": "panic", "time_of_day": "day", "look": "normal", "people": "packed"}
+    env = assemble([pick], [4.0], seed=3, city="new_york")[0]["environment"]
+    for key, cap in TOON_CROWD_CAPS.items():
+        assert env.get(key, 0) <= cap  # Nov 14: ~200 people took 4 h to render
