@@ -356,6 +356,8 @@ def assemble(
         spec["pick"] = dict(pick)
         if not spec.get("look"):  # the illustrated look of the reference videos, unless the story asks for x-ray
             spec["look"] = "toon"  # what the director chose, to plan this scene again if it fails the check
+        if spec["look"] == "toon":
+            _cap_crowd(spec["environment"])
         if i:
             prev = picks[i - 1]
             through_door = prev["recipe"] in DOOR_EXITS and prev["recipe"] != recipe
@@ -422,6 +424,17 @@ def _ration_stats(picks: list[dict]) -> None:
             pick["stat"], pick["trend"] = "", "none"
             continue
         kept, last = kept + 1, stat
+
+
+# The outlines of the illustrated look cost time per visible person: a street with ~200 people (crowd 120,
+# onlookers 25, panic 55) took 2-3 min a frame and hit the 4 h render limit (Nov 14, English).
+TOON_CROWD_CAPS = {"crowd": 60, "onlookers": 15, "panic": 25}
+
+
+def _cap_crowd(env: dict) -> None:
+    for key, cap in TOON_CROWD_CAPS.items():
+        if isinstance(env.get(key), int | float) and env[key] > cap:
+            env[key] = cap
 
 
 def _clean(pick: dict) -> dict:
