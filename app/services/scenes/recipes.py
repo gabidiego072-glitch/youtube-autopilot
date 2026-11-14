@@ -931,8 +931,10 @@ def hand_action(d, *, rng, seed, city, time_of_day, people, **_):
         "pov_reach": [reach],
         "shots": [
             _shot(0, (x - 4.0, 5.2, 1.65), (x, 7.3, 1.2), 24),
-            _shot(max(0.5, reach - 0.4), (x - 0.1, 6.35, 1.6), (x, 7.3, 1.15), 24),
-            _shot(d, (x - 0.05, 6.4, 1.58), (x, 7.3, 1.12), 26),
+            # Seen at an angle, wide: straight on, the wall filled the frame with one flat colour for 2 s and the
+            # video QA refused the video (Nov 14, English).
+            _shot(max(0.5, reach - 0.4), (x - 0.75, 6.4, 1.6), (x, 7.3, 1.15), 20),
+            _shot(d, (x - 0.7, 6.45, 1.58), (x, 7.3, 1.12), 20),
         ],
     }
     spec["sfx"] = [*_bed("steps", 0.0, max(0.1, reach - 0.6), 0.55), {"type": "impact", "at": reach}]
