@@ -32,9 +32,11 @@ line and frames of the scene (or one frame of each of its short sub-scenes, in o
 line is spoken (stylised low-poly 3D, the viewer's own hands may be at the bottom). Be strict and literal,
 like a viewer who hears the line and looks at the screen.
 seen: what the frames actually show, in one sentence (place, people, objects, events, numbers on screen).
-shows_it: true only if the main thing the line says happens or is clearly visible (the person, the place, the
-object, the event, the number). A generic street or room that merely could be where it happens is false. On-screen
-subtitles and the counter at the top do not count.
+shows_it: true if the concrete thing the line is about is on screen: the person, the place, the object or the
+event it names (a line about whispering in your flat shows a flat with you there; a line about a bus shows a bus).
+Things no camera can film (a sound, a smell, a temperature, a thought, an echo) do not have to be drawn: judge the
+place, people and objects around them. A generic street or room unrelated to what the line names is false.
+On-screen subtitles and the counter at the top do not count.
 missing: if false, what the picture would need to show the line (one short sentence); empty if true."""
 
 
