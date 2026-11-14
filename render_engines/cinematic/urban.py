@@ -894,7 +894,7 @@ def _sign_text(name: str, text: str, center, side: int, size: float, col) -> Non
 
 def _seafront(urban: Urban, env: dict, length: float, col) -> None:
     """South side becomes a promenade, a railing, a beach and the sea."""
-    stone = _mat("promenade", "#c9bfa9", roughness=0.8)
+    stone = _mat("promenade", "#a9765a", roughness=0.8)  # warm brick: the pale stone washed the picture out (Nov 14)
     sand = materials.noise_ground("sand", "#d8c48f", "#e6d6a8", scale=0.8, roughness=0.95, bump=0.2)
     rail = _mat("rail", "#e6e6e6", roughness=0.4, metallic=0.6)
     objects.mesh_object("Promenade", _box(length * 2, 5, 0.4, (0, -(ROAD_HALF + 2.5), -0.2)), stone, col=col)
