@@ -81,6 +81,9 @@ def segments(log: str, start_key: str, end_key: str) -> list[tuple[float, float]
 FLAT_FPS = 2
 FLAT_RANGE = 35  # brightness range (YHIGH - YLOW) of the frame's middle; a real scene has 60-100
 FLAT_SECONDS = 1.5
+# Only a long dull stretch stops the upload (the x-ray blackout was 6 s). 1.5-3 s of a plain wall or a misty
+# window stopped four videos on Nov 13-14 that were otherwise fine: those are now kept as warnings.
+FLAT_BLOCK_SECONDS = 3.5
 WASHED_AVG = 170  # very bright...
 WASHED_SAT = 8.0  # ...and almost colourless: washed out (pale sky/promenade ~5.7; a sunny park or a white
 # hospital room keeps 10-14 of saturation)
@@ -198,8 +201,9 @@ def check_video(
         problems.append(f"frozen segments: {frozen}")
     if any(b - a > 1.2 for a, b in silence):
         problems.append(f"long silences: {silence}")
-    if flat:
-        problems.append(f"flat, washed-out or empty frames at {flat}")
+    long_flat = [(a, b) for a, b in flat if b - a >= FLAT_BLOCK_SECONDS]
+    if long_flat:
+        problems.append(f"flat, washed-out or empty frames at {long_flat}")
     if subtitle_issues:
         problems.append(f"{len(subtitle_issues)} subtitle cues outside their voice line")
     result = {
@@ -211,6 +215,7 @@ def check_video(
         "frozen_segments": frozen,
         "silences": silence,
         "flat_segments": flat,
+        "warnings": [f"short dull stretch at {a}-{b} s" for a, b in flat if b - a < FLAT_BLOCK_SECONDS],
         "subtitle_cues": cue_count,
         "subtitle_issues": subtitle_issues,
         "contact_sheet": None if sheet_error else str(sheet),

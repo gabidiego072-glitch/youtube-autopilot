@@ -103,7 +103,7 @@ def test_washed_out_and_flat_frames_are_reported(tmp_path):
             "-f",
             "lavfi",
             "-i",
-            "color=c=0xd8dce0:size=320x240:rate=24:duration=2.5",
+            "color=c=0xd8dce0:size=320x240:rate=24:duration=4.5",
             "-f",
             "lavfi",
             "-i",
@@ -124,3 +124,18 @@ def test_washed_out_and_flat_frames_are_reported(tmp_path):
 def test_a_colourful_bright_scene_is_not_washed_out(video):
     result = check_video(video, frames=2, ffmpeg=FFMPEG, ffprobe=FFPROBE)
     assert result["flat_segments"] == []
+
+
+def test_a_short_dull_stretch_is_only_a_warning(tmp_path):
+    """Nov 14: 2 s of a plain wall stopped otherwise good videos; only long stretches block the upload."""
+    clip = tmp_path / "short.mp4"
+    parts = ["testsrc2=size=320x240:rate=24:duration=1", "color=c=0x1d3a55:size=320x240:rate=24:duration=2"]
+    parts.append(parts[0])
+    args = [FFMPEG, "-loglevel", "error", "-y"]
+    for part in parts:
+        args += ["-f", "lavfi", "-i", part]
+    args += ["-filter_complex", "[0][1][2]concat=n=3:v=1:a=0,noise=alls=6:allf=t", "-pix_fmt", "yuv420p", str(clip)]
+    subprocess.run(args, check=True)
+    result = check_video(clip, frames=2, ffmpeg=FFMPEG, ffprobe=FFPROBE)
+    assert result["flat_segments"] and result["warnings"]
+    assert not any("washed-out" in p for p in result["problems"])
