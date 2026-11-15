@@ -215,3 +215,36 @@ def test_illustrated_streets_keep_crowds_small_enough_to_render():
     env = assemble([pick], [4.0], seed=3, city="new_york")[0]["environment"]
     for key, cap in TOON_CROWD_CAPS.items():
         assert env.get(key, 0) <= cap  # Nov 14: ~200 people took 4 h to render
+
+
+def test_what_the_line_says_happens_on_screen():
+    """Nov 15: 'the pots catch fire', 'people float', 'everything freezes' were heard but not seen."""
+    from app.services.scenes.objects import library_model
+    from app.services.scenes.recipes import EVENTS, RECIPES, build
+    from render_engines.core.spec import validate_spec
+
+    for recipe in RECIPES:
+        for event in EVENTS:
+            validate_spec(build(recipe, 4.0, seed=5, event=event))
+
+    def kinds(spec):
+        return [a["type"] for a in spec["actions"]]
+
+    street = build("street_watch", 4.0, seed=5, event="fire")
+    assert "fire" in kinds(street)
+    floating = build("street_watch", 4.0, seed=5, event="float")
+    assert any(a["type"] == "fling" and a["gravity"] == 0.0 for a in floating["actions"])
+    assert {"snow", "frost"} <= set(kinds(build("street_watch", 4.0, seed=5, event="freeze")))
+    cup = build("reaction", 4.0, seed=5, room="kitchen", event="float", obj=library_model("glass"))
+    assert any(a["type"] == "levitate" and a["prop"] == "obj" for a in cup["actions"])
+    blast = build("street_watch", 4.0, seed=5, event="explosion")
+    assert "explosion" in kinds(blast) and blast["camera"]["shakes"]
+
+
+def test_the_director_can_ask_for_an_event():
+    from app.services.scenes.recipe_planner import assemble
+
+    pick = {"recipe": "kitchen", "threat": "none", "time_of_day": "day", "look": "normal", "event": "fire"}
+    spec = assemble([pick], [4.0], seed=3, city="new_york")[0]
+    assert any(a["type"] == "fire" for a in spec["actions"])
+    assert assemble([{**pick, "event": "lava"}], [4.0], seed=3, city="new_york")[0]["pick"]["event"] == "none"

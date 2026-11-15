@@ -16,6 +16,7 @@ from app.services.ai.base import AIProvider
 from app.services.scenes.objects import design_object
 from app.services.scenes.recipes import (
     BUILDERS,
+    EVENTS,
     GESTURES,
     HANDS,
     ITEMS,
@@ -53,6 +54,7 @@ RECIPE_SCHEMA = {
                     "trend": {"type": "string", "enum": list(TRENDS)},
                     "hands": {"type": "string", "enum": list(HANDS)},
                     "gesture": {"type": "string", "enum": list(GESTURES)},
+                    "event": {"type": "string", "enum": list(EVENTS)},
                     "headline": {"type": "string"},
                     "object": {"type": "string"},
                     "screens": {"type": "string"},
@@ -68,6 +70,7 @@ RECIPE_SCHEMA = {
                     "trend",
                     "hands",
                     "gesture",
+                    "event",
                 ],
                 "additionalProperties": False,
             },
@@ -91,6 +94,12 @@ IT MUST HAPPEN ON SCREEN, LIVE: if a line says someone can't swallow, the viewer
 throat with the croissant on the table; if a line says they hide, they cover their head. Never a scene where
 people only talk about it. Use reaction (a person across the table DOING it, the object on the table) and
 gesture (what the person in front of you does) for the moments of the story.
+event = what HAPPENS in front of you, in any recipe, whenever the line says it: fire (flames, burning pots),
+smoke, explosion (a blast), flood (water rising), crack (the floor or ground splits), collapse (a building or
+bridge comes down), shatter (windows burst), float (people and the object lift off: no gravity), fly (people
+and things are thrown through the air), freeze (snow falls and frost covers the ground), snow, steam (something
+boiling or hot). If the line says fire, there IS fire on screen; if it says things float, they float. none
+only when nothing physical happens.
 THE VIEWER MUST SEE WHAT THE NARRATION SAYS. A street where nothing related happens is a failure: every scene
 shows the line's own subject (the person, the place, the object, the number).
 Scene 0 is the hook: the most striking picture of the story (a threat if there is one: street_run,
@@ -351,6 +360,7 @@ def assemble(
             companion=companion if speaking and speaking[i] else None,
             screens=pick.get("screens", ""),
             gesture=pick["gesture"],
+            event=pick["event"],
         )
         takes[recipe] = takes.get(recipe, 0) + 1
         spec["pick"] = dict(pick)
@@ -456,6 +466,7 @@ def _clean(pick: dict) -> dict:
         ("trend", TRENDS, "none"),
         ("hands", HANDS, "normal"),
         ("gesture", GESTURES, "none"),
+        ("event", EVENTS, "none"),
     ):
         if out.get(key) not in allowed:
             out[key] = default

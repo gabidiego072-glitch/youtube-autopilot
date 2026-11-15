@@ -9,7 +9,14 @@ from render_engines.core.spec import RenderContext
 from render_engines.core.timeline import Timeline
 
 ACTION_TYPES = tuple(ACTIONS)
-PROP_ACTIONS = ("light_on", "spin", "wind", "migrate_oceans", "open_door")  # actions that move one of the props
+PROP_ACTIONS = (
+    "light_on",
+    "spin",
+    "wind",
+    "migrate_oceans",
+    "open_door",
+    "levitate",
+)  # actions that move one of the props
 
 
 def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
@@ -362,8 +369,14 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
                 life=2.0,
                 seed=start,
             )
-        elif kind in ("fire", "smoke", "crack", "flood", "collapse"):
+        elif kind in ("fire", "smoke", "crack", "flood", "collapse", "snow", "frost", "explosion", "steam"):
             _effect(kind, action, start, end, ctx, urban, env)
+        elif kind == "levitate":  # the object of the line loses its weight
+            from render_engines.cinematic import effects
+
+            effects.levitate(
+                props[action["prop"]].root, start, end, ctx.fps, float(action.get("height", 1.2)), ctx.seed + start
+            )
         elif kind == "cover":
             char.cover(start, end)
         elif kind == "touch_throat":
@@ -493,6 +506,29 @@ def _effect(kind: str, action: dict, start: int, end: int, ctx, urban, env: dict
         effects.fire(name, location, start, end, ctx.fps, float(action.get("size", 1.0)), seed)
     elif kind == "smoke":
         effects.puffs(name, location, start, end, ctx.fps, count=max(8, (end - start) // 4), seed=seed)
+    elif kind == "steam":  # white steam off something hot (a boiling cup or pot)
+        effects.puffs(
+            name,
+            location,
+            start,
+            end,
+            ctx.fps,
+            color="#f4f4f4",
+            alpha=0.35,
+            count=max(8, (end - start) // 5),
+            rise=0.9,
+            spread=0.12,
+            size=0.08,
+            life=1.6,
+            seed=seed,
+            soft=True,
+        )
+    elif kind == "snow":
+        effects.snow(name, location, start, end, ctx.fps, float(action.get("area", 6.0)), seed=seed)
+    elif kind == "frost":
+        effects.frost(name, location, start, end, float(action.get("size", 7.0)))
+    elif kind == "explosion":
+        effects.explosion(name, location, start, ctx.fps, float(action.get("size", 2.0)), seed)
     elif kind == "crack":
         surface = action.get("surface", "wall" if interior else "floor")
         effects.crack(name, location, start, end, surface, float(action.get("length", 2.0)), seed)
