@@ -317,6 +317,15 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
             props[action["prop"]].light_on(start)
         elif kind == "spin":
             props[action["prop"]].change_spin(start, end, float(action["rate_from"]), float(action["rate_to"]))
+        elif kind == "float_up":
+            char.float_up(
+                start,
+                end,
+                ctx.fps,
+                float(action.get("height", 1.6)),
+                ctx.seed + start,
+                timeline.tracks[action["character"]],
+            )
         elif kind == "fling":
             char.fling(
                 start,
@@ -535,7 +544,7 @@ def _effect(kind: str, action: dict, start: int, end: int, ctx, urban, env: dict
     elif kind == "snow":
         effects.snow(name, location, start, end, ctx.fps, float(action.get("area", 6.0)), seed=seed)
     elif kind == "frost":
-        effects.frost(name, location, start, end, float(action.get("size", 7.0)))
+        effects.frost(name, location, start, end, float(action.get("size", 7.0)), seed)
     elif kind == "explosion":
         effects.explosion(name, location, start, ctx.fps, float(action.get("size", 2.0)), seed)
     elif kind == "crack":

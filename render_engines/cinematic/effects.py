@@ -249,7 +249,7 @@ def collapse(building, start: int, end: int, fps: int, seed: int = 0, col=None) 
 
 
 def snow(
-    name: str, center, start: int, end: int, fps: int, area: float = 6.0, count: int = 90, seed: int = 0, col=None
+    name: str, center, start: int, end: int, fps: int, area: float = 6.0, count: int = 160, seed: int = 0, col=None
 ) -> None:
     """Snowflakes falling (and drifting) through the view, looping until `end`: the cold the line talks about."""
     rng = random.Random(seed)
@@ -258,7 +258,7 @@ def snow(
     top = cz + 3.2
     fall = max(1.0, top - 0.0)
     for i in range(count):
-        flake = objects.mesh_object(f"{name}_{i}", objects.icosphere(rng.uniform(0.018, 0.035), 1), mat, col=col)
+        flake = objects.mesh_object(f"{name}_{i}", objects.icosphere(rng.uniform(0.03, 0.055), 1), mat, col=col)
         flake.visible_shadow = False
         x, y = cx + rng.uniform(-area / 2, area / 2), cy + rng.uniform(-area / 2, area / 2)
         speed = rng.uniform(0.7, 1.2)  # metres a second
@@ -275,15 +275,27 @@ def snow(
         set_interpolation(flake, "LINEAR")
 
 
-def frost(name: str, center, start: int, end: int, size: float = 7.0, col=None) -> None:
-    """White frost spreading over the ground (or floor) around `center`."""
-    mat = materials.principled(f"{name}_mat", "#e9f3fb", roughness=0.35, emission="#dfefff", emission_strength=0.4)
-    sheet = objects.mesh_object(
-        f"{name}_sheet", objects.box(size, size, 0.01), mat, location=(center[0], center[1], 0.012), col=col
-    )
-    sheet.visible_shadow = False
-    key(sheet, "scale", start, (0.05, 0.05, 1.0))
-    key(sheet, "scale", max(start + 1, end), (1.0, 1.0, 1.0))
+def frost(name: str, center, start: int, end: int, size: float = 7.0, seed: int = 0, col=None) -> None:
+    """Frost spreading over the ground in icy patches (pale blue-white, a little shiny), not one white sheet."""
+    rng = random.Random(seed)
+    mat = materials.principled(f"{name}_mat", "#dcecf7", roughness=0.25, emission="#cfe6f7", emission_strength=0.25)
+    span = max(1, end - start)
+    for i in range(26):
+        r = rng.uniform(0.4, 1.3) * size / 7.0
+        x = center[0] + rng.uniform(-size / 2, size / 2)
+        y = center[1] + rng.uniform(-size / 2, size / 2)
+        patch = objects.mesh_object(
+            f"{name}_{i}",
+            objects.cone(r, r, 0.006, 9, base_at_origin=True),
+            mat,
+            location=(x, y, 0.01 + i * 0.0004),
+            col=col,
+        )
+        patch.visible_shadow = False
+        born = start + int(span * rng.uniform(0, 0.7))
+        key(patch, "scale", start, (0.001, 0.001, 1.0))
+        key(patch, "scale", born, (0.001, 0.001, 1.0))
+        key(patch, "scale", min(end, born + int(span * 0.4)), (1.0, rng.uniform(0.6, 1.0), 1.0))
 
 
 def explosion(name: str, location, start: int, fps: int, size: float = 2.0, seed: int = 0, col=None) -> None:
@@ -313,9 +325,9 @@ def explosion(name: str, location, start: int, fps: int, size: float = 2.0, seed
         start + 2,
         start + int(3 * fps),
         fps,
-        color="#2a2a2e",
-        alpha=0.6,
-        count=18,
+        color="#5a5a5e",
+        alpha=0.4,
+        count=14,
         rise=size * 2.5,
         spread=size * 0.8,
         size=size * 0.5,

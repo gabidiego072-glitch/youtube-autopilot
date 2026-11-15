@@ -118,6 +118,8 @@ ACTIONS = {
     "snow": "snow falling through the view: location [x,y,z] (centre), start, end, area (m)",
     "frost": "white frost spreading over the ground around location [x,y,z]: start, end, size (m)",
     "explosion": "a blast (flash, fireball, smoke, then fire): location [x,y,z], start, size",
+    "float_up": "no gravity: a character lifts off slowly, upright, arms out, bobbing: character, start, end, "
+    "height (m)",
     "levitate": "a prop loses its weight and floats up turning: prop, start, end, height (m)",
     "crack": "a crack grows: location [x,y,z] (on a wall: y=2.69 for the room's north wall; on the ground: z=0.01), "
     "start, end, surface (wall|floor), length (m)",

@@ -266,20 +266,30 @@ def _add_event(spec: dict, event: str, d: float, rng: random.Random) -> None:
                 spec["characters"].append(person)
                 people.append(person)
         for c in people:
-            actions.append(
-                {
-                    "type": "fling",
-                    "character": c["id"],
-                    "start": start + rng.uniform(0, 0.4),
-                    "end": d,
-                    "direction_deg": rng.uniform(0, 360),
-                    **(
-                        {"speed": 0.25, "lift": 0.45, "gravity": 0.0}
-                        if event == "float"
-                        else {"speed": 6.0, "lift": 3.5, "gravity": 1.6}
-                    ),
-                }
-            )
+            begin = start + rng.uniform(0, 0.4)
+            if event == "float":  # upright, arms out, lifting slowly: tumbling read as falling (Nov 15)
+                actions.append(
+                    {
+                        "type": "float_up",
+                        "character": c["id"],
+                        "start": begin,
+                        "end": d,
+                        "height": round(rng.uniform(1.2, 2.2), 2),
+                    }
+                )
+            else:
+                actions.append(
+                    {
+                        "type": "fling",
+                        "character": c["id"],
+                        "start": begin,
+                        "end": d,
+                        "direction_deg": rng.uniform(0, 360),
+                        "speed": 6.0,
+                        "lift": 3.5,
+                        "gravity": 1.6,
+                    }
+                )
         if table and event == "float":
             actions.append({"type": "levitate", "prop": "obj", "start": start, "end": d, "height": 0.8})
     elif event in ("freeze", "snow"):

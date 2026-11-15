@@ -233,7 +233,7 @@ def test_what_the_line_says_happens_on_screen():
     street = build("street_watch", 4.0, seed=5, event="fire")
     assert "fire" in kinds(street)
     floating = build("street_watch", 4.0, seed=5, event="float")
-    assert any(a["type"] == "fling" and a["gravity"] == 0.0 for a in floating["actions"])
+    assert any(a["type"] == "float_up" for a in floating["actions"])
     assert {"snow", "frost"} <= set(kinds(build("street_watch", 4.0, seed=5, event="freeze")))
     cup = build("reaction", 4.0, seed=5, room="kitchen", event="float", obj=library_model("glass"))
     assert any(a["type"] == "levitate" and a["prop"] == "obj" for a in cup["actions"])
