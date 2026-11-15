@@ -19,15 +19,15 @@ name: Autopilot
 
 on:
   schedule:
-    # Tuesdays, Thursdays and Saturdays at 04:17 UTC (05:17 in Spain in winter): three better videos a week
-    # instead of one a day (Nov 11: daily videos plateaued at ~1,000 views). GitHub often starts scheduled runs
+    # Every day at 04:17 UTC (05:17 in Spain in winter). Three a week (Nov 11-15) still plateaued at ~1,000
+    # views, so back to one a day, as the owner decided. GitHub often starts scheduled runs
     # hours late, so the first try is early enough for the video to be ready in the morning.
-    - cron: "17 4 * * 2,4,6"
+    - cron: "17 4 * * *"
     # Safety retries: they only make a video if today's has not been made yet (late start, Gemini failure).
-    - cron: "47 5 * * 2,4,6"
-    - cron: "17 7 * * 2,4,6"
-    - cron: "47 9 * * 2,4,6"
-    - cron: "17 12 * * 2,4,6"
+    - cron: "47 5 * * *"
+    - cron: "17 7 * * *"
+    - cron: "47 9 * * *"
+    - cron: "17 12 * * *"
   workflow_dispatch:
     inputs:
       command:

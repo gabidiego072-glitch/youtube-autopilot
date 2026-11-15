@@ -103,3 +103,28 @@ def test_the_companion_must_really_talk():
     data["scenes"][2]["speaker"] = "kenji"
     two = ScriptDraft(**data, provider="t", model="t")
     assert not any("speaks" in p for p in structure_problems(two, VideoFormat.SHORT))
+
+
+def test_shorts_are_short_enough_to_be_watched_whole():
+    import pytest
+
+    from app.core.errors import ProviderError
+    from app.models.enums import VideoFormat
+    from app.services.experiments import LENGTHS
+    from app.services.production.formats import FormatSpec
+    from app.services.scripts.generator import generate_script
+    from tests.conftest import SCRIPT_RESPONSE, StubAIProvider
+
+    assert max(int(x) for x in LENGTHS) <= 28  # Nov 15: people watch ~20 s of a Short, whatever its length
+    spec = FormatSpec(VideoFormat.SHORT, 1080, 1920, 24, 5, None, "8M", "192k")
+
+    def write(target):
+        ai = StubAIProvider(responses=[SCRIPT_RESPONSE, SCRIPT_RESPONSE])
+        return generate_script(
+            ai, spec=spec, topic="t", working_title="w", target_duration_seconds=target, language="es"
+        ), ai
+
+    with pytest.raises(ProviderError, match="words; at most"):
+        write(4)  # a script far longer than its target is sent back, then rejected
+    draft, ai = write(200)
+    assert draft and "words of narration in total" in ai.calls[0]["prompt"]

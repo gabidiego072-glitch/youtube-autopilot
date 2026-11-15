@@ -13,6 +13,7 @@ from app.services.scripts.prompts import (
     PROMPT_VERSION,
     SCRIPT_SCHEMA,
     SYSTEM_PROMPT,
+    WORDS_BUDGET,
     build_script_prompt,
 )
 
@@ -209,6 +210,9 @@ def generate_script(
             continue
         repair_ending(draft)
         problems = structure_problems(draft, spec.format)
+        words, budget = len(draft.full_text.split()), round(target_duration_seconds * WORDS_BUDGET * 1.25)
+        if spec.format == VideoFormat.SHORT and words > budget:  # Gemini wrote 37-48 s for 32-45 s targets
+            problems.append(f"The narration has {words} words; at most {budget}. Cut lines, keep the story.")
         if not problems:
             break
     if problems:
