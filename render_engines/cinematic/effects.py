@@ -107,7 +107,9 @@ def puffs(
     return out
 
 
-def fire(name: str, location, start: int, end: int, fps: int, size: float = 1.0, seed: int = 0, col=None) -> None:
+def fire(
+    name: str, location, start: int, end: int, fps: int, size: float = 1.0, seed: int = 0, col=None, smoke: float = 1.0
+) -> None:
     """Flames that flicker and grow in, a flickering warm light, and dark smoke rising above."""
     rng = random.Random(seed)
     x, y, z = location
@@ -156,7 +158,8 @@ def fire(name: str, location, start: int, end: int, fps: int, size: float = 1.0,
         alpha=0.45,
         count=max(8, int((end - start) / fps * 5)),
         rise=2.4 * size,
-        size=0.3 * size,
+        size=0.3 * size * smoke,
+        spread=0.6 * smoke,
         seed=seed,
         col=col,
     )

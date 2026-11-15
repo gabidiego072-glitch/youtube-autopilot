@@ -112,7 +112,7 @@ ACTIONS = {
     "open_door": "a door prop swings open: prop, start, end",
     "vanish": "magic trick: a puff of white smoke and the character disappears: character, start",
     "fire": "flames, flickering light and smoke: location [x,y,z] (default: the kitchen stove), start, end, size "
-    "(1 = stove fire, 3 = a burning car)",
+    "(1 = stove fire, 3 = a burning car), smoke (0-1: how thick the smoke is)",
     "smoke": "dark smoke rising: location [x,y,z], start, end",
     "steam": "white steam rising off something hot: location [x,y,z], start, end",
     "snow": "snow falling through the view: location [x,y,z] (centre), start, end, area (m)",

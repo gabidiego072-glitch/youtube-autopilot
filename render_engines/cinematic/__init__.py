@@ -503,7 +503,16 @@ def _effect(kind: str, action: dict, start: int, end: int, ctx, urban, env: dict
     location = tuple((list(action.get("location") or default) + [0.0, 0.0, 0.0])[:3])
     seed = ctx.seed + start
     if kind == "fire":
-        effects.fire(name, location, start, end, ctx.fps, float(action.get("size", 1.0)), seed)
+        effects.fire(
+            name,
+            location,
+            start,
+            end,
+            ctx.fps,
+            float(action.get("size", 1.0)),
+            seed,
+            smoke=float(action.get("smoke", 1.0)),
+        )
     elif kind == "smoke":
         effects.puffs(name, location, start, end, ctx.fps, count=max(8, (end - start) // 4), seed=seed)
     elif kind == "steam":  # white steam off something hot (a boiling cup or pot)

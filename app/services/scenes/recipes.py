@@ -221,6 +221,7 @@ def _add_event(spec: dict, event: str, d: float, rng: random.Random) -> None:
                 "start": start,
                 "end": d,
                 "size": 0.6 if table else (1.0 if not outdoor else 2.0),
+                "smoke": 1.0 if outdoor else 0.35,  # close to you, thick smoke hid the person across the table
             }
         )
     elif event == "smoke":
