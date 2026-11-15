@@ -185,13 +185,12 @@ EVENTS = (
     "flood",
     "crack",
     "collapse",
-    "shatter",
     "float",
     "fly",
     "freeze",
-    "snow",
-    "steam",
 )
+# Not offered yet, their test frames did not show them (Nov 15): steam (white balls over the person), shatter
+# (no broken glass visible), snow (flakes not visible). The code stays for when they are fixed.
 OUTDOOR = ("city", "coast")
 
 
@@ -295,8 +294,9 @@ def _add_event(spec: dict, event: str, d: float, rng: random.Random) -> None:
         if table and event == "float":
             actions.append({"type": "levitate", "prop": "obj", "start": start, "end": d, "height": 0.8})
     elif event in ("freeze", "snow"):
-        sx_, sy_ = _ahead(spec, 2.5)  # the flakes fall right in front of you, where they can be seen
-        actions.append({"type": "snow", "location": [sx_, sy_, 0.0], "start": 0.0, "end": d, "area": 4.5})
+        if event == "snow":
+            sx_, sy_ = _ahead(spec, 2.5)
+            actions.append({"type": "snow", "location": [sx_, sy_, 0.0], "start": 0.0, "end": d, "area": 4.5})
         if event == "freeze":
             actions.append(
                 {

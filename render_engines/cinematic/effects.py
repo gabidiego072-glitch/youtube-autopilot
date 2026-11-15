@@ -266,7 +266,7 @@ def snow(
     top = cz + 3.2
     fall = max(1.0, top - 0.0)
     for i in range(count):
-        flake = objects.mesh_object(f"{name}_{i}", objects.icosphere(rng.uniform(0.04, 0.07), 1), mat, col=col)
+        flake = objects.mesh_object(f"{name}_{i}", objects.icosphere(rng.uniform(0.07, 0.11), 1), mat, col=col)
         flake.visible_shadow = False
         x, y = cx + rng.uniform(-area / 2, area / 2), cy + rng.uniform(-area / 2, area / 2)
         speed = rng.uniform(0.7, 1.2)  # metres a second
