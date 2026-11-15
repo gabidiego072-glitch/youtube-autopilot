@@ -9,7 +9,14 @@ from render_engines.core.spec import RenderContext
 from render_engines.core.timeline import Timeline
 
 ACTION_TYPES = tuple(ACTIONS)
-PROP_ACTIONS = ("light_on", "spin", "wind", "migrate_oceans", "open_door")  # actions that move one of the props
+PROP_ACTIONS = (
+    "light_on",
+    "spin",
+    "wind",
+    "migrate_oceans",
+    "open_door",
+    "levitate",
+)  # actions that move one of the props
 
 
 def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
@@ -310,6 +317,15 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
             props[action["prop"]].light_on(start)
         elif kind == "spin":
             props[action["prop"]].change_spin(start, end, float(action["rate_from"]), float(action["rate_to"]))
+        elif kind == "float_up":
+            char.float_up(
+                start,
+                end,
+                ctx.fps,
+                float(action.get("height", 1.6)),
+                ctx.seed + start,
+                timeline.tracks[action["character"]],
+            )
         elif kind == "fling":
             char.fling(
                 start,
@@ -362,8 +378,14 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
                 life=2.0,
                 seed=start,
             )
-        elif kind in ("fire", "smoke", "crack", "flood", "collapse"):
+        elif kind in ("fire", "smoke", "crack", "flood", "collapse", "snow", "frost", "explosion", "steam"):
             _effect(kind, action, start, end, ctx, urban, env)
+        elif kind == "levitate":  # the object of the line loses its weight
+            from render_engines.cinematic import effects
+
+            effects.levitate(
+                props[action["prop"]].root, start, end, ctx.fps, float(action.get("height", 1.2)), ctx.seed + start
+            )
         elif kind == "cover":
             char.cover(start, end)
         elif kind == "touch_throat":
@@ -490,12 +512,53 @@ def _effect(kind: str, action: dict, start: int, end: int, ctx, urban, env: dict
     location = tuple((list(action.get("location") or default) + [0.0, 0.0, 0.0])[:3])
     seed = ctx.seed + start
     if kind == "fire":
-        effects.fire(name, location, start, end, ctx.fps, float(action.get("size", 1.0)), seed)
+        effects.fire(
+            name,
+            location,
+            start,
+            end,
+            ctx.fps,
+            float(action.get("size", 1.0)),
+            seed,
+            smoke=float(action.get("smoke", 1.0)),
+        )
     elif kind == "smoke":
         effects.puffs(name, location, start, end, ctx.fps, count=max(8, (end - start) // 4), seed=seed)
+    elif kind == "steam":  # white steam off something hot (a boiling cup or pot)
+        effects.puffs(
+            name,
+            location,
+            start,
+            end,
+            ctx.fps,
+            color="#f4f4f4",
+            alpha=0.12,
+            count=max(8, (end - start) // 4),
+            rise=0.6,
+            spread=0.05,
+            size=0.025,  # thin wisps: at 0.08 they were white balls in front of the person (Nov 15)
+            life=1.6,
+            seed=seed,
+            soft=True,
+        )
+    elif kind == "snow":
+        effects.snow(name, location, start, end, ctx.fps, float(action.get("area", 6.0)), seed=seed)
+    elif kind == "frost":
+        effects.frost(name, location, start, end, float(action.get("size", 7.0)), seed)
+    elif kind == "explosion":
+        effects.explosion(name, location, start, ctx.fps, float(action.get("size", 2.0)), seed)
     elif kind == "crack":
         surface = action.get("surface", "wall" if interior else "floor")
-        effects.crack(name, location, start, end, surface, float(action.get("length", 2.0)), seed)
+        effects.crack(
+            name,
+            location,
+            start,
+            end,
+            surface,
+            float(action.get("length", 2.0)),
+            seed,
+            thick=float(action.get("thick", 1.0)),
+        )
     elif kind == "flood":
         if interior:
             center, size = (0.0, 0.0, 0.0), (6.2, 5.2)

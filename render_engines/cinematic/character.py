@@ -173,6 +173,31 @@ class CinematicCharacter:
                 track.add(start + f, (x, y, z))
         set_interpolation(self.root, "LINEAR")
 
+    def float_up(self, start: int, end: int, fps: int, height: float = 1.6, seed: int = 0, track=None) -> None:
+        """No gravity: the body lifts off slowly, upright, arms out, turning a little and bobbing (not tumbling)."""
+        import random
+
+        rng = random.Random(seed)
+        x0, y0, z0 = self.position
+        drift = (rng.uniform(-0.3, 0.3), rng.uniform(-0.3, 0.3))
+        key(self.root, "location", start, (x0, y0, z0))
+        key(self.root, "rotation_euler", start, (0, 0, self.yaw))
+        for limb, angle in ((self.arms["L"], 70), (self.arms["R"], -70)):
+            key(limb, "rotation_euler", start, (0, 0, 0))
+            key(limb, "rotation_euler", start + int(0.6 * fps), (0, math.radians(angle), 0))
+        for leg, angle in ((self.legs["L"], 12), (self.legs["R"], -8)):
+            key(leg, "rotation_euler", start + int(0.6 * fps), (math.radians(angle), 0, 0))
+        span = max(1, end - start)
+        for f in range(0, span + 1, 3):
+            t = f / span
+            ease = t * t * (3 - 2 * t)
+            z = z0 + height * ease + 0.06 * math.sin(f / fps * 3.0 + seed)
+            loc = (x0 + drift[0] * ease, y0 + drift[1] * ease, z)
+            key(self.root, "location", start + f, loc)
+            key(self.root, "rotation_euler", start + f, (0.15 * math.sin(f / fps * 1.3), 0.1 * t, self.yaw + 0.6 * t))
+            if track is not None and f % 6 == 0:
+                track.add(start + f, loc)
+
     def cover(self, start: int, end: int) -> None:
         """Crouch and protect the head with both arms."""
         key(self.hips, "location", start, (0, 0, HIP_HEIGHT))

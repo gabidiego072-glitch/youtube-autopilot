@@ -14,7 +14,7 @@ import bpy
 from mathutils import Matrix, Vector
 
 from render_engines.core.blender import lights, materials, objects
-from render_engines.core.blender.animation import add_noise, key
+from render_engines.core.blender.animation import add_noise, key, set_interpolation
 from render_engines.core.colors import hex_to_linear
 
 
@@ -107,7 +107,9 @@ def puffs(
     return out
 
 
-def fire(name: str, location, start: int, end: int, fps: int, size: float = 1.0, seed: int = 0, col=None) -> None:
+def fire(
+    name: str, location, start: int, end: int, fps: int, size: float = 1.0, seed: int = 0, col=None, smoke: float = 1.0
+) -> None:
     """Flames that flicker and grow in, a flickering warm light, and dark smoke rising above."""
     rng = random.Random(seed)
     x, y, z = location
@@ -156,14 +158,23 @@ def fire(name: str, location, start: int, end: int, fps: int, size: float = 1.0,
         alpha=0.45,
         count=max(8, int((end - start) / fps * 5)),
         rise=2.4 * size,
-        size=0.3 * size,
+        size=0.3 * size * smoke,
+        spread=0.6 * smoke,
         seed=seed,
         col=col,
     )
 
 
 def crack(
-    name: str, location, start: int, end: int, surface: str = "wall", length: float = 2.0, seed: int = 0, col=None
+    name: str,
+    location,
+    start: int,
+    end: int,
+    surface: str = "wall",
+    length: float = 2.0,
+    seed: int = 0,
+    col=None,
+    thick: float = 1.0,
 ) -> None:
     """A jagged dark crack that grows across a wall (facing -y) or the floor, segment by segment."""
     rng = random.Random(seed)
@@ -180,7 +191,7 @@ def crack(
         else:  # floor / ground plane x-y
             direction = Vector((math.cos(heading), math.sin(heading), 0.0))
         direction.normalize()
-        width = 0.06 * (1.0 - i / (segments + 2))
+        width = thick * 0.06 * (1.0 - i / (segments + 2))
         seg = objects.mesh_object(
             f"{name}_{i}", objects.box(step, width, width, base_at_origin=False), mat, location=point.copy(), col=col
         )
@@ -243,3 +254,103 @@ def collapse(building, start: int, end: int, fps: int, seed: int = 0, col=None) 
             seed=seed + k,
             col=col,
         )
+
+
+def snow(
+    name: str, center, start: int, end: int, fps: int, area: float = 6.0, count: int = 160, seed: int = 0, col=None
+) -> None:
+    """Snowflakes falling (and drifting) through the view, looping until `end`: the cold the line talks about."""
+    rng = random.Random(seed)
+    mat = materials.principled(f"{name}_flake", "#ffffff", emission="#eef6ff", emission_strength=1.5)
+    cx, cy, cz = center
+    top = cz + 3.2
+    fall = max(1.0, top - 0.0)
+    for i in range(count):
+        flake = objects.mesh_object(f"{name}_{i}", objects.icosphere(rng.uniform(0.07, 0.11), 1), mat, col=col)
+        flake.visible_shadow = False
+        x, y = cx + rng.uniform(-area / 2, area / 2), cy + rng.uniform(-area / 2, area / 2)
+        speed = rng.uniform(0.7, 1.2)  # metres a second
+        period = max(6, int(fall / speed * fps))
+        offset = rng.randrange(period)
+        _hidden_until(flake, start)
+        frame = start
+        while frame < end:
+            phase = ((frame - start + offset) % period) / period
+            z = top - phase * fall
+            drift = 0.15 * math.sin((frame + i * 13) / fps * 1.7)
+            key(flake, "location", frame, (x + drift, y + drift * 0.5, z))
+            frame += 4
+        set_interpolation(flake, "LINEAR")
+
+
+def frost(name: str, center, start: int, end: int, size: float = 7.0, seed: int = 0, col=None) -> None:
+    """Frost spreading over the ground in icy patches (pale blue-white, a little shiny), not one white sheet."""
+    rng = random.Random(seed)
+    mat = materials.principled(f"{name}_mat", "#dcecf7", roughness=0.25, emission="#cfe6f7", emission_strength=0.25)
+    span = max(1, end - start)
+    for i in range(26):
+        r = rng.uniform(0.4, 1.3) * size / 7.0
+        x = center[0] + rng.uniform(-size / 2, size / 2)
+        y = center[1] + rng.uniform(-size / 2, size / 2)
+        patch = objects.mesh_object(
+            f"{name}_{i}",
+            objects.cone(r, r, 0.006, 9, base_at_origin=True),
+            mat,
+            location=(x, y, 0.01 + i * 0.0004),
+            col=col,
+        )
+        patch.visible_shadow = False
+        born = start + int(span * rng.uniform(0, 0.7))
+        key(patch, "scale", start, (0.001, 0.001, 1.0))
+        key(patch, "scale", born, (0.001, 0.001, 1.0))
+        key(patch, "scale", min(end, born + int(span * 0.4)), (1.0, rng.uniform(0.6, 1.0), 1.0))
+
+
+def explosion(name: str, location, start: int, fps: int, size: float = 2.0, seed: int = 0, col=None) -> None:
+    """A blast: a flash, a ball of fire that grows and fades fast, and a big cloud of dark smoke."""
+    x, y, z = location
+    flash = lights.point(f"{name}_flash", (x, y, z + size), "#ffd29a", 0.0, radius=size)
+    key(flash.data, "energy", max(0, start - 1), 0.0)
+    key(flash.data, "energy", start + 2, 9000.0 * size)
+    key(flash.data, "energy", start + int(0.8 * fps), 0.0)
+    ball = objects.mesh_object(
+        f"{name}_ball",
+        objects.icosphere(1.0, 3),
+        materials.principled(f"{name}_ballmat", "#ffb347", emission="#ff7a1a", emission_strength=25.0),
+        smooth=True,
+        location=(x, y, z + size * 0.5),
+        col=col,
+    )
+    ball.visible_shadow = False
+    _hidden_until(ball, start)
+    key(ball, "scale", start, (0.1, 0.1, 0.1))
+    key(ball, "scale", start + int(0.35 * fps), (size, size, size * 0.8))
+    key(ball, "scale", start + int(0.9 * fps), (0.001, 0.001, 0.001))
+    fire(f"{name}_fire", location, start + int(0.3 * fps), start + int(6 * fps), fps, size * 0.8, seed, col=col)
+    puffs(
+        f"{name}_cloud",
+        (x, y, z + size * 0.6),
+        start + 2,
+        start + int(3 * fps),
+        fps,
+        color="#5a5a5e",
+        alpha=0.4,
+        count=14,
+        rise=size * 2.5,
+        spread=size * 0.8,
+        size=size * 0.5,
+        life=3.0,
+        seed=seed,
+        col=col,
+    )
+
+
+def levitate(obj, start: int, end: int, fps: int, height: float = 1.2, seed: int = 0) -> None:
+    """Something loses its weight: it lifts slowly off where it was and turns in the air."""
+    rng = random.Random(seed)
+    x, y, z = obj.location
+    rx, ry, rz = obj.rotation_euler
+    key(obj, "location", start, (x, y, z))
+    key(obj, "rotation_euler", start, (rx, ry, rz))
+    key(obj, "location", end, (x + rng.uniform(-0.2, 0.2), y + rng.uniform(-0.2, 0.2), z + height))
+    key(obj, "rotation_euler", end, (rx + rng.uniform(-0.8, 0.8), ry + rng.uniform(-0.8, 0.8), rz + rng.uniform(-1, 1)))

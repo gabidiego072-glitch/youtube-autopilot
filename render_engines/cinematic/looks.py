@@ -50,6 +50,10 @@ def toon(scene, bands: float = 0.55) -> None:
         strength = bsdf.inputs["Emission Strength"].default_value
         if strength > 0.05 or bsdf.inputs["Transmission Weight"].default_value > 0.5:
             continue  # screens, lamps and glass stay as they are
+        if bsdf.inputs["Alpha"].default_value < 0.99 or any(
+            word in mat.name for word in ("smoke", "steam", "cloud", "puff", "vanish")
+        ):
+            continue  # see-through smoke and steam: as solid toon blobs they hid the scene (Nov 15)
         source, colour = _base_color(bsdf)
         shade = nodes.new("ShaderNodeBsdfToon")
         shade.component = "DIFFUSE"

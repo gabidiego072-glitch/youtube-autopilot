@@ -112,10 +112,17 @@ ACTIONS = {
     "open_door": "a door prop swings open: prop, start, end",
     "vanish": "magic trick: a puff of white smoke and the character disappears: character, start",
     "fire": "flames, flickering light and smoke: location [x,y,z] (default: the kitchen stove), start, end, size "
-    "(1 = stove fire, 3 = a burning car)",
+    "(1 = stove fire, 3 = a burning car), smoke (0-1: how thick the smoke is)",
     "smoke": "dark smoke rising: location [x,y,z], start, end",
+    "steam": "white steam rising off something hot: location [x,y,z], start, end",
+    "snow": "snow falling through the view: location [x,y,z] (centre), start, end, area (m)",
+    "frost": "white frost spreading over the ground around location [x,y,z]: start, end, size (m)",
+    "explosion": "a blast (flash, fireball, smoke, then fire): location [x,y,z], start, size",
+    "float_up": "no gravity: a character lifts off slowly, upright, arms out, bobbing: character, start, end, "
+    "height (m)",
+    "levitate": "a prop loses its weight and floats up turning: prop, start, end, height (m)",
     "crack": "a crack grows: location [x,y,z] (on a wall: y=2.69 for the room's north wall; on the ground: z=0.01), "
-    "start, end, surface (wall|floor), length (m)",
+    "start, end, surface (wall|floor), length (m), thick (1 = a wall crack, 4 = the street splits)",
     "flood": "water rises in the room or the street: start, end, height (m; 0.3 = ankles, 1.0 = waist)",
     "collapse": "city/coast: the building nearest to x crumbles into dust: x (m), start, end",
     "sun_path": "meadow/city: the sun moves (time-lapse): start, end, elevation_from, elevation_to (deg; below 0 "
