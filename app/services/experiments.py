@@ -64,7 +64,9 @@ VOICES = {
 
 MUSIC = ("wistful", "tense", "bright", "curious", "rising")  # index = audio.synth PROGRESSIONS index
 
-LENGTHS = ("32", "45", "58")  # Short target duration in seconds
+# Short target duration in seconds. Nov 15 report (15 videos): whatever the length, people watch ~20 s on
+# average and only 20-37 % reach the end of 37-48 s videos. Short enough to be watched whole (and looped).
+LENGTHS = ("20", "24", "28")
 
 HOOKS = {
     "question": "Open with a direct, intriguing question to the viewer.",

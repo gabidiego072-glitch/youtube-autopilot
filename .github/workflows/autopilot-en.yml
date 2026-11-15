@@ -5,13 +5,13 @@ name: Autopilot (English)
 
 on:
   schedule:
-    # Mondays, Wednesdays and Fridays at 11:41 UTC (6:41 New York in winter): three better videos a week,
+    # Every day at 11:41 UTC (6:41 New York in winter); back to daily on Nov 15 (three a week stayed at ~1,000),
     # ready for the US morning even if GitHub starts it late.
-    - cron: "41 11 * * 1,3,5"
+    - cron: "41 11 * * *"
     # Safety retries: they only make a video if today's has not been made yet (late start, Gemini failure).
-    - cron: "41 13 * * 1,3,5"
-    - cron: "11 16 * * 1,3,5"
-    - cron: "41 18 * * 1,3,5"
+    - cron: "41 13 * * *"
+    - cron: "11 16 * * *"
+    - cron: "41 18 * * *"
   workflow_dispatch:
     inputs:
       command:

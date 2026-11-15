@@ -14,7 +14,8 @@ from app.models.enums import ClaimType, VideoFormat
 from app.services.language import title_guide
 from render_engines.core.catalog import catalog_text
 
-PROMPT_VERSION = "whatif-script-v6"
+PROMPT_VERSION = "whatif-script-v7"
+WORDS_BUDGET = 2.6  # spoken words per second of target length (the narrator says ~2.5 a second)
 HOOK_MAX_WORDS = 8  # ~2 seconds of fast narration
 BEATS = ("hook", "setup", "escalation", "climax", "ending")
 
@@ -187,7 +188,9 @@ def build_script_prompt(
         _FORMAT_GUIDANCE[video_format],
         f"Premise / working title: {working_title}",
         f"Topic details: {topic}",
-        f"Target length: about {target_duration_seconds} seconds.",
+        f"Target length: about {target_duration_seconds} seconds, never more: at most "
+        f"{round(target_duration_seconds * WORDS_BUDGET)} words of narration in total. Short lines; cut anything "
+        "that is not the premise, the escalation or the choice.",
         f"Language: write title_question, narration and ending_line in '{language}'. Visual descriptions in English.",
         title_guide(language),
     ]
