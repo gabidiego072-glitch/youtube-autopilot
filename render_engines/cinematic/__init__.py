@@ -532,11 +532,11 @@ def _effect(kind: str, action: dict, start: int, end: int, ctx, urban, env: dict
             end,
             ctx.fps,
             color="#f4f4f4",
-            alpha=0.22,
+            alpha=0.12,
             count=max(8, (end - start) // 4),
             rise=0.6,
             spread=0.05,
-            size=0.035,  # thin wisps: at 0.08 they were white balls in front of the person (Nov 15)
+            size=0.025,  # thin wisps: at 0.08 they were white balls in front of the person (Nov 15)
             life=1.6,
             seed=seed,
             soft=True,

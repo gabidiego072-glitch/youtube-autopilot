@@ -261,8 +261,8 @@ def _add_event(spec: dict, event: str, d: float, rng: random.Random) -> None:
             norm = max(0.01, (dx * dx + dy * dy) ** 0.5)
             sx, sy = -dy / norm, dx / norm  # sideways, across the view
             for k in range(4):
-                px, py = _ahead(spec, near + 1.5 + k * 1.3)
-                side = (-1.2, 1.0, -0.6, 1.4)[k]
+                px, py = _ahead(spec, (2.6 if outdoor else 1.8) + k * 0.9)  # close: far away they were specks
+                side = (-0.7, 0.6, -0.3, 0.8)[k]  # inside the vertical frame
                 person = _person(f"ev{k}", (px + sx * side, py + sy * side), rng.uniform(0, 360), rng)
                 spec["characters"].append(person)
                 people.append(person)
@@ -295,7 +295,8 @@ def _add_event(spec: dict, event: str, d: float, rng: random.Random) -> None:
         if table and event == "float":
             actions.append({"type": "levitate", "prop": "obj", "start": start, "end": d, "height": 0.8})
     elif event in ("freeze", "snow"):
-        actions.append({"type": "snow", "location": [x, y, 0.0], "start": 0.0, "end": d, "area": 7.0})
+        sx_, sy_ = _ahead(spec, 2.5)  # the flakes fall right in front of you, where they can be seen
+        actions.append({"type": "snow", "location": [sx_, sy_, 0.0], "start": 0.0, "end": d, "area": 4.5})
         if event == "freeze":
             actions.append(
                 {
