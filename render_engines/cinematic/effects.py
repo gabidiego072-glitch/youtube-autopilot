@@ -166,7 +166,15 @@ def fire(
 
 
 def crack(
-    name: str, location, start: int, end: int, surface: str = "wall", length: float = 2.0, seed: int = 0, col=None
+    name: str,
+    location,
+    start: int,
+    end: int,
+    surface: str = "wall",
+    length: float = 2.0,
+    seed: int = 0,
+    col=None,
+    thick: float = 1.0,
 ) -> None:
     """A jagged dark crack that grows across a wall (facing -y) or the floor, segment by segment."""
     rng = random.Random(seed)
@@ -183,7 +191,7 @@ def crack(
         else:  # floor / ground plane x-y
             direction = Vector((math.cos(heading), math.sin(heading), 0.0))
         direction.normalize()
-        width = 0.06 * (1.0 - i / (segments + 2))
+        width = thick * 0.06 * (1.0 - i / (segments + 2))
         seg = objects.mesh_object(
             f"{name}_{i}", objects.box(step, width, width, base_at_origin=False), mat, location=point.copy(), col=col
         )

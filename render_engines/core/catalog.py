@@ -122,7 +122,7 @@ ACTIONS = {
     "height (m)",
     "levitate": "a prop loses its weight and floats up turning: prop, start, end, height (m)",
     "crack": "a crack grows: location [x,y,z] (on a wall: y=2.69 for the room's north wall; on the ground: z=0.01), "
-    "start, end, surface (wall|floor), length (m)",
+    "start, end, surface (wall|floor), length (m), thick (1 = a wall crack, 4 = the street splits)",
     "flood": "water rises in the room or the street: start, end, height (m; 0.3 = ankles, 1.0 = waist)",
     "collapse": "city/coast: the building nearest to x crumbles into dust: x (m), start, end",
     "sun_path": "meadow/city: the sun moves (time-lapse): start, end, elevation_from, elevation_to (deg; below 0 "

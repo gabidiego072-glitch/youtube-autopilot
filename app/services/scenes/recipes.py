@@ -242,7 +242,8 @@ def _add_event(spec: dict, event: str, d: float, rng: random.Random) -> None:
                 "start": start,
                 "end": d * 0.8,
                 "surface": "floor",
-                "length": 2.5,
+                "length": 5.0 if outdoor else 2.5,
+                "thick": 4.0 if outdoor else 2.0,  # a hairline 6 m away could not be seen (Nov 15)
             }
         )
     elif event == "collapse":
@@ -285,9 +286,10 @@ def _add_event(spec: dict, event: str, d: float, rng: random.Random) -> None:
                         "start": begin,
                         "end": d,
                         "direction_deg": rng.uniform(0, 360),
-                        "speed": 6.0,
+                        # slower and floatier: at 6 m/s they had left the frame within a second (Nov 15)
+                        "speed": 2.0,
                         "lift": 3.5,
-                        "gravity": 1.6,
+                        "gravity": 0.9,
                     }
                 )
         if table and event == "float":

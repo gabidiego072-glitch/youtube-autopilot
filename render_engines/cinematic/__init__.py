@@ -532,11 +532,11 @@ def _effect(kind: str, action: dict, start: int, end: int, ctx, urban, env: dict
             end,
             ctx.fps,
             color="#f4f4f4",
-            alpha=0.35,
-            count=max(8, (end - start) // 5),
-            rise=0.9,
-            spread=0.12,
-            size=0.08,
+            alpha=0.22,
+            count=max(8, (end - start) // 4),
+            rise=0.6,
+            spread=0.05,
+            size=0.035,  # thin wisps: at 0.08 they were white balls in front of the person (Nov 15)
             life=1.6,
             seed=seed,
             soft=True,
@@ -549,7 +549,16 @@ def _effect(kind: str, action: dict, start: int, end: int, ctx, urban, env: dict
         effects.explosion(name, location, start, ctx.fps, float(action.get("size", 2.0)), seed)
     elif kind == "crack":
         surface = action.get("surface", "wall" if interior else "floor")
-        effects.crack(name, location, start, end, surface, float(action.get("length", 2.0)), seed)
+        effects.crack(
+            name,
+            location,
+            start,
+            end,
+            surface,
+            float(action.get("length", 2.0)),
+            seed,
+            thick=float(action.get("thick", 1.0)),
+        )
     elif kind == "flood":
         if interior:
             center, size = (0.0, 0.0, 0.0), (6.2, 5.2)
