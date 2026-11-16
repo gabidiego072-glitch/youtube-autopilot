@@ -612,7 +612,7 @@ def _can_render(services) -> bool:
 
 # Share of scenes that must show what the voice says, or the topic is dropped. 0.5 with the first, too literal
 # check dropped every topic on Nov 13-14 (0/5, 0/8: it wanted to see sound waves for an echo).
-MIN_SHOWN_SHARE = 0.35
+MIN_SHOWN_SHARE = 0.3  # 0.35 dropped two Spanish topics at 2/6 on Nov 16, as good as published ones (4/9)
 
 
 def _show_what_is_said(db, run, services, ai, specs, durations, notes):
