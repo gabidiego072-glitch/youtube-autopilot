@@ -161,7 +161,7 @@ Keep the same characters and places across scenes: define them once in 'visual_b
 _FORMAT_GUIDANCE = {
     VideoFormat.SHORT: (
         "Format: vertical YouTube Short (9:16), 30-60 seconds. 6-10 fast scenes of 1-2 sentences. "
-        "At least 3 escalation scenes. Vertical framing: keep the subject centred and tall in frame."
+        "2-3 escalation scenes. Vertical framing: keep the subject centred and tall in frame."
     ),
     VideoFormat.LONG: (
         "Format: horizontal long-form video (16:9). Cover the premise in depth: timeline of consequences, "

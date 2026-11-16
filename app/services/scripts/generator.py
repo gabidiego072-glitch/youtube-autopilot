@@ -18,7 +18,8 @@ from app.services.scripts.prompts import (
 )
 
 WORDS_PER_SECOND = 2.5  # ~150 words per minute narration
-MIN_ESCALATIONS = {VideoFormat.SHORT: 3, VideoFormat.LONG: 6}
+# 2 in a Short: with 20-28 s, the hook, the companion's lines and the choice, 3 did not fit (Nov 16)
+MIN_ESCALATIONS = {VideoFormat.SHORT: 2, VideoFormat.LONG: 6}
 
 
 class ClaimDraft(BaseModel):
