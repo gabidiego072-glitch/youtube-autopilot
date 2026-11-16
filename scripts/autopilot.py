@@ -287,6 +287,18 @@ def youtube_command(args, settings) -> int:
             if video.get("channel_id") and video["channel_id"] not in top_ids:
                 top_ids.append(video["channel_id"])
         report["channels_30d"] = channel_months(publisher.api, top_ids[:40])
+        # mid-size channels (10k-2M subscribers): reachable examples, not giants
+        mid: list[str] = []
+        for video in report["videos"]:
+            cid = video.get("channel_id")
+            if (
+                cid
+                and cid not in mid
+                and cid not in top_ids[:40]
+                and 10_000 <= video.get("subscribers", 0) <= 2_000_000
+            ):
+                mid.append(cid)
+        report["mid_channels_30d"] = channel_months(publisher.api, mid[:40])
         args.out.write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
         print(json.dumps(report["summary"], ensure_ascii=False, indent=1))
         return 0
