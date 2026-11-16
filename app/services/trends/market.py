@@ -15,9 +15,24 @@ from datetime import UTC, datetime, timedelta
 
 SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
 VIDEOS_URL = "https://www.googleapis.com/youtube/v3/videos"
+CHANNELS_URL = "https://www.googleapis.com/youtube/v3/channels"
 QUERIES = {
-    "es": ("qué pasaría si", "que pasaria si shorts", "qué pasaría si la tierra", "y si de repente"),
-    "en": ("what if", "what would happen if", "what if the earth", "what if shorts animation"),
+    "es": (
+        "qué pasaría si",
+        "que pasaria si shorts",
+        "qué pasaría si la tierra",
+        "qué pasaría si los humanos",
+        "y si de repente",
+        "qué pasaría si el sol",
+    ),
+    "en": (
+        "what if",
+        "what would happen if",
+        "what if the earth",
+        "what if humans",
+        "what if you",
+        "what if the sun",
+    ),
 }
 
 
@@ -67,10 +82,31 @@ def market_report(api, days: int = 30, per_query: int = 25) -> dict:
                 channel=snippet.get("channelTitle", ""),
                 published=snippet.get("publishedAt", "")[:10],
                 seconds=_seconds(item.get("contentDetails", {}).get("duration", "")),
+                channel_id=snippet.get("channelId", ""),
+                tags=(snippet.get("tags") or [])[:12],
+                description=(snippet.get("description") or "")[:200],
                 views=int(stats.get("viewCount", 0) or 0),
                 likes=int(stats.get("likeCount", 0) or 0),
                 comments=int(stats.get("commentCount", 0) or 0),
             )
+    channel_ids = sorted({v.get("channel_id") for v in found.values() if v.get("channel_id")})
+    channels: dict[str, dict] = {}
+    for start in range(0, len(channel_ids), 50):
+        data = api.json(
+            "GET", CHANNELS_URL, params={"part": "statistics,snippet", "id": ",".join(channel_ids[start : start + 50])}
+        )
+        for item in data.get("items", []):
+            stats = item.get("statistics", {})
+            channels[item["id"]] = {
+                "subscribers": int(stats.get("subscriberCount", 0) or 0),
+                "channel_videos": int(stats.get("videoCount", 0) or 0),
+                "channel_created": (item.get("snippet", {}).get("publishedAt") or "")[:10],
+            }
+    for v in found.values():
+        info = channels.get(v.get("channel_id", ""), {})
+        v.update(info)
+        # views per subscriber: a small channel with a big Short shows what the CONTENT does, not the channel size
+        v["views_per_subscriber"] = round(v.get("views", 0) / max(1, info.get("subscribers", 0)), 2)
     videos = sorted(
         (v for v in found.values() if v.get("seconds", 0) and v["seconds"] <= 180),
         key=lambda v: v.get("views", 0),
@@ -98,5 +134,70 @@ def summarize(videos: list[dict]) -> dict:
             "top_20pct_median_seconds": median([v["seconds"] for v in top]),
             "all_median_seconds": median([v["seconds"] for v in rows]),
             "top_channels": sorted({v["channel"] for v in top}),
+            # small channels (under 50k subscribers) whose Short got at least 5x their subscribers in views
+            "outliers": [
+                {k: v[k] for k in ("title", "channel", "views", "subscribers", "seconds", "views_per_subscriber")}
+                for v in rows
+                if v.get("subscribers", 0) < 50_000 and v.get("views_per_subscriber", 0) >= 5
+            ][:15],
+            "title_words": _common_words([v["title"] for v in top]),
         }
     return out
+
+
+STOP = {
+    "the",
+    "a",
+    "an",
+    "of",
+    "to",
+    "in",
+    "and",
+    "is",
+    "on",
+    "for",
+    "if",
+    "what",
+    "you",
+    "your",
+    "would",
+    "with",
+    "el",
+    "la",
+    "los",
+    "las",
+    "de",
+    "del",
+    "que",
+    "qué",
+    "si",
+    "un",
+    "una",
+    "y",
+    "en",
+    "se",
+    "por",
+    "para",
+    "es",
+    "shorts",
+    "short",
+    "pasaría",
+    "pasaria",
+    "happen",
+    "this",
+    "it",
+    "al",
+    "lo",
+    "tu",
+    "te",
+    "le",
+}
+
+
+def _common_words(titles: list[str], limit: int = 25) -> list[tuple[str, int]]:
+    counts: dict[str, int] = {}
+    for title in titles:
+        for word in set(re.findall(r"[\wáéíóúñü]+", title.lower())):
+            if len(word) > 2 and word not in STOP and not word.isdigit():
+                counts[word] = counts.get(word, 0) + 1
+    return sorted(counts.items(), key=lambda kv: -kv[1])[:limit]

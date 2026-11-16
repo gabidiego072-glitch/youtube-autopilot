@@ -7,13 +7,20 @@ class FakeAPI:
 
     def json(self, method, url, params=None, **_):
         self.calls.append(params)
+        if url.endswith("/channels"):
+            return {"items": [{"id": "c1", "statistics": {"subscriberCount": "100", "videoCount": "30"}}]}
         if url.endswith("/search"):
             return {"items": [{"id": {"videoId": "a"}}, {"id": {"videoId": "b"}}]}
         return {
             "items": [
                 {
                     "id": "a",
-                    "snippet": {"title": "What if", "channelTitle": "X", "publishedAt": "2026-11-01T00:00:00Z"},
+                    "snippet": {
+                        "title": "What if",
+                        "channelTitle": "X",
+                        "channelId": "c1",
+                        "publishedAt": "2026-11-01T00:00:00Z",
+                    },
                     "statistics": {"viewCount": "900"},
                     "contentDetails": {"duration": "PT25S"},
                 },
@@ -32,3 +39,5 @@ def test_the_market_report_lists_the_most_viewed_shorts():
     assert [v["id"] for v in report["videos"]] == ["a"]  # a 12-minute video is not a Short
     assert report["videos"][0]["seconds"] == 25 and report["summary"]["es"]["top_20pct_median_views"] == 900
     assert _seconds("PT1M5S") == 65 and _seconds("bad") == 0
+    assert report["videos"][0]["views_per_subscriber"] == 9.0
+    assert report["summary"]["es"]["outliers"][0]["channel"] == "X"  # 100 subscribers, 900 views
