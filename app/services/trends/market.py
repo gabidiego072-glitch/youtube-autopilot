@@ -209,3 +209,64 @@ def _common_words(titles: list[str], limit: int = 25) -> list[tuple[str, int]]:
             if len(word) > 2 and word not in STOP and not word.isdigit():
                 counts[word] = counts.get(word, 0) + 1
     return sorted(counts.items(), key=lambda kv: -kv[1])[:limit]
+
+
+PLAYLIST_ITEMS_URL = "https://www.googleapis.com/youtube/v3/playlistItems"
+
+
+def channel_months(api, channel_ids: list[str], days: int = 30, max_pages: int = 6) -> list[dict]:
+    """For each channel: every Short it uploaded in the last `days` days and their real views today.
+    (Views of what it published this month: older videos keep earning views too, so it is a floor.)"""
+    since = (datetime.now(UTC) - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    out = []
+    for start in range(0, len(channel_ids), 50):
+        data = api.json(
+            "GET",
+            CHANNELS_URL,
+            params={"part": "contentDetails,snippet,statistics", "id": ",".join(channel_ids[start : start + 50])},
+        )
+        for ch in data.get("items", []):
+            uploads = ch.get("contentDetails", {}).get("relatedPlaylists", {}).get("uploads")
+            if not uploads:
+                continue
+            recent, token = [], None
+            for _ in range(max_pages):
+                params = {"part": "contentDetails", "playlistId": uploads, "maxResults": 50}
+                if token:
+                    params["pageToken"] = token
+                page = api.json("GET", PLAYLIST_ITEMS_URL, params=params)
+                items = page.get("items", [])
+                fresh = [
+                    i["contentDetails"]["videoId"]
+                    for i in items
+                    if i.get("contentDetails", {}).get("videoPublishedAt", "") >= since
+                ]
+                recent += fresh
+                token = page.get("nextPageToken")
+                if not token or len(fresh) < len(items):
+                    break
+            shorts_views, shorts, long_views = 0, 0, 0
+            for s in range(0, len(recent), 50):
+                vids = api.json(
+                    "GET",
+                    VIDEOS_URL,
+                    params={"part": "statistics,contentDetails", "id": ",".join(recent[s : s + 50])},
+                ).get("items", [])
+                for v in vids:
+                    views = int(v.get("statistics", {}).get("viewCount", 0) or 0)
+                    if _seconds(v.get("contentDetails", {}).get("duration", "")) <= 180:
+                        shorts += 1
+                        shorts_views += views
+                    else:
+                        long_views += views
+            out.append(
+                {
+                    "channel": ch.get("snippet", {}).get("title", ""),
+                    "subscribers": int(ch.get("statistics", {}).get("subscriberCount", 0) or 0),
+                    "shorts_last_30d": shorts,
+                    "shorts_views_last_30d": shorts_views,
+                    "long_views_last_30d": long_views,
+                    "views_per_short": shorts_views // max(1, shorts),
+                }
+            )
+    return sorted(out, key=lambda c: -c["shorts_views_last_30d"])

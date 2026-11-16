@@ -278,9 +278,15 @@ def youtube_command(args, settings) -> int:
         return 0
     publisher = YouTubeDataAPIPublisher(settings)
     if args.command == "market-report":
-        from app.services.trends.market import market_report
+        from app.services.trends.market import channel_months, market_report
 
         report = market_report(publisher.api, days=args.days)
+        # the 20 channels with the most viewed Shorts of the report: what they really did in the last 30 days
+        top_ids: list[str] = []
+        for video in report["videos"]:
+            if video.get("channel_id") and video["channel_id"] not in top_ids:
+                top_ids.append(video["channel_id"])
+        report["channels_30d"] = channel_months(publisher.api, top_ids[:40])
         args.out.write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
         print(json.dumps(report["summary"], ensure_ascii=False, indent=1))
         return 0
