@@ -126,10 +126,13 @@ def main() -> int:
     report_p = sub.add_parser("channel-report", help="real YouTube data for every upload (views, retention, traffic)")
     report_p.add_argument("--days", type=int, default=120)
     report_p.add_argument("--out", type=Path, default=Path("channel_report.json"))
+    market_p = sub.add_parser("market-report", help="the most viewed recent 'what if' Shorts of the market")
+    market_p.add_argument("--days", type=int, default=30)
+    market_p.add_argument("--out", type=Path, default=Path("market_report.json"))
     args = parser.parse_args()
     settings = get_settings()
 
-    if args.command in ("youtube-check", "upload-test", "trends", "publish-file", "channel-report"):
+    if args.command in ("youtube-check", "upload-test", "trends", "publish-file", "channel-report", "market-report"):
         return youtube_command(args, settings)
     if args.command == "ai-check":
         provider = get_ai_provider(settings)
@@ -274,6 +277,13 @@ def youtube_command(args, settings) -> int:
         print(json.dumps(signals.__dict__, ensure_ascii=False, indent=2))
         return 0
     publisher = YouTubeDataAPIPublisher(settings)
+    if args.command == "market-report":
+        from app.services.trends.market import market_report
+
+        report = market_report(publisher.api, days=args.days)
+        args.out.write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
+        print(json.dumps(report["summary"], ensure_ascii=False, indent=1))
+        return 0
     if args.command == "channel-report":
         end = date.today()
         report = ChannelReport(publisher.api).report(end - timedelta(days=args.days), end)
