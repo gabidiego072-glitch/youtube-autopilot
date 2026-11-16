@@ -248,3 +248,18 @@ def test_the_director_can_ask_for_an_event():
     spec = assemble([pick], [4.0], seed=3, city="new_york")[0]
     assert any(a["type"] == "fire" for a in spec["actions"])
     assert assemble([{**pick, "event": "lava"}], [4.0], seed=3, city="new_york")[0]["pick"]["event"] == "none"
+
+
+def test_a_storyboard_with_a_scene_missing_is_fitted_not_dropped():
+    """Nov 16: 8 scenes for 9 sent the video to the old planner, without any effect."""
+    from app.services.scenes.recipe_planner import _ask
+    from tests.conftest import StubAIProvider
+
+    pick = {"recipe": "kitchen", "threat": "none", "time_of_day": "day", "look": "normal", "event": "fire"}
+    beats = [
+        {"line": i, "narration": f"line {i}", "share": 1.0, "hud": "", "visual": "", "speaker": ""} for i in range(3)
+    ]
+    short = {"scenes": [pick, pick]}
+    ai = StubAIProvider([short, short])
+    assert len(_ask(ai, beats, [3.0, 3.0, 3.0], "paris", "")) == 3 and len(ai.calls) == 2
+    assert "EXACTLY 3" in ai.calls[1]["prompt"]
