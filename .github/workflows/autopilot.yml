@@ -33,7 +33,7 @@ on:
       command:
         description: "Qué hacer"
         type: choice
-        options: [run, approve, resume, status, sync-analytics, ai-check, publish-file, learning, channel-report, image-test]
+        options: [run, approve, resume, status, sync-analytics, ai-check, publish-file, learning, channel-report, image-test, market-report]
         default: run
       run_id:
         description: "run id (approve / resume / status) o carpeta (publish-file)"
@@ -140,6 +140,8 @@ jobs:
             YOUTUBE_PUBLISHING_ENABLED=true python scripts/autopilot.py publish-file "${RUN_ID_IN:-productions/what_if_earth_stops_v2/publish}"
           elif [ "$CMD" = "channel-report" ]; then
             python scripts/autopilot.py channel-report
+          elif [ "$CMD" = "market-report" ]; then
+            python scripts/autopilot.py market-report
           elif [ "$CMD" = "image-test" ]; then
             python scripts/image_test.py --out image_test
           elif [ "$CMD" = "ai-check" ]; then
@@ -152,6 +154,14 @@ jobs:
             echo "run_id=$RUN_ID_IN" >> "$GITHUB_OUTPUT"
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
+      - name: Keep the market report
+        if: github.event.inputs.command == 'market-report'
+        uses: actions/upload-artifact@v4
+        with:
+          name: market-report
+          path: market_report.json
+          retention-days: 30
+          if-no-files-found: ignore
       - name: Keep the image test
         if: github.event.inputs.command == 'image-test'
         uses: actions/upload-artifact@v4

@@ -57,8 +57,8 @@ def title_guide(language: str) -> str:
 
 
 EXAMPLE_PREMISES_EN = (
-    "What if you grew one inch with every step?",
-    "What if you could run at 600 mph?",
-    "What if the Earth stopped spinning?",
-    "What if gravity doubled tomorrow?",
+    "What if you fell to the bottom of the ocean?",
+    "What if everyone on Earth jumped at the same time?",
+    "What if you drank only seawater for a week?",
+    "What if a whale swallowed you?",
 )

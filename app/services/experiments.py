@@ -66,7 +66,8 @@ MUSIC = ("wistful", "tense", "bright", "curious", "rising")  # index = audio.syn
 
 # Short target duration in seconds. Nov 15 report (15 videos): whatever the length, people watch ~20 s on
 # average and only 20-37 % reach the end of 37-48 s videos. Short enough to be watched whole (and looped).
-LENGTHS = ("20", "24", "28")
+# Nov 16 market report: the most viewed Shorts of this format last 35-80 s (median ~60 s); 20-28 s was too short.
+LENGTHS = ("35", "45", "55")
 
 HOOKS = {
     "question": "Open with a direct, intriguing question to the viewer.",

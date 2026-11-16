@@ -126,10 +126,13 @@ def main() -> int:
     report_p = sub.add_parser("channel-report", help="real YouTube data for every upload (views, retention, traffic)")
     report_p.add_argument("--days", type=int, default=120)
     report_p.add_argument("--out", type=Path, default=Path("channel_report.json"))
+    market_p = sub.add_parser("market-report", help="the most viewed recent 'what if' Shorts of the market")
+    market_p.add_argument("--days", type=int, default=180)  # half a year: the biggest hits, not only this month
+    market_p.add_argument("--out", type=Path, default=Path("market_report.json"))
     args = parser.parse_args()
     settings = get_settings()
 
-    if args.command in ("youtube-check", "upload-test", "trends", "publish-file", "channel-report"):
+    if args.command in ("youtube-check", "upload-test", "trends", "publish-file", "channel-report", "market-report"):
         return youtube_command(args, settings)
     if args.command == "ai-check":
         provider = get_ai_provider(settings)
@@ -274,6 +277,31 @@ def youtube_command(args, settings) -> int:
         print(json.dumps(signals.__dict__, ensure_ascii=False, indent=2))
         return 0
     publisher = YouTubeDataAPIPublisher(settings)
+    if args.command == "market-report":
+        from app.services.trends.market import channel_months, market_report
+
+        report = market_report(publisher.api, days=args.days)
+        # the 20 channels with the most viewed Shorts of the report: what they really did in the last 30 days
+        top_ids: list[str] = []
+        for video in report["videos"]:
+            if video.get("channel_id") and video["channel_id"] not in top_ids:
+                top_ids.append(video["channel_id"])
+        report["channels_30d"] = channel_months(publisher.api, top_ids[:40])
+        # mid-size channels (10k-2M subscribers): reachable examples, not giants
+        mid: list[str] = []
+        for video in report["videos"]:
+            cid = video.get("channel_id")
+            if (
+                cid
+                and cid not in mid
+                and cid not in top_ids[:40]
+                and 10_000 <= video.get("subscribers", 0) <= 2_000_000
+            ):
+                mid.append(cid)
+        report["mid_channels_30d"] = channel_months(publisher.api, mid[:40])
+        args.out.write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
+        print(json.dumps(report["summary"], ensure_ascii=False, indent=1))
+        return 0
     if args.command == "channel-report":
         end = date.today()
         report = ChannelReport(publisher.api).report(end - timedelta(days=args.days), end)

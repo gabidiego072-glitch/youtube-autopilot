@@ -103,6 +103,15 @@ You propose premises for new videos. A strong premise:
   dropping asleep, animals or giant things appearing. Not the senses or the mind (not being able to sleep,
   dreams, memory, echoes, smells, sounds, feelings): Nov 15, "What if nobody could fall asleep?" was people
   standing in rooms, nothing could be shown.
+- WHAT THE MARKET WATCHES (YouTube data, Nov 16, most viewed Shorts of this format in the last 6 months):
+  YOU or "the humans" in ONE concrete, bizarre, extreme situation, told step by step: "What if you dug
+  through the Earth" (28M views), "Can you survive being swallowed" (22M), "¿Qué pasaría si caes al fondo
+  del océano?" (16M), "¿Qué pasa si tomas agua del mar?" (9M), "What if you dropped 10 kg of tungsten from
+  space" (small 3D channel, 29M a month), "¿Qué pasaría si todos los humanos saltáramos a la vez?" (3.3M on
+  a 12k-subscriber channel), "What if you built a dog with 3 heads" (8M, 42k subscribers). Prefer this kind:
+  a person-sized, physical, concrete premise with an object, an animal, a place or a whole crowd of people,
+  over big abstract changes to the planet ("gravity oscillates", "the sun turns green"). Learn the pattern,
+  never copy a title.
 Never propose anything about video games or gaming.
 
 {SCIENCE_RULES}

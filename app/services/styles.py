@@ -18,6 +18,8 @@ PLANNED_TOPICS = Path(__file__).resolve().parent.parent / "content" / "planned_t
 STYLES = ("classic", "pov")
 
 POV_SCRIPT_NOTE = """STYLE: first-person POV ("what if it were YOU"), written like the channel's best hand-made videos.
+- STEP BY STEP, like the most viewed Shorts of this format: what happens to YOU second by second (or minute
+  by minute), each line a new stage you see and feel ("At 10 metres your ears hurt. At 100 the light is gone.").
 - The FIRST line drops the viewer into the most dramatic moment of the story (in medias res): never start by
   waking up, a calm room or an explanation. TikTok data: viewers who see nothing happen leave within 7 seconds.
 - Narrate in second person, present tense, as a JOURNEY with decisions: {lines}.
