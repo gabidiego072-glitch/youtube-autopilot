@@ -189,6 +189,22 @@ def _ask(provider, beats, beat_durations, city, notes, extra: str = "") -> list[
         prompt += f"\n\n{notes}"
     result = provider.generate_json(system=SYSTEM_PROMPT, prompt=prompt, schema=RECIPE_SCHEMA)
     picks = result.data.get("scenes", [])
+    if len(picks) != len(beats) and picks:
+        # Nov 16: a busy-day fallback model gave 8 scenes for 9 and the video lost every effect (the free-form
+        # storyboard was used). Ask once more, then fit the count instead of giving up.
+        again = provider.generate_json(
+            system=SYSTEM_PROMPT,
+            prompt=prompt + f"\n\nYou returned {len(picks)} scenes. Return EXACTLY {len(beats)}: one per scene above.",
+            schema=RECIPE_SCHEMA,
+        ).data.get("scenes", [])
+        if len(again) == len(beats):
+            picks = again
+        else:
+            picks = (
+                (picks * (len(beats) // len(picks) + 1))[: len(beats)]
+                if len(picks) < len(beats)
+                else picks[: len(beats)]
+            )
     if len(picks) != len(beats):
         raise ProviderError(f"Recipe storyboard has {len(picks)} scenes; the script has {len(beats)}.")
     return picks
