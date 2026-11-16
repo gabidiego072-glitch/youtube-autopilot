@@ -64,7 +64,7 @@ def test_invalid_ai_output_is_rejected(make_client, channel):
 
 def test_script_gets_one_retry_with_the_reasons(make_client, channel):
     bad = copy.deepcopy(SCRIPT_RESPONSE)
-    bad["hook"] = "uno dos tres cuatro cinco seis siete ocho nueve diez"
+    bad["hook"] = "uno dos tres cuatro cinco seis siete ocho nueve diez once doce trece catorce"
     ai = StubAIProvider([bad, SCRIPT_RESPONSE])
     client = make_client(ai=ai)
     project = create_project(client, channel["id"])

@@ -16,7 +16,7 @@ from render_engines.core.catalog import catalog_text
 
 PROMPT_VERSION = "whatif-script-v7"
 WORDS_BUDGET = 2.6  # spoken words per second of target length (the narrator says ~2.5 a second)
-HOOK_MAX_WORDS = 8  # ~2 seconds of fast narration
+HOOK_MAX_WORDS = 12  # ~3 s; at 8, six tries in a row were rejected and the day's video was lost (Nov 16)
 BEATS = ("hook", "setup", "escalation", "climax", "ending")
 
 SCRIPT_SCHEMA = {
