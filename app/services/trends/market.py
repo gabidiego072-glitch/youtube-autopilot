@@ -234,7 +234,10 @@ def channel_months(api, channel_ids: list[str], days: int = 30, max_pages: int =
                 params = {"part": "contentDetails", "playlistId": uploads, "maxResults": 50}
                 if token:
                     params["pageToken"] = token
-                page = api.json("GET", PLAYLIST_ITEMS_URL, params=params)
+                try:
+                    page = api.json("GET", PLAYLIST_ITEMS_URL, params=params)
+                except Exception:  # noqa: BLE001 - a channel with its uploads hidden is skipped, not fatal
+                    page = {}
                 items = page.get("items", [])
                 fresh = [
                     i["contentDetails"]["videoId"]
