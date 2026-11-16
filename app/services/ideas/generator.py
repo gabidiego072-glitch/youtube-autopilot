@@ -98,6 +98,11 @@ You propose premises for new videos. A strong premise:
   drops 1%) or something happens INSIDE the body (saliva, cells, hormones, digestion). Property premises are not
   used: the channel's data shows they get 3-10 times fewer views, and what they change cannot be shown on
   screen. Propose events.
+- the events must be PHYSICAL and VISIBLE in the street or at home: fire, explosions, water rising, people or
+  things floating or flying, buildings or bridges falling, ice and frost, the ground cracking, everyone
+  dropping asleep, animals or giant things appearing. Not the senses or the mind (not being able to sleep,
+  dreams, memory, echoes, smells, sounds, feelings): Nov 15, "What if nobody could fall asleep?" was people
+  standing in rooms, nothing could be shown.
 Never propose anything about video games or gaming.
 
 {SCIENCE_RULES}
@@ -155,6 +160,14 @@ ABSTRACT_PATTERNS = (
     r"\bdigesti",
     r"\binmun|\bimmun",
     r"\bbacteri",
+    # The senses and the mind: nothing physical happens on screen (Nov 13 echo 3/7, Nov 15 no sleep).
+    r"\b(?:no|nadie) (?:pudiera|podr[ií]a|pudi[eé]ramos)n? dormir",
+    r"\bcould(?:n't| not) (?:fall asleep|sleep)",
+    r"\bnobody (?:on earth )?could (?:fall asleep|sleep)",
+    r"\becos?\b|\becho",
+    r"\bsue[nñ]os?\b|\bdream",
+    r"\bmemori",
+    r"\bolfato\b|\bsmell",
 )
 
 

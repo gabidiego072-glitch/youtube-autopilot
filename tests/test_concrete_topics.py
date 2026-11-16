@@ -59,3 +59,21 @@ def test_the_opening_is_not_a_strangers_face():
     calm = {"recipe": "street_watch", "characters": [], "environment": {}, "actions": []}
     assert cold_open_scene([calm, stranger, calm], [0, 1, 2]) is None
     assert cold_open_scene([calm, sleeper, calm], [0, 1, 2]) == 1
+
+
+def test_topics_about_the_senses_or_the_mind_are_dropped():
+    """Nov 13-15: an echo and sleeplessness showed nothing physical; everyone dropping asleep does."""
+    from app.services.ideas.generator import is_abstract_property
+
+    for premise in (
+        "What if nobody on Earth could fall asleep?",
+        "¿Qué pasaría si nadie pudiera dormir?",
+        "What if your voice echoed everywhere forever?",
+    ):
+        assert is_abstract_property(premise), premise
+    for premise in (
+        "¿Qué pasaría si todos los humanos cayeran dormidos a la vez?",
+        "What if the sun turned bright green tomorrow?",
+        "¿Qué pasaría si la ecología cambiara?",
+    ):
+        assert not is_abstract_property(premise), premise
