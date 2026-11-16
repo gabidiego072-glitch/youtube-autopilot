@@ -91,7 +91,7 @@ def _draft(data=None):
 def test_script_structure_rules():
     assert structure_problems(_draft(), VideoFormat.SHORT) == []
     bad = copy.deepcopy(SCRIPT_RESPONSE)
-    bad["hook"] = "una frase de gancho demasiado larga que nadie escucharía entera"
+    bad["hook"] = "una frase de gancho demasiado larga que nadie escucharía entera ni aunque quisiera oírla toda"
     bad["ending_line"] = "Sin pregunta"
     bad["scenes"] = bad["scenes"][1:]
     problems = " ".join(structure_problems(_draft(bad), VideoFormat.SHORT))
