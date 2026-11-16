@@ -24,6 +24,10 @@ QUERIES = {
         "qué pasaría si los humanos",
         "y si de repente",
         "qué pasaría si el sol",
+        # made like ours: 3D animation, simulations, AI
+        "qué pasaría si animación 3d",
+        "simulación 3d qué pasaría",
+        "qué pasaría si animación",
     ),
     "en": (
         "what if",
@@ -32,6 +36,10 @@ QUERIES = {
         "what if humans",
         "what if you",
         "what if the sun",
+        "what if 3d animation",
+        "what if simulation 3d",
+        "blender simulation what if",
+        "what if animated",
     ),
 }
 

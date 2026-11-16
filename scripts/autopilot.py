@@ -127,7 +127,7 @@ def main() -> int:
     report_p.add_argument("--days", type=int, default=120)
     report_p.add_argument("--out", type=Path, default=Path("channel_report.json"))
     market_p = sub.add_parser("market-report", help="the most viewed recent 'what if' Shorts of the market")
-    market_p.add_argument("--days", type=int, default=30)
+    market_p.add_argument("--days", type=int, default=180)  # half a year: the biggest hits, not only this month
     market_p.add_argument("--out", type=Path, default=Path("market_report.json"))
     args = parser.parse_args()
     settings = get_settings()
