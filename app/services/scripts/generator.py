@@ -210,7 +210,9 @@ def generate_script(
             continue
         repair_ending(draft)
         problems = structure_problems(draft, spec.format)
-        words, budget = len(draft.full_text.split()), round(target_duration_seconds * WORDS_BUDGET * 1.25)
+        # 1.5x the target's words: at 1.25x Gemini's 86-word script for a 20 s target was rejected twice and the
+        # day's video was lost (Nov 16); 1.5x still keeps Shorts near 30 s instead of 45.
+        words, budget = len(draft.full_text.split()), round(target_duration_seconds * WORDS_BUDGET * 1.5)
         if spec.format == VideoFormat.SHORT and words > budget:  # Gemini wrote 37-48 s for 32-45 s targets
             problems.append(f"The narration has {words} words; at most {budget}. Cut lines, keep the story.")
         if not problems:
