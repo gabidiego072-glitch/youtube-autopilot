@@ -13,13 +13,13 @@ CHANNEL_CONCEPT = (
     "The channel never covers video games, gaming, gameplay or game culture."
 )
 
-EXAMPLE_PREMISES = (
-    "¿Qué pasaría si cada paso que das crecieras un centímetro?",
-    "¿Qué pasaría si pudieras correr a 1.000 km/h?",
+EXAMPLE_PREMISES = (  # Nov 16: the kind the market watches most (you, one concrete extreme situation)
+    "¿Qué pasaría si cayeras al fondo del océano?",
+    "¿Qué pasaría si todos los humanos saltáramos a la vez?",
+    "¿Qué pasaría si solo bebieras agua del mar una semana?",
+    "¿Qué pasaría si te tragara una ballena?",
+    "¿Qué pasaría si cavaras un agujero hasta el otro lado de la Tierra?",
     "¿Qué pasaría si la Tierra dejase de girar?",
-    "¿Qué pasaría si cada día te hicieras un 10% más pequeño?",
-    "¿Qué pasaría si la gravedad se duplicase?",
-    "¿Qué pasaría si vivieses 1.000 años?",
 )
 
 CATEGORY_DESCRIPTIONS = {

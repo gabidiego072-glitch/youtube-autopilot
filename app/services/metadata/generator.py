@@ -33,6 +33,8 @@ Rules:
   no technical terms (keep the science for the description). Bad: '¿Qué pasaría si los árboles dejaran de
   absorber dióxido de carbono?'. Good: '¿Qué pasaría si no existieran los árboles?'. Curiosity without lying: the
   video must deliver what the title promises.
+  End the title with 1-2 emojis that fit (😱 💀 🌊 😳 🔥 🧊 🌍): every most-viewed Short of this format does it
+  (Nov 16 market report: "¿Qué pasa si tomas agua del mar? 🌊😳", "What If You Dug Through The Earth 😨").
 - Description: 2-3 hook sentences, then what the video explains, then a short line saying which parts are
   established science and which are estimates or speculation, then the sources (URLs) when given.
 - Tags: specific science terms of the topic plus general ones (ciencia, curiosidades, qué pasaría si).

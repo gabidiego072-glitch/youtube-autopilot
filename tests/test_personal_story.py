@@ -115,7 +115,7 @@ def test_shorts_are_short_enough_to_be_watched_whole():
     from app.services.scripts.generator import generate_script
     from tests.conftest import SCRIPT_RESPONSE, StubAIProvider
 
-    assert max(int(x) for x in LENGTHS) <= 28  # Nov 15: people watch ~20 s of a Short, whatever its length
+    assert all(35 <= int(x) <= 55 for x in LENGTHS)  # Nov 16 market: the top Shorts of this format last 35-80 s
     spec = FormatSpec(VideoFormat.SHORT, 1080, 1920, 24, 5, None, "8M", "192k")
 
     def write(target):
