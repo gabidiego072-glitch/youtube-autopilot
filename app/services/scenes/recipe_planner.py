@@ -96,8 +96,8 @@ people only talk about it. Use reaction (a person across the table DOING it, the
 gesture (what the person in front of you does) for the moments of the story.
 event = what HAPPENS in front of you, in any recipe, whenever the line says it: fire (flames, burning pots),
 smoke, explosion (a blast), flood (water rising), crack (the floor or ground splits), collapse (a building or
-bridge comes down), float (people and the object lift off: no gravity), fly (people
-and things are thrown through the air), freeze (frost covers the ground). If the line
+bridge comes down; a PERSON collapsing is gesture fall, not this), float (people and the object lift off:
+no gravity), fly (people and things are thrown through the air), freeze (frost covers the ground). If the line
 says fire, there IS fire on screen; if it says things float, they float. none only when nothing physical
 happens.
 THE VIEWER MUST SEE WHAT THE NARRATION SAYS. A street where nothing related happens is a failure: every scene
