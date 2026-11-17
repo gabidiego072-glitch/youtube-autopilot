@@ -15,6 +15,21 @@ from tests.helpers import create_project
 PIPELINE = [SCRIPT_RESPONSE, METADATA_RESPONSE, FACTCHECK_PASS]  # call order
 
 
+def _in_english(script: dict) -> dict:
+    """The fixture script with English lines: English scripts with Spanish lines are sent back (Nov 17)."""
+    scenes = [
+        {**sc, "narration": f"Line {i}: the ground shakes and you hold on to the railing." if i else "The Earth stops."}
+        for i, sc in enumerate(script["scenes"])
+    ]
+    return {
+        **script,
+        "title_question": "What if the Earth stopped spinning?",
+        "hook": "The Earth stops.",
+        "ending_line": "Do you stay or run?",
+        "scenes": scenes,
+    }
+
+
 def test_render_requires_script(client, channel):
     project = create_project(client, channel["id"])
     assert client.post(f"/api/v1/projects/{project['id']}/renders", json={}).status_code == 409
@@ -131,7 +146,7 @@ def test_manual_upload_sends_the_project_language(make_client, db_session_factor
     settings = make_settings(
         youtube_publishing_enabled=True, youtube_client_id="a", youtube_client_secret="b", youtube_refresh_token="c"
     )
-    client = make_client(settings, ai=StubAIProvider(list(PIPELINE)))
+    client = make_client(settings, ai=StubAIProvider([_in_english(SCRIPT_RESPONSE), *PIPELINE[1:]]))
     project = _approved_project(client, db_session_factory, channel, language="en")
     assert client.post(f"/api/v1/projects/{project['id']}/publish").status_code == 200
     assert sent[0].language == "en"
