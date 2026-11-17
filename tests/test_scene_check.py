@@ -92,7 +92,7 @@ def test_a_topic_whose_scenes_cannot_be_shown_is_dropped_before_the_render(tmp_p
 
         return fake
 
-    monkeypatch.setattr(runner, "check_scenes", verdicts({0}))  # 1/6 even after replanning
+    monkeypatch.setattr(runner, "check_scenes", verdicts({0}))  # 1/6 even after replanning (below 20%)
     with pytest.raises(runner.StepBlocked):
         runner._show_what_is_said(None, None, services, None, [{}] * 6, [3.0] * 6, "")
     assert (tmp_path / "check" / "scene_check.json").exists()  # the report is kept to see why
