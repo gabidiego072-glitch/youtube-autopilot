@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import json
 import logging
+import re
+import subprocess
 from pathlib import Path
 
 from app.services.ai.base import AIProvider
@@ -61,6 +63,46 @@ def _render(blender, spec: dict, folder: Path, seed: int, moments) -> list[Path]
     return blender.render_stills(path, folder, moments)
 
 
+FLAT_RANGE = 35  # the same thresholds as the video QA (app/services/qa/video.py)
+WASHED_AVG, WASHED_SAT = 170, 8.0
+FLAT_VERDICT = {
+    "seen": "a flat, blank picture (the camera faces a plain wall, panel or empty screen)",
+    "shows_it": False,
+    "missing": "the camera must not face a plain wall: frame the people, the objects or the street of the line",
+}
+
+
+def flat_still(path: Path, ffmpeg: str = "ffmpeg") -> bool:
+    """A preview that is one flat colour or washed out (Nov 17: 5 s of a grey office panel stopped the English
+    video at the final QA, after two hours of render). Caught here, the scene is planned again instead."""
+    try:
+        log = subprocess.run(
+            [
+                ffmpeg,
+                "-hide_banner",
+                "-i",
+                str(path),
+                "-vf",
+                "crop=iw:ih*0.5:0:ih*0.25,signalstats,metadata=print",
+                "-f",
+                "null",
+                "-",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        ).stderr
+    except (OSError, subprocess.SubprocessError):
+        return False
+    values = {k: float(v) for k, v in re.findall(r"signalstats\.(YLOW|YHIGH|YAVG|SATAVG)=([\d.]+)", log)}
+    if len(values) < 4:
+        return False
+    flat = values["YHIGH"] - values["YLOW"] < FLAT_RANGE
+    washed = values["YAVG"] >= WASHED_AVG and values["SATAVG"] < WASHED_SAT
+    return flat or washed
+
+
 def check_scene(ai: AIProvider, narration: str, images: list[bytes]) -> dict:
     result = ai.generate_json(
         system=CHECK_SYSTEM, prompt=f"Narration line: {narration}", schema=CHECK_SCHEMA, images=images
@@ -88,6 +130,9 @@ def check_scenes(
         try:
             frames = stills_for(blender, specs[i], work / f"scene_{i:02d}", seed + i)
             if not frames:
+                continue
+            if any(flat_still(f) for f in frames):  # no need to ask the AI: replan it (and save quota)
+                verdicts[i] = dict(FLAT_VERDICT)
                 continue
             verdicts[i] = check_scene(ai, narrations[i], [f.read_bytes() for f in frames])
         except Exception as exc:  # noqa: BLE001 - the check helps; it must never stop the day's video
