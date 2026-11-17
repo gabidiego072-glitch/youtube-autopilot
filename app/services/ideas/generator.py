@@ -177,6 +177,7 @@ ABSTRACT_PATTERNS = (
     r"\bsue[nñ]os?\b|\bdream",
     r"\bmemori",
     r"\bolfato\b|\bsmell",
+    r"\bthoughts?\b|\bpensamientos?\b|\bread (?:minds|everyone)",  # Nov 16: hearing thoughts showed nothing
 )
 
 

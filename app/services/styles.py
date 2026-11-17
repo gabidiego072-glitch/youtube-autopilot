@@ -40,6 +40,8 @@ POV_SCRIPT_NOTE = """STYLE: first-person POV ("what if it were YOU"), written li
 - Escalate every line: a bigger number, a new place or a stranger event; never two lines that show the same
   thing. Around two thirds in, one turn ("and the worst hasn't come yet"), then the most extreme image.
 - Name real places of the city in at least half of the lines (its streets, landmarks, the river, the metro).
+- EVERY line in the narration's language (the language of this channel): the narrator, the companion's lines,
+  the phone texts and the final question. The examples below are only examples: never copy their language.
 - A PERSONAL STORY, not a list of facts: you live it with ONE companion (visual_bible.companion: a common
   first name in the narration's language, gender, relation: best friend, sister, dad, flatmate...). The
   companion SPEAKS 2-4 lines in their own voice: that scene's 'speaker' is their name and its narration is what

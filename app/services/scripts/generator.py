@@ -1,5 +1,7 @@
 """Script generation for 'What would happen if...?' Shorts and long-form videos."""
 
+import re
+
 from pydantic import BaseModel, Field, ValidationError
 
 from app.content.profile import is_off_topic, scale_problems
@@ -122,7 +124,24 @@ MIN_COMPANION_LINES = 2  # Nov 13 (English): Kenji said one line, the story felt
 MAX_LINE_WORDS = 20  # the prompt asks for 16; a little margin before a script is rejected
 
 
-def structure_problems(draft: ScriptDraft, video_format: VideoFormat) -> list[str]:
+SPANISH = re.compile(
+    r"[¿¡ñ]|\b(?:que|qué|pero|para|porque|cómo|está|estás|tú|también|después|ahora|mientras|aquí|calle|de|la|las|"
+    r"los|el|del|por|favor|una|con|se|me|haz|mi|muy|todo|nada|vamos)\b",
+    re.I,
+)
+
+
+def wrong_language(draft: ScriptDraft, language: str) -> list[int]:
+    """Lines of an English script written in Spanish (Nov 16: the companion's lines and the last question of
+    an English video came out in Spanish, copied from the Spanish examples of the prompt)."""
+    if not (language or "").lower().startswith("en"):
+        return []
+    texts = [(i, f"{sc.narration} {getattr(sc, 'phone', '') or ''}") for i, sc in enumerate(draft.scenes)]
+    texts.append((-1, f"{draft.ending_line} {draft.hook}"))
+    return [i for i, text in texts if len(SPANISH.findall(text)) >= 2 or re.search(r"[¿¡ñ]", text)]
+
+
+def structure_problems(draft: ScriptDraft, video_format: VideoFormat, language: str = "") -> list[str]:
     """Checks the 'What would happen if' structure. Empty list = OK."""
     problems = []
     beats = [scene.beat for scene in draft.scenes]
@@ -152,6 +171,12 @@ def structure_problems(draft: ScriptDraft, video_format: VideoFormat) -> list[st
                 f"{name} speaks {spoken} line(s); give {name} {MIN_COMPANION_LINES}-4 short lines of their own "
                 f'(speaker "{name}"), reacting to what happens, like a real conversation.'
             )
+    bad = wrong_language(draft, language)
+    if bad:
+        problems.append(
+            f"Lines {bad} are in Spanish: this is an English channel. Write EVERY line in natural American English: "
+            "the narrator, the companion's lines, the phone texts and the final question."
+        )
     if draft.ending_type not in ("question", "surprising_conclusion"):
         problems.append("Unknown ending type.")
     if draft.ending_type == "question" and not draft.ending_line.rstrip().endswith("?"):
@@ -210,7 +235,7 @@ def generate_script(
             problems = [f"The JSON failed validation ({exc.error_count()} error(s)); follow the schema exactly."]
             continue
         repair_ending(draft)
-        problems = structure_problems(draft, spec.format)
+        problems = structure_problems(draft, spec.format, language)
         # 1.5x the target's words: at 1.25x Gemini's 86-word script for a 20 s target was rejected twice and the
         # day's video was lost (Nov 16); 1.5x still keeps Shorts near 30 s instead of 45.
         words, budget = len(draft.full_text.split()), round(target_duration_seconds * WORDS_BUDGET * 1.5)
