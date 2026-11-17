@@ -96,6 +96,7 @@ def flat_still(path: Path, ffmpeg: str = "ffmpeg") -> bool:
     except (OSError, subprocess.SubprocessError):
         return False
     values = {k: float(v) for k, v in re.findall(r"signalstats\.(YLOW|YHIGH|YAVG|SATAVG)=([\d.]+)", log)}
+    logging.getLogger(__name__).info("preview %s: %s", path.name, values)
     if len(values) < 4:
         return False
     flat = values["YHIGH"] - values["YLOW"] < FLAT_RANGE
@@ -131,10 +132,15 @@ def check_scenes(
             frames = stills_for(blender, specs[i], work / f"scene_{i:02d}", seed + i)
             if not frames:
                 continue
-            if any(flat_still(f) for f in frames):  # no need to ask the AI: replan it (and save quota)
-                verdicts[i] = dict(FLAT_VERDICT)
-                continue
+            # Flat previews are only logged for now: on the GitHub machines the measure marked every scene flat
+            # (Nov 17, 0/8 in 4 minutes); on our own renders it was right. Until the values are understood the
+            # AI still judges every scene.
+            flat = [f.name for f in frames if flat_still(f)]
+            if flat:
+                log.warning("scene %s: previews measured flat %s", i, flat)
             verdicts[i] = check_scene(ai, narrations[i], [f.read_bytes() for f in frames])
+            if flat:
+                verdicts[i]["flat_previews"] = flat
         except Exception as exc:  # noqa: BLE001 - the check helps; it must never stop the day's video
             log.warning("scene %s could not be checked: %s", i, exc)
     return verdicts
