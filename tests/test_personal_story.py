@@ -128,3 +128,26 @@ def test_shorts_are_short_enough_to_be_watched_whole():
         write(4)  # a script far longer than its target is sent back, then rejected
     draft, ai = write(200)
     assert draft and "words of narration in total" in ai.calls[0]["prompt"]
+
+
+def test_an_english_script_with_spanish_lines_is_sent_back():
+    """Nov 16: Sarah's lines in an English video came out in Spanish."""
+    from types import SimpleNamespace as N
+
+    from app.services.scripts.generator import wrong_language
+
+    def draft(*lines):
+        return N(scenes=[N(narration=t, phone="") for t in lines], ending_line="Do you stay or run?", hook="")
+
+    assert wrong_language(draft("You run outside.", "¡No salgas! ¡Es peor afuera!"), "en") == [1]
+    assert wrong_language(draft("You run outside.", "Get down, the whole street is on fire!"), "en") == []
+    assert wrong_language(draft("¡No salgas!"), "es") == []  # only English channels are checked
+
+
+def test_the_opening_title_is_big_bold_and_without_emoji(tmp_path):
+    """Nov 17: 45-70% of viewers swiped away in the first second; the question must stand out."""
+    from app.services.editing.assembler import title_card
+
+    text = title_card("¿Qué pasaría si el suelo subiera 1 metro? 🌍😳", 2.5, tmp_path / "t.ass").read_text()
+    assert "DejaVu Sans" in text and "Liberation Serif" not in text
+    assert "¿QUÉ PASARÍA SI" in text and "🌍" not in text

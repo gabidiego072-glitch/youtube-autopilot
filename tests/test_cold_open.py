@@ -69,7 +69,7 @@ def test_cold_open_comes_first_and_shifts_the_story(tmp_path):
     )
     story = slots[-1].start + slots[-1].duration
     assert abs(probe.duration_seconds - (story + 1.6)) < 0.15 and probe.has_audio
-    assert (tmp_path / "edit" / "title.ass").read_text(encoding="utf-8").count("zombis") == 1
+    assert (tmp_path / "edit" / "title.ass").read_text(encoding="utf-8").lower().count("zombis") == 1
 
 
 @needs_ffmpeg

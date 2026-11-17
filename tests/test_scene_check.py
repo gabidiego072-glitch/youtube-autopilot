@@ -100,3 +100,23 @@ def test_a_topic_whose_scenes_cannot_be_shown_is_dropped_before_the_render(tmp_p
     monkeypatch.setattr(runner, "check_scenes", verdicts({0, 1}))  # 2/6: good enough, it is made (Nov 16)
     specs, _ = runner._show_what_is_said(None, None, services, None, [{}] * 6, [3.0] * 6, "")
     assert len(specs) == 6
+
+
+def test_a_flat_preview_is_replanned_without_asking_the_ai(tmp_path):
+    """Nov 17: 5 s of a grey office panel stopped the English video at the final QA."""
+    import shutil
+    import subprocess
+
+    import pytest
+
+    from app.services.scenes.check import flat_still
+
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
+        pytest.skip("ffmpeg not installed")
+    wall, street = tmp_path / "wall.png", tmp_path / "street.png"
+    for out, source in ((wall, "color=c=0x6a6a6a:size=320x568"), (street, "testsrc2=size=320x568")):
+        subprocess.run(
+            [ffmpeg, "-loglevel", "error", "-y", "-f", "lavfi", "-i", source, "-frames:v", "1", str(out)], check=True
+        )
+    assert flat_still(wall, ffmpeg) and not flat_still(street, ffmpeg)

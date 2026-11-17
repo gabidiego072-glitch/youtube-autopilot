@@ -94,8 +94,11 @@ class ColdOpen:
 def title_card(title: str, length: float, path: Path, portrait: bool = True) -> Path:
     """Big title over the cold open: fades in and out, centred in the upper part of the frame."""
     w, h = (1080, 1920) if portrait else (1920, 1080)
-    size = 100 if portrait else 76
-    text = title.replace("{", "(").replace("}", ")").strip()
+    size = 96 if portrait else 76
+    # Upper case, bold sans with a thick outline, like the most viewed Shorts of this format (Nov 17: 45-70% of
+    # our viewers swiped away in the first second; the old serif title did not stand out). No emoji: the font
+    # cannot draw them (they stay in the YouTube title).
+    text = "".join(ch for ch in title if ord(ch) < 0x2190).replace("{", "(").replace("}", ")").strip().upper()
     words, lines, line = text.split(), [], ""
     for word in words:  # wrap at ~18 characters per line
         if line and len(line) + 1 + len(word) > 16:
@@ -113,9 +116,9 @@ def title_card(title: str, length: float, path: Path, portrait: bool = True) -> 
         "[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, "
         "Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, "
         "MarginL, MarginR, MarginV, Encoding\n"
-        f"Style: Title,Liberation Serif,{size},&H00FFFFFF,&H00FFFFFF,&H00101010,&H80000000,1,0,0,0,100,100,0,0,1,3,4,"
-        "5,60,60,0,1\n\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
-        f"Dialogue: 0,0:00:00.05,{end},Title,,0,0,0,,{{\\pos({w // 2},{int(h * 0.36)})\\fad(200,300)}}"
+        f"Style: Title,DejaVu Sans,{size},&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,7,3,"
+        "5,50,50,0,1\n\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n"
+        f"Dialogue: 0,0:00:00.00,{end},Title,,0,0,0,,{{\\pos({w // 2},{int(h * 0.33)})\\fad(0,300)}}"
         + "\\N".join(lines)
         + "\n",
         encoding="utf-8",
