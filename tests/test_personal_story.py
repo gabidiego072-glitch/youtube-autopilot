@@ -142,3 +142,12 @@ def test_an_english_script_with_spanish_lines_is_sent_back():
     assert wrong_language(draft("You run outside.", "¡No salgas! ¡Es peor afuera!"), "en") == [1]
     assert wrong_language(draft("You run outside.", "Get down, the whole street is on fire!"), "en") == []
     assert wrong_language(draft("¡No salgas!"), "es") == []  # only English channels are checked
+
+
+def test_the_opening_title_is_big_bold_and_without_emoji(tmp_path):
+    """Nov 17: 45-70% of viewers swiped away in the first second; the question must stand out."""
+    from app.services.editing.assembler import title_card
+
+    text = title_card("¿Qué pasaría si el suelo subiera 1 metro? 🌍😳", 2.5, tmp_path / "t.ass").read_text()
+    assert "DejaVu Sans" in text and "Liberation Serif" not in text
+    assert "¿QUÉ PASARÍA SI" in text and "🌍" not in text
