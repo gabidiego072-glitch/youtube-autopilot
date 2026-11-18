@@ -49,3 +49,23 @@ def test_a_hand_script_is_used_without_asking_the_ai(tmp_path, monkeypatch):
     monkeypatch.setattr(runner, "get_format_spec", lambda fmt, settings: SimpleNamespace(format=VideoFormat.SHORT))
     draft = runner._hand_script(project, services)
     assert draft.provider == runner.HAND_PROVIDER and draft.scenes[0].shot["recipe"] in BUILDERS
+
+
+def test_a_planned_topic_is_used_until_uploaded_or_tried_three_times():
+    class DB:
+        def __init__(self, rows):
+            self.rows = rows
+
+        def execute(self, _query):
+            return SimpleNamespace(all=lambda: self.rows)
+
+    rows = [("A", None), ("A", None), ("B", "vid"), ("C", None), ("C", None), ("C", None)]
+    assert runner._planned_used(DB(rows), None) == {"B", "C"}
+
+
+def test_a_judge_with_no_verdict_does_not_count_as_a_failed_scene():
+    from app.services.scenes.check import check_scene
+
+    ai = SimpleNamespace(generate_json=lambda **_: SimpleNamespace(data={"seen": "?"}))
+    with pytest.raises(ValueError):
+        check_scene(ai, "line", [])
