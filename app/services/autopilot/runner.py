@@ -65,7 +65,7 @@ from app.services.reporting.builder import performances
 from app.services.research.briefing import build_brief
 from app.services.scenes.check import check_scenes
 from app.services.scenes.planner import plan_scenes
-from app.services.scenes.recipe_planner import plan_with_recipes, replan
+from app.services.scenes.recipe_planner import plan_from_shots, plan_with_recipes, replan
 from app.services.scripts.generator import generate_script
 from app.services.styles import POV_STORYBOARD_NOTE, city_note, next_city, next_planned_topic, pov_script_note
 from app.services.thumbnails.generator import best_moment, generate_thumbnails
@@ -533,8 +533,15 @@ def step_storyboard(db, run, services, ai) -> dict:
     specs = None
     recipe_notes = "\n\n".join(n for n in (project.notes, _recent(db, project).recipe_note()) if n) or None
     if services.settings.recipes_enabled and features.get("style") == "pov":
-        try:  # hand-made scene recipes: the AI only picks one per line
-            specs = plan_with_recipes(
+        try:  # the writer's own shots first (shot-first scripts); else the director picks one per line
+            specs = plan_from_shots(
+                ai,
+                scenes=script.scenes,
+                durations=durations,
+                seed=int(project.id.int % 100_000),
+                city=features.get("city_style") or "new_york",
+                companion=(script.visual_bible or {}).get("companion") or None,
+            ) or plan_with_recipes(
                 ai,
                 scenes=script.scenes,
                 durations=durations,
@@ -612,7 +619,8 @@ def _can_render(services) -> bool:
 
 # Share of scenes that must show what the voice says, or the topic is dropped. 0.5 with the first, too literal
 # check dropped every topic on Nov 13-14 (0/5, 0/8: it wanted to see sound waves for an echo).
-MIN_SHOWN_SHARE = 0.2  # 0.3 still dropped topics at 2/7 and 2/8 (Nov 16-17); only 1 scene in 7-9 is dropped now
+# Nov 17: weak judge models on busy days rejected good videos; only a video where NO scene shows its line is dropped.
+MIN_SHOWN_SHARE = 0.01
 
 
 def _show_what_is_said(db, run, services, ai, specs, durations, notes):

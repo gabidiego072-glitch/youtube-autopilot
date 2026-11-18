@@ -42,6 +42,7 @@ class SceneDraft(BaseModel):
     hud: str = ""  # on-screen counter for POV videos ("DÍA 1 · 07:42")
     speaker: str = ""  # "" or "narrator" = the narrator (you); otherwise the companion's name: their own voice
     phone: str = ""  # a text message from the companion shown on your phone during this line
+    shot: dict = Field(default_factory=dict)  # the 3D scene of this line, chosen by the writer (recipe, event...)
 
 
 class VisualBible(BaseModel):
@@ -120,8 +121,8 @@ def repair_ending(draft: ScriptDraft) -> None:
             draft.ending_type = "surprising_conclusion"
 
 
-MIN_COMPANION_LINES = 2  # Nov 13 (English): Kenji said one line, the story felt like narration again
-MAX_LINE_WORDS = 20  # the prompt asks for 16; a little margin before a script is rejected
+MIN_COMPANION_LINES = 0  # Nov 18: explainer style; a companion is optional (it was 2, Nov 13)
+MAX_LINE_WORDS = 16  # the prompt asks for 10 (Nov 18 reference: short lines, one step each); margin before rejecting
 
 
 SPANISH = re.compile(

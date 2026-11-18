@@ -158,6 +158,46 @@ def plan_with_recipes(
     )
 
 
+SHOT_DEFAULTS = {
+    "threat": "none",
+    "time_of_day": "day",
+    "look": "normal",
+    "people": "busy",
+    "item": "none",
+    "room": "living_room",
+    "subject": "standing",
+    "stat": "",
+    "trend": "none",
+    "hands": "normal",
+    "gesture": "none",
+    "event": "none",
+    "headline": "",
+    "object": "",
+    "screens": "",
+}
+
+
+def plan_from_shots(
+    provider: AIProvider,
+    *,
+    scenes: list[dict],
+    durations: list[float],
+    seed: int,
+    city: str = "new_york",
+    companion: dict | None = None,
+) -> list[dict] | None:
+    """SHOT FIRST (Nov 18): the writer chose each line's shot from the 3D world and wrote the line to describe
+    it, so the scenes are built from those shots, one per line, with no second guess. None when the script has
+    no shots (older prompt): then the director plans them as before."""
+    if not scenes or not all(isinstance(s.get("shot"), dict) and s["shot"].get("recipe") in BUILDERS for s in scenes):
+        return None
+    picks = [{**SHOT_DEFAULTS, **{k: v for k, v in s["shot"].items() if v not in (None, "")}} for s in scenes]
+    beats = _beats(scenes, split=False)
+    return _by_line(
+        picks, beats, list(durations), seed=seed, city=city, provider=provider, lines=len(scenes), companion=companion
+    )
+
+
 def _beats(scenes: list[dict], split: bool) -> list[dict]:
     if not split:
         return [
@@ -402,6 +442,8 @@ def _striking_start(picks: list[dict]) -> None:
     """The first scene must grab the viewer. A calm room becomes the street with the story's main threat; a story
     without a threat opens instead on its own strongest picture (the person you meet, people sleeping rough)."""
     if not picks or picks[0]["recipe"] not in SLOW_STARTS:
+        return
+    if picks[0].get("event", "none") != "none":  # something already happens in it (Nov 18: keep the writer's shot)
         return
     threat = next((p["threat"] for p in picks if p["threat"] != "none"), None)
     if threat:

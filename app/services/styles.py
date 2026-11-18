@@ -17,54 +17,53 @@ from app.services.language import POV_VOICE, base
 PLANNED_TOPICS = Path(__file__).resolve().parent.parent / "content" / "planned_topics.json"
 STYLES = ("classic", "pov")
 
-POV_SCRIPT_NOTE = """STYLE: first-person POV ("what if it were YOU"), written like the channel's best hand-made videos.
-- STEP BY STEP, like the most viewed Shorts of this format: what happens to YOU second by second (or minute
-  by minute), each line a new stage you see and feel ("At 10 metres your ears hurt. At 100 the light is gone.").
-- The FIRST line drops the viewer into the most dramatic moment of the story (in medias res): never start by
-  waking up, a calm room or an explanation. TikTok data: viewers who see nothing happen leave within 7 seconds.
-- Narrate in second person, present tense, as a JOURNEY with decisions: {lines}.
-- Words a 10-year-old understands, in the narration and on screen: never medical or scientific jargon
-  ("xerostomía", "enzimas salivales", "modulus"); say what it means ("tu boca se queda seca").
-- ONE LINE = ONE THING YOU SEE HAPPEN in front of you, in at most 16 words: a person, a place, an object, a
-  change you could film. Never abstract sentences ("studies show...", "the economy...", "this means...",
-  "experts estimate..."): turn every fact into an image you see, with its number ("The ER waiting room is
-  empty: cold injuries, minus 40%"). If it cannot be filmed, it does not go in the video.
-- The story has a GOAL with a number, said in the hook in a few words (e.g. {goal}, "reach the river before
-  night", "keep the lights on for 24 hours"): the viewer stays to see if they make it.
-- Each scene's 'hud' is the on-screen counter. It measures what the premise changes, plus the clock: the sea
-  level ("+30 m · 11:00"), the temperature, your speed, the people helped ("1/1000"), the days ({example}).
-  It grows every line, short, in the narration's language, with words a 10-year-old understands (never
-  technical terms or units like "MODULUS", "PPM", "kPa"). Time only moves forward; jump hours and days to
-  keep the pace. For a counter in days the first scene starts at {first}. Never write words like LOOP or END
-  in it: the last scene shows the final value.
-- Escalate every line: a bigger number, a new place or a stranger event; never two lines that show the same
-  thing. Around two thirds in, one turn ("and the worst hasn't come yet"), then the most extreme image.
-- Name real places of the city in at least half of the lines (its streets, landmarks, the river, the metro).
-- EVERY line in the narration's language (the language of this channel): the narrator, the companion's lines,
-  the phone texts and the final question. The examples below are only examples: never copy their language.
-- A PERSONAL STORY, not a list of facts: you live it with ONE companion (visual_bible.companion: a common
-  first name in the narration's language, gender, relation: best friend, sister, dad, flatmate...). The
-  companion SPEAKS 2-4 lines in their own voice: that scene's 'speaker' is their name and its narration is what
-  they say, natural and short ("No abras la puerta.", "Te lo dije."). Every other line has speaker "narrator"
-  (second person). Most of the story happens in one or two places with the same people.
-- Your phone: 2-3 lines carry a text message from the companion in 'phone' (at most 8 words, like a real
-  chat: lowercase, no full stop, e.g. "estoy en el súper. no queda agua"); empty otherwise.
-- The ending is the viewer's CHOICE (this video is part 1): visual_bible.choice = question (at most 6 words)
-  and two tempting options a and b (at most 4 words each). The last line asks it in the story ("¿Abres la
-  puerta o esperas?") and ending_type is "question".
-- Keep the science: each decision is explained in half a sentence with a real fact (how fast an outbreak
-  spreads, how long the water and the power last without workers, how long a person lasts without water).
-- WRITE ONLY WHAT THE 3D WORLD CAN SHOW. Every line is one of these moments, and the 'visual' names it:
-  you walk, run or stand in a city street (busy, empty, people sleeping rough, panic, a fire, a flood, a
-  building collapsing, a zombie horde, the story's text on every screen and billboard); you meet one person and
-  hand them something; your hand works a thing on a wall (pull an alarm, press a button, open a tap, pull a
-  lever); a room (home, kitchen, office, hospital ward, classroom, café with the TV news, theatre); the river
-  or the sea rising; a park; dinosaurs; the Earth from space; your own hands changing (old, glowing); a big
-  number floating in the air; any object, named plainly (a rocket, a tent, a vending machine).
-- NEVER narrate what cannot be filmed in that world: liquids or materials behaving strangely, what happens
-  inside your body (cells, organs, pain, thirst, hunger, feelings), smells, sounds, temperatures, microscopic
-  or invisible things, abstract statistics. Show their visible consequence instead ("the tap gives nothing",
-  "people queue at the hospital", "every screen says NO WATER")."""
+POV_SCRIPT_NOTE = """STYLE: EXPLAIN IT, AND SHOW EVERY THING YOU SAY (owner, Nov 18: "nothing of what the video says
+is seen; explain it, but every thing must be seen, in the right place"). Like the most viewed Shorts of this
+format.
+- ONE SUBJECT, ONE CONTINUOUS JOURNEY (the owner's reference, Nov 18, "What if your car never stopped
+  accelerating?": the same red car from a city street to the highway, the sound barrier, the sky, space; every
+  step follows from the last, one big number grows the whole time). Keep the SAME place (one recipe, at most
+  two) and the SAME subject in most scenes, and make the premise grow in it step by step with the events: the
+  fire spreads, the water rises, people float higher. Never jump to an unrelated place (a café, an office) for
+  one line.
+- SHORT LINES: at most 10 words each, one step each ("BOOM. The sound barrier." "The sky turns black.").
+- The 'hud' counter is the hero number of the premise (speed, height, temperature, water level, people
+  floating), growing in every line; plain words.
+- SHOT FIRST. For every scene, first choose its 'shot' from the 3D world below (recipe + event + room, people,
+  gesture, object, time of day), then write the narration so that it says EXACTLY what that shot shows, plus
+  the reason in half a sentence of plain science. The viewer must see every noun and verb of the line.
+  Example: shot {{recipe: kitchen, event: fire}} -> "Si el aire tuviera el doble de oxígeno, la sartén de tu
+  cocina ardería sola." Never a line whose main thing is not in its shot.
+- Second person, present or conditional ("If..., your...", "Si..., tu..."), one step per line, escalating: your
+  home, your street, your city, the whole planet. Words a 10-year-old understands.
+- PLACES: only the ones the shot shows: your kitchen, your bedroom, a café, an office, a hospital ward, a
+  classroom, a street or the river/sea of the video's city, a park, the Earth from space. Say the city's name
+  at most once; NEVER name stations, neighbourhoods, bridges or buildings (they are not built in 3D).
+- Each scene's 'hud' is a short on-screen counter of what the premise changes, plus the clock ({example}); it
+  grows every line, in the narration's language, plain words.
+- A companion is OPTIONAL: if one appears (visual_bible.companion), they are on screen in reaction scenes and
+  may say 1-2 short lines ('speaker' = their name), always in the narration's language. 'phone' only if a
+  message is shown; empty otherwise.
+- The ending: the viewer's choice (visual_bible.choice, question at most 6 words, options at most 4 words
+  each), asked in the last line, ending_type "question".
+- EVERY line in the narration's language: narration, companion, phone, choice. Never copy the language of an
+  example.
+- The 3D world (choose shots only from here):
+  RECIPES: wake_up (your bedroom at dawn), cafe_news (a café, the TV shows news), street_run (you run down the
+  avenue, people around), street_watch (you stand on the sidewalk and watch the avenue), dark_room (night at
+  home, the power is out), kitchen (your kitchen, a cup, the stove), waterfront (the river or sea promenade),
+  theater, park (a city park), space (the Earth from space: only for the whole planet), meet_person (you walk
+  up to one person), hand_action (your hand works a thing on a wall: alarm, button, tap, lever), reaction (a
+  person across a table DOES the line: gesture throat, cover, point, wave, reach, jump, fall; the object on the
+  table), room_view (a room: office, hospital, classroom, living_room, bedroom, kitchen, cafe).
+  EVENTS (what happens in front of you, in any recipe): fire, smoke, explosion, flood (water rises), crack (the
+  ground splits), collapse (a building comes down), float (people and the object lift off), fly (people are
+  thrown through the air), freeze (frost covers the ground), none.
+  threat (streets): none, panic (everyone runs), fire, flood, collapse, zombies. people: busy, empty,
+  rough_sleepers. object: any concrete thing, named plainly (croissant, glass, phone, rocket, tent).
+- NEVER narrate what no shot can show: what happens inside the body (cells, organs, pain, hunger, feelings),
+  smells, sounds, temperatures, microscopic or invisible things, numbers without a picture. Show their visible
+  consequence with a shot instead ("the tap gives nothing", "people collapse in the street")."""
 
 POV_STORYBOARD_NOTE = """STYLE: first-person POV. In EVERY scene set camera.pov true: the camera is the viewer's
 eyes at height 1.6 standing where the protagonist is, lens 22-28, moving a little forward as if walking. Use
@@ -107,8 +106,9 @@ CITIES = {
 def city_note(city: str) -> str:
     name, places = CITIES[city]
     return (
-        f"SETTING: {name}. If the story happens in a city, it happens in {name}: name real places ({places}) "
-        f"and use the city street with style {city} for every outdoor street scene."
+        f"SETTING: {name}. Outdoor scenes happen in a street of {name} (style {city}). Say the city's name at "
+        "most once and never name its stations, neighbourhoods, bridges or buildings: they are not built in 3D "
+        "(Nov 18: 'Shinjuku station' and 'Westminster Bridge' were heard over a generic street)."
     )
 
 

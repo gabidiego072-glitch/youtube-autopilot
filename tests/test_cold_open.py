@@ -103,7 +103,8 @@ def test_the_title_number_stands_out_like_the_hand_made_cards():
 
 
 def test_pov_scripts_are_written_like_the_hand_made_videos():
+    """Nov 18: explain it and show every thing said, one subject on one continuous journey (owner's reference)."""
     from app.services.styles import pov_script_note
 
     note = pov_script_note("en")
-    assert "ONE LINE = ONE THING YOU SEE" in note and "+30 m" in note and "DAY 1/N" in note
+    assert "SHOT FIRST" in note and "ONE CONTINUOUS JOURNEY" in note and "NEVER name stations" in note

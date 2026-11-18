@@ -94,7 +94,7 @@ def test_videos_rotate_through_famous_cities():
     assert next_city([]) == "new_york"
     assert next_city(["new_york"]) == "paris"
     assert next_city(["new_york", "paris", "tokyo"]) == "london"
-    assert "Eiffel Tower" in city_note("paris") and "style paris" in city_note("paris")
+    assert "never name" in city_note("paris") and "style paris" in city_note("paris")  # Nov 18: only what is built
     from render_engines.core.catalog import catalog_text
 
     assert all(city in catalog_text() for city in CITIES)
