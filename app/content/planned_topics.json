@@ -17,5 +17,16 @@
     "angle": "First-person mission, day by day, in a big city: you meet the people who sleep on the street, give each one a home first (the 'Housing First' idea), then see what changes: the street, hospitals, police, the city budget and the people themselves. Treat everyone with dignity: real people with names and stories, never jokes about them.",
     "science_basis": "Housing First evidence: Finland gives homeless people a permanent home first and its long-term homelessness fell by more than half since 2008; US studies find that housing a chronically homeless person can cost less than the emergency rooms, shelters and police calls they otherwise need; health and employment improve once people have a stable home.",
     "notes": "Respectful tone: these are real people in a hard situation, never the butt of a joke. Show them as individuals (characters with their own palette), your first-person hands giving keys, food or a coat. Use street_watch and street_run recipes for the city, kitchen for a first meal in a new home, park for the morning after, space only for the final 'every city did it' idea."
+  },
+  {
+    "premise": "¿Qué pasaría si la gravedad se apagara 10 segundos?",
+    "language": "es",
+    "style": "pov",
+    "category": "physics_laws",
+    "city_style": "new_york",
+    "hook": "La gravedad se apaga. Tienes diez segundos.",
+    "angle": "One street, one continuous journey, second by second: everything in front of you starts to float, higher and higher, then gravity comes back and everything falls at once. Counter: GRAVEDAD and the seconds. Twist at the end.",
+    "science_basis": "Without gravity nothing pulls objects down: anything resting keeps a small upward push from the ground and drifts; the atmosphere stays for seconds; when gravity returns, everything falls from its height (from 10 m, at about 50 km/h).",
+    "notes": "Made by hand for the owner (Nov 18). Use EXACTLY these lines, in this order, each with its shot and hud (one street of New York, golden hour, no companion):\n1. 'La gravedad se apaga. Tienes diez segundos.' shot street_watch, event float, time golden. hud 'GRAVEDAD 0% · 0 s'\n2. 'Segundo uno: la gente empieza a flotar.' shot street_watch, event float, people busy, time golden. hud 'GRAVEDAD 0% · 1 s'\n3. 'Tu móvil se escapa de tu mano.' shot meet_person, event float, object phone, time golden. hud 'GRAVEDAD 0% · 3 s'\n4. 'Segundo cinco: los coches se despegan del suelo.' shot street_run, event fly, time golden. hud 'GRAVEDAD 0% · 5 s'\n5. 'Todo está ya a diez metros de altura.' shot street_watch, event float, time golden. hud 'GRAVEDAD 0% · 8 s'\n6. 'Segundo diez. La gravedad vuelve.' shot street_watch, event collapse, time golden. hud 'GRAVEDAD 100% · 10 s'\n7. 'Todo cae a la vez: cincuenta kilómetros por hora.' shot street_watch, event crack, time golden. hud 'GRAVEDAD 100% · 11 s'\n8. 'Y entonces... se apaga otra vez. Para siempre.' shot street_watch, event float, time dusk. hud 'GRAVEDAD 0% · ∞'\nEnding question for the choice card: '¿Te agarras o te dejas llevar?' a 'Agarrarme a algo', b 'Dejarme llevar'."
   }
 ]
