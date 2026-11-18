@@ -97,6 +97,19 @@ def next_planned_topic(used_premises: set[str], language: str = "es") -> dict | 
     return None
 
 
+def planned_script(premise: str, language: str = "es") -> dict | None:
+    """The full script written by hand (by Claude) for a planned topic, if it has one (Nov 18).
+
+    A planned topic may carry "script": the same JSON a script writer returns (title_question, hook, scenes with
+    narration, hud and shot, ending_type, ending_line, visual_bible). The pipeline then uses it as it is: Gemini
+    neither writes nor rewrites it, and the storyboard is built from each line's shot.
+    """
+    for topic in planned_topics():
+        if topic.get("premise") == premise and base(topic.get("language", "es")) == base(language):
+            return topic.get("script") or None
+    return None
+
+
 # Famous cities the 3D engine can build (city_style). Videos rotate through them: a recognisable place
 # ("you are in Paris") keeps people watching more than a generic town.
 CITIES = {
