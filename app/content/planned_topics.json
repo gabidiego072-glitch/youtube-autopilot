@@ -27,6 +27,270 @@
     "hook": "La gravedad se apaga. Tienes diez segundos.",
     "angle": "One street, one continuous journey, second by second: everything in front of you starts to float, higher and higher, then gravity comes back and everything falls at once. Counter: GRAVEDAD and the seconds. Twist at the end.",
     "science_basis": "Without gravity nothing pulls objects down: anything resting keeps a small upward push from the ground and drifts; the atmosphere stays for seconds; when gravity returns, everything falls from its height (from 10 m, at about 50 km/h).",
-    "notes": "Made by hand for the owner (Nov 18). Use EXACTLY these lines, in this order, each with its shot and hud (one street of New York, golden hour, no companion):\n1. 'La gravedad se apaga. Tienes diez segundos.' shot street_watch, event float, time golden. hud 'GRAVEDAD 0% · 0 s'\n2. 'Segundo uno: la gente empieza a flotar.' shot street_watch, event float, people busy, time golden. hud 'GRAVEDAD 0% · 1 s'\n3. 'Tu móvil se escapa de tu mano.' shot meet_person, event float, object phone, time golden. hud 'GRAVEDAD 0% · 3 s'\n4. 'Segundo cinco: los coches se despegan del suelo.' shot street_run, event fly, time golden. hud 'GRAVEDAD 0% · 5 s'\n5. 'Todo está ya a diez metros de altura.' shot street_watch, event float, time golden. hud 'GRAVEDAD 0% · 8 s'\n6. 'Segundo diez. La gravedad vuelve.' shot street_watch, event collapse, time golden. hud 'GRAVEDAD 100% · 10 s'\n7. 'Todo cae a la vez: cincuenta kilómetros por hora.' shot street_watch, event crack, time golden. hud 'GRAVEDAD 100% · 11 s'\n8. 'Y entonces... se apaga otra vez. Para siempre.' shot street_watch, event float, time dusk. hud 'GRAVEDAD 0% · ∞'\nEnding question for the choice card: '¿Te agarras o te dejas llevar?' a 'Agarrarme a algo', b 'Dejarme llevar'."
+    "script": {
+      "title_question": "¿Qué pasaría si la gravedad se apagara 10 segundos?",
+      "hook": "La gravedad se apaga. Tienes diez segundos.",
+      "scenes": [
+        {
+          "beat": "hook",
+          "narration": "La gravedad se apaga. Tienes diez segundos.",
+          "visual": "street_watch float",
+          "duration_seconds": 2.7,
+          "scale": "street",
+          "human_subject": "la gente de la calle y tú",
+          "consequence": "La gravedad se apaga. Tienes diez segundos.",
+          "claims": [
+            {
+              "text": "Sin gravedad nada tira de los objetos hacia el suelo.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVEDAD 0% · 0 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "float",
+            "time_of_day": "golden"
+          }
+        },
+        {
+          "beat": "setup",
+          "narration": "Segundo uno: la gente empieza a flotar.",
+          "visual": "street_watch float",
+          "duration_seconds": 2.7,
+          "scale": "street",
+          "human_subject": "la gente de la calle y tú",
+          "consequence": "Segundo uno: la gente empieza a flotar.",
+          "claims": [
+            {
+              "text": "El pequeño empujón del suelo al caminar basta para separarte de él si nada te atrae de vuelta.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVEDAD 0% · 1 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "float",
+            "time_of_day": "golden",
+            "people": "busy"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "El café se escapa de la mesa.",
+          "visual": "reaction float",
+          "duration_seconds": 2.7,
+          "scale": "interior",
+          "human_subject": "la gente de la calle y tú",
+          "consequence": "El café se escapa de la mesa.",
+          "claims": [
+            {
+              "text": "Los líquidos sin gravedad forman bolas flotantes por la tensión superficial, como se ve en la Estación Espacial.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVEDAD 0% · 3 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "reaction",
+            "event": "float",
+            "room": "cafe",
+            "time_of_day": "golden",
+            "object": "glass"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Segundo cinco: la gente sale disparada hacia arriba.",
+          "visual": "street_watch fly",
+          "duration_seconds": 2.7,
+          "scale": "street",
+          "human_subject": "la gente de la calle y tú",
+          "consequence": "Segundo cinco: la gente sale disparada hacia arriba.",
+          "claims": [
+            {
+              "text": "Quien estaba corriendo o saltando conserva su velocidad y sigue subiendo en línea recta (inercia).",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVEDAD 0% · 5 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "fly",
+            "time_of_day": "golden"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Segundo seis: el agua del río se levanta.",
+          "visual": "waterfront flood",
+          "duration_seconds": 2.7,
+          "scale": "street",
+          "human_subject": "la gente de la calle y tú",
+          "consequence": "Segundo seis: el agua del río se levanta.",
+          "claims": [
+            {
+              "text": "Sin gravedad, el agua ya no se queda en su cauce y cualquier ola la levanta.",
+              "type": "speculation",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVEDAD 0% · 6 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "waterfront",
+            "event": "flood",
+            "time_of_day": "golden"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "La gente grita. Nadie tiene dónde agarrarse.",
+          "visual": "street_watch float",
+          "duration_seconds": 2.7,
+          "scale": "street",
+          "human_subject": "la gente de la calle y tú",
+          "consequence": "La gente grita. Nadie tiene dónde agarrarse.",
+          "claims": [
+            {
+              "text": "Sin apoyo ni aire que empujar, una persona flotando no puede cambiar de dirección.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVEDAD 0% · 7 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "float",
+            "threat": "panic",
+            "time_of_day": "golden"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Todo está ya a diez metros de altura.",
+          "visual": "street_watch float",
+          "duration_seconds": 2.7,
+          "scale": "street",
+          "human_subject": "la gente de la calle y tú",
+          "consequence": "Todo está ya a diez metros de altura.",
+          "claims": [
+            {
+              "text": "A poco más de un metro por segundo, en ocho segundos se suben unos diez metros.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVEDAD 0% · 8 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "float",
+            "time_of_day": "golden"
+          }
+        },
+        {
+          "beat": "climax",
+          "narration": "Segundo diez. La gravedad vuelve.",
+          "visual": "street_watch collapse",
+          "duration_seconds": 2.7,
+          "scale": "street",
+          "human_subject": "la gente de la calle y tú",
+          "consequence": "Segundo diez. La gravedad vuelve.",
+          "claims": [
+            {
+              "text": "Al volver la gravedad, todo vuelve a caer con la misma aceleración: 9,8 m/s².",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVEDAD 100% · 10 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "collapse",
+            "time_of_day": "golden"
+          }
+        },
+        {
+          "beat": "climax",
+          "narration": "Todo cae a la vez. El suelo se parte.",
+          "visual": "street_watch crack",
+          "duration_seconds": 2.7,
+          "scale": "street",
+          "human_subject": "la gente de la calle y tú",
+          "consequence": "Todo cae a la vez. El suelo se parte.",
+          "claims": [
+            {
+              "text": "Desde diez metros, un objeto llega al suelo a unos cincuenta kilómetros por hora.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVEDAD 100% · 11 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "crack",
+            "time_of_day": "golden"
+          }
+        },
+        {
+          "beat": "ending",
+          "narration": "Y entonces... se apaga otra vez. Para siempre.",
+          "visual": "street_watch float",
+          "duration_seconds": 2.7,
+          "scale": "street",
+          "human_subject": "la gente de la calle y tú",
+          "consequence": "Y entonces... se apaga otra vez. Para siempre.",
+          "claims": [
+            {
+              "text": "Sin gravedad para siempre, la atmósfera y los océanos se escaparían al espacio.",
+              "type": "speculation",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVEDAD 0% · ∞",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "float",
+            "time_of_day": "dusk"
+          }
+        }
+      ],
+      "ending_type": "surprising_conclusion",
+      "ending_line": "Y entonces... se apaga otra vez. Para siempre.",
+      "visual_bible": {
+        "look": "toon 3D, one New York street at golden hour",
+        "recurring_subjects": [],
+        "palette": "",
+        "camera_language": "first person",
+        "companion": {},
+        "choice": {
+          "question": "¿Qué haces?",
+          "a": "Agarrarme a algo",
+          "b": "Dejarme llevar"
+        }
+      }
+    },
+    "notes": "Script written by hand by Claude (Nov 18): used as it is."
   }
 ]

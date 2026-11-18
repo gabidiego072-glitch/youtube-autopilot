@@ -66,8 +66,15 @@ from app.services.research.briefing import build_brief
 from app.services.scenes.check import check_scenes
 from app.services.scenes.planner import plan_scenes
 from app.services.scenes.recipe_planner import plan_from_shots, plan_with_recipes, replan
-from app.services.scripts.generator import generate_script
-from app.services.styles import POV_STORYBOARD_NOTE, city_note, next_city, next_planned_topic, pov_script_note
+from app.services.scripts.generator import ScriptDraft, generate_script, structure_problems
+from app.services.styles import (
+    POV_STORYBOARD_NOTE,
+    city_note,
+    next_city,
+    next_planned_topic,
+    planned_script,
+    pov_script_note,
+)
 from app.services.thumbnails.generator import best_moment, generate_thumbnails
 from app.services.variety import RECENT, RecentVideos, pick_idea, recent_videos
 from app.services.youtube.base import UploadRequest
@@ -369,9 +376,25 @@ def step_research(db, run, services, ai) -> dict:
     }
 
 
+HAND_PROVIDER = "claude"  # scripts written by hand (by Claude) in app/content/planned_topics.json
+
+
+def _hand_script(project, services) -> ScriptDraft | None:
+    """The hand-written script of this project's planned topic, checked by the same structure rules."""
+    data = planned_script(project.working_title, project.language)
+    if not data:
+        return None
+    draft = ScriptDraft(**data, provider=HAND_PROVIDER, model="hand-written")
+    problems = structure_problems(draft, get_format_spec(project.format, services.settings).format, project.language)
+    if problems:
+        raise TopicRejected("Hand-written script rejected: " + " ".join(problems))
+    return draft
+
+
 def _write_script(db, project, services, ai, notes: str | None = None) -> Script:
+    draft = _hand_script(project, services)
     last_error = None
-    for _ in range(SCRIPT_ATTEMPTS):
+    for _ in range(0 if draft else SCRIPT_ATTEMPTS):
         try:
             draft = generate_script(
                 ai,
@@ -400,7 +423,8 @@ def _write_script(db, project, services, ai, notes: str | None = None) -> Script
         except ProviderError as exc:  # the rules rejected it: ask again
             last_error = exc
     else:
-        raise last_error
+        if not draft:
+            raise last_error
     script = Script(
         project_id=project.id,
         version=len(project.scripts) + 1,
@@ -444,6 +468,11 @@ def step_fact_check(db, run, services, ai) -> dict:
         db.commit()
         if result.status == FactCheckStatus.PASSED:
             return {"status": "passed", "script_version": script.version, "rewrites": attempt}
+        if script.provider == HAND_PROVIDER:  # a hand-written script is not rewritten; only a wrong fact stops it
+            wrong = [v["claim"] for v in result.verdicts if v["verdict"] == "incorrect"]
+            if wrong:
+                raise TopicRejected("The hand-written script has incorrect claims: " + "; ".join(wrong[:3]))
+            return {"status": "hand_script", "script_version": script.version, "findings": len(result.verdicts)}
         if attempt == 0:  # one rewrite with the reviewer's corrections
             corrections = [
                 f"- {v['claim']}: {v['note']} {v['correction']}".strip()
