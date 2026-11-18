@@ -27,6 +27,10 @@ format.
   fire spreads, the water rises, people float higher. Never jump to an unrelated place (a café, an office) for
   one line.
 - SHORT LINES: at most 10 words each, one step each ("BOOM. The sound barrier." "The sky turns black.").
+- TIME JUMPS in the same place, said in the line ("Day ninety. The power dies." "Year three. You build a
+  home."), a touch of dry humour ("At first? It's paradise." "Guest list: Steve." for a mannequin), and a TWIST
+  in the last lines that changes everything (the calm sea pulls back: a tsunami; after ten years alone, a
+  second person: the counter goes from 1 to 2, "For now."). From the owner's references (Nov 18).
 - The 'hud' counter is the hero number of the premise (speed, height, temperature, water level, people
   floating), growing in every line; plain words.
 - SHOT FIRST. For every scene, first choose its 'shot' from the 3D world below (recipe + event + room, people,
