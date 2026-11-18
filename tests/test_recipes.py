@@ -263,3 +263,19 @@ def test_a_storyboard_with_a_scene_missing_is_fitted_not_dropped():
     ai = StubAIProvider([short, short])
     assert len(_ask(ai, beats, [3.0, 3.0, 3.0], "paris", "")) == 3 and len(ai.calls) == 2
     assert "EXACTLY 3" in ai.calls[1]["prompt"]
+
+
+def test_shot_first_scripts_build_their_own_scenes():
+    """Nov 18: the writer picks each line's shot, the scene is built from it (no second guess)."""
+    from app.services.scenes.recipe_planner import plan_from_shots
+    from tests.conftest import StubAIProvider
+
+    scenes = [
+        {"narration": "Your kitchen pan catches fire.", "shot": {"recipe": "kitchen", "event": "fire"}},
+        {"narration": "People float above the street.", "shot": {"recipe": "street_watch", "event": "float"}},
+    ]
+    specs = plan_from_shots(StubAIProvider([]), scenes=scenes, durations=[3.0, 3.0], seed=4, city="tokyo")
+    assert [s["recipe"] for s in specs] == ["kitchen", "street_watch"]
+    assert any(a["type"] == "fire" for a in specs[0]["actions"])
+    assert any(a["type"] == "float_up" for a in specs[1]["actions"])
+    assert plan_from_shots(StubAIProvider([]), scenes=[{"narration": "x"}], durations=[3.0], seed=4) is None

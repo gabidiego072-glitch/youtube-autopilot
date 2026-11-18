@@ -397,7 +397,7 @@ def test_planned_pov_topic_goes_first_and_every_scene_is_first_person(db, tmp_pa
     assert project.working_title.startswith("¿Qué pasaría si todos fueran zombis")
     assert project.features["style"] == "pov"
     script_prompt = services.ai.calls[2]["prompt"]
-    assert "first-person POV" in script_prompt and "DÍA 1" in script_prompt
+    assert "SHOT FIRST" in script_prompt and "DÍA 1" in script_prompt
     specs = project.scripts[-1].scene_specs
     assert all(spec["camera"]["pov"] for spec in specs if spec["environment"]["type"] != "space")
     assert all(s["environment"].get("style") == "new_york" for s in specs if s["environment"]["type"] == "city")

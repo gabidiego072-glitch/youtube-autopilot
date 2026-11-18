@@ -12,9 +12,10 @@ from app.content.profile import (
 )
 from app.models.enums import ClaimType, VideoFormat
 from app.services.language import title_guide
+from app.services.scenes.recipes import EVENTS, GESTURES, PEOPLE, RECIPES, ROOMS, THREATS
 from render_engines.core.catalog import catalog_text
 
-PROMPT_VERSION = "whatif-script-v7"
+PROMPT_VERSION = "whatif-script-v8"
 WORDS_BUDGET = 2.6  # spoken words per second of target length (the narrator says ~2.5 a second)
 HOOK_MAX_WORDS = 12  # ~3 s; at 8, six tries in a row were rejected and the day's video was lost (Nov 16)
 BEATS = ("hook", "setup", "escalation", "climax", "ending")
@@ -39,6 +40,22 @@ SCRIPT_SCHEMA = {
                     "hud": {"type": "string"},
                     "speaker": {"type": "string"},
                     "phone": {"type": "string"},
+                    # SHOT FIRST (Nov 18): the scene the 3D world shows for this line, chosen by the writer, so the
+                    # line describes what is really on screen instead of a scene being guessed afterwards.
+                    "shot": {
+                        "type": "object",
+                        "properties": {
+                            "recipe": {"type": "string", "enum": list(RECIPES)},
+                            "event": {"type": "string", "enum": list(EVENTS)},
+                            "threat": {"type": "string", "enum": list(THREATS)},
+                            "room": {"type": "string", "enum": list(ROOMS)},
+                            "people": {"type": "string", "enum": list(PEOPLE)},
+                            "gesture": {"type": "string", "enum": list(GESTURES)},
+                            "time_of_day": {"type": "string", "enum": ["dawn", "day", "golden", "dusk", "night"]},
+                            "object": {"type": "string"},
+                        },
+                        "required": ["recipe", "event"],
+                    },
                     "claims": {
                         "type": "array",
                         "items": {
@@ -62,6 +79,7 @@ SCRIPT_SCHEMA = {
                     "human_subject",
                     "consequence",
                     "claims",
+                    "shot",
                 ],
                 "additionalProperties": False,
             },
