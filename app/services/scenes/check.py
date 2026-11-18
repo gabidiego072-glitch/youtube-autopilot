@@ -109,6 +109,8 @@ def check_scene(ai: AIProvider, narration: str, images: list[bytes]) -> dict:
         system=CHECK_SYSTEM, prompt=f"Narration line: {narration}", schema=CHECK_SCHEMA, images=images
     )
     data = result.data if isinstance(result.data, dict) else {}
+    if "shows_it" not in data:  # Nov 18: overloaded fallback models answered nothing usable; 0/6 lost the video
+        raise ValueError("the judge gave no verdict")
     return {
         "seen": str(data.get("seen", "")),
         "shows_it": bool(data.get("shows_it", False)),

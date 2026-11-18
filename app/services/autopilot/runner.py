@@ -209,6 +209,24 @@ def _usable(ideas) -> list:
     return [i for i in ideas if not is_abstract_property(i.premise)]
 
 
+PLANNED_ATTEMPTS = 3  # a planned topic whose runs all failed is tried this many times, then skipped
+
+
+def _planned_used(db, channel_id) -> set[str]:
+    """Planned topics already done: uploaded, or tried PLANNED_ATTEMPTS times. Nov 18: two runs cancelled by hand
+    made the hand-written gravity script count as used, and Gemini wrote another topic instead."""
+    rows = db.execute(
+        select(VideoProject.working_title, VideoProject.youtube_video_id).where(VideoProject.channel_id == channel_id)
+    ).all()
+    tries: dict[str, int] = {}
+    done = set()
+    for title, video_id in rows:
+        tries[title] = tries.get(title, 0) + 1
+        if video_id:
+            done.add(title)
+    return done | {title for title, n in tries.items() if n >= PLANNED_ATTEMPTS}
+
+
 # --- steps ---------------------------------------------------------------------------
 def step_topic(db, run, services, ai) -> dict:
     channel = db.get(Channel, run.channel_id)
@@ -218,8 +236,11 @@ def step_topic(db, run, services, ai) -> dict:
         )
     )
     generated = 0
-    used = set(db.scalars(select(VideoProject.working_title).where(VideoProject.channel_id == channel.id)))
-    planned = next_planned_topic(used, channel.language) if services.settings.planned_topics_enabled else None
+    planned = (
+        next_planned_topic(_planned_used(db, channel.id), channel.language)
+        if services.settings.planned_topics_enabled
+        else None
+    )
     if planned:  # a topic chosen by hand goes first, once
         idea = Idea(
             channel_id=channel.id,
@@ -656,6 +677,9 @@ def _show_what_is_said(db, run, services, ai, specs, durations, notes):
     """Look at every scene before the long render: one that does not show its line is planned again."""
     project = _project(db, run)
     script = project.scripts[-1]
+    if getattr(script, "provider", "") == HAND_PROVIDER:  # each shot was chosen by hand: no AI judge, no replan
+        services.log("scene check skipped: hand-written script")
+        return specs, durations
     work = _work_dir(services, run) / "check"
     seed = int(project.id.int % 100_000)
     city = (project.features or {}).get("city_style") or "new_york"
