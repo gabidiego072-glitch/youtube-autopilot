@@ -62,7 +62,9 @@ format.
   table), room_view (a room: office, hospital, classroom, living_room, bedroom, kitchen, cafe).
   EVENTS (what happens in front of you, in any recipe): fire, smoke, explosion, flood (water rises), crack (the
   ground splits), collapse (a building comes down), float (people and the object lift off), fly (people are
-  thrown through the air), freeze (frost covers the ground), none.
+  thrown through the air), freeze (frost covers the ground), meteor (a burning rock hits the street in front of
+  you), meteor_far (it hits far away, fireball over the roofs), meteor_sky (it crosses the sky, still coming),
+  dazed (you are dizzy after a blast), none.
   threat (streets): none, panic (everyone runs), fire, flood, collapse, zombies. people: busy, empty,
   rough_sleepers. object: any concrete thing, named plainly (croissant, glass, phone, rocket, tent).
 - NEVER narrate what no shot can show: what happens inside the body (cells, organs, pain, hunger, feelings),

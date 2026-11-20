@@ -354,3 +354,100 @@ def levitate(obj, start: int, end: int, fps: int, height: float = 1.2, seed: int
     key(obj, "rotation_euler", start, (rx, ry, rz))
     key(obj, "location", end, (x + rng.uniform(-0.2, 0.2), y + rng.uniform(-0.2, 0.2), z + height))
     key(obj, "rotation_euler", end, (rx + rng.uniform(-0.8, 0.8), ry + rng.uniform(-0.8, 0.8), rz + rng.uniform(-1, 1)))
+
+
+def meteor(
+    name: str,
+    impact,
+    start: int,
+    hit: int,
+    fps: int,
+    size: float = 3.0,
+    seed: int = 0,
+    lands: bool = True,
+    col=None,
+    origin=None,
+    to=None,
+) -> None:
+    """A burning rock crosses the sky and, if it lands, hits at `impact`: flash, fireball, cracks and fire.
+
+    The rock is a library rock (Quaternius, CC0) glowing orange, with a trail of fire and smoke behind it.
+    `lands` False: it only crosses the sky high up and leaves the frame (seen from far away, still coming).
+    """
+    from render_engines.cinematic import assets
+
+    rng = random.Random(seed)
+    ix, iy, iz = impact
+    direction = Vector((rng.uniform(-0.6, 0.6), 1.0, 0.0)).normalized()  # comes from behind the impact point
+    # origin/to: points chosen in front of the camera, so the whole fall is in the frame (Nov 20 test: the
+    # rock came from outside the view and only the blast was seen)
+    sky = Vector(origin) if origin else Vector((ix, iy, iz)) + direction * 140.0 + Vector((0.0, 0.0, 110.0))
+    end = Vector((ix, iy, iz)) if lands else (Vector(to) if to else sky + (Vector((ix, iy, 40.0)) - sky) * 0.9)
+    rocks = [m for m in assets.available("simple_nature") if m.startswith("Rock")] or []
+    hot = materials.principled(f"{name}_hot", "#7a2e10", emission="#ff5a14", emission_strength=2.2)
+    if rocks:
+        rock = assets.place("simple_nature", rng.choice(rocks), f"{name}_rock", sky, size, 0.0, col)
+        rock.data = rock.data.copy()
+        rock.data.materials.clear()
+        rock.data.materials.append(hot)
+    else:
+        rock = objects.mesh_object(f"{name}_rock", objects.icosphere(size * 0.5, 2), hot, False, sky, col=col)
+    rock.visible_shadow = False
+    glow = objects.mesh_object(
+        f"{name}_glow",
+        objects.icosphere(size * 1.3, 2),
+        materials.principled(f"{name}_glowmat", "#ff8a2a", emission="#ff7a1a", emission_strength=1.6),
+        True,
+        sky,
+        col=col,
+    )
+    glow.visible_shadow = False
+    glow.parent = rock
+    glow.location = (0.0, 0.0, size * 0.4)
+    glow.scale = (1.0 / rock.scale[0],) * 3
+    key(rock, "location", start, sky)
+    key(rock, "location", hit, end)
+    key(rock, "rotation_euler", start, (0.0, 0.0, 0.0))
+    key(rock, "rotation_euler", hit, (rng.uniform(4, 8), rng.uniform(4, 8), 0.0))
+    set_interpolation(rock, "LINEAR")
+    _hidden_until(rock, start)
+    light = lights.point(f"{name}_light", sky, "#ffa04a", 0.0, radius=size)
+    light.parent = rock
+    light.location = (0.0, 0.0, 0.0)
+    key(light.data, "energy", start, 60000.0 * size)
+    # the trail: fire balls left along the path, each shrinking and turning to smoke
+    steps = max(6, (hit - start) // 2)
+    trail_mats = {
+        "f": materials.principled(f"{name}_trailf", "#ff9a2a", emission="#ff6a10", emission_strength=1.8),
+        "s": materials.principled(f"{name}_smoke", "#3e3a37", roughness=1.0),  # "smoke": the toon look leaves it dark
+    }
+    for k in range(steps):
+        t = k / steps
+        f = start + int((hit - start) * t)
+        p = sky + (end - sky) * t
+        for kind, life, grow in (("f", 0.5, 1.4), ("s", 2.5, 3.0)):
+            ball = objects.mesh_object(
+                f"{name}_trail{kind}{k}",
+                objects.icosphere(size * (0.6 if kind == "f" else 0.5), 2),
+                trail_mats[kind],
+                True,
+                tuple(p),
+                col=col,
+            )
+            ball.visible_shadow = False
+            key(ball, "scale", start, (0.001, 0.001, 0.001))
+            key(ball, "scale", max(start, f - 1), (0.001, 0.001, 0.001))
+            key(ball, "scale", f + 1, (1.0, 1.0, 1.0))
+            key(ball, "scale", f + int(life * fps), (grow, grow, grow) if kind == "s" else (0.001, 0.001, 0.001))
+            if kind == "s":
+                key(ball, "scale", f + int((life + 1.0) * fps), (0.001, 0.001, 0.001))
+    if not lands:
+        key(rock, "scale", hit, tuple(rock.scale))
+        key(rock, "scale", hit + 1, (0.001, 0.001, 0.001))
+        return
+    key(rock, "scale", hit, tuple(rock.scale))
+    key(rock, "scale", hit + 1, (0.001, 0.001, 0.001))
+    key(light.data, "energy", hit, 60000.0 * size)
+    key(light.data, "energy", hit + 2, 0.0)
+    explosion(f"{name}_blast", (ix, iy, iz), hit, fps, size * 2.5, seed, col=col)
+    crack(f"{name}_crack", (ix, iy - 4.0, 0.01), hit, hit + int(1.2 * fps), "floor", 9.0, seed, thick=6.0)

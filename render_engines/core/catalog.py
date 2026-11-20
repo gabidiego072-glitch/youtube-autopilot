@@ -117,6 +117,8 @@ ACTIONS = {
     "steam": "white steam rising off something hot: location [x,y,z], start, end",
     "snow": "snow falling through the view: location [x,y,z] (centre), start, end, area (m)",
     "frost": "white frost spreading over the ground around location [x,y,z]: start, end, size (m)",
+    "meteor": "a burning rock falls from the sky with a trail of fire and smoke: location [x,y,z] (impact), start, "
+    "hit (s: when it lands), size, lands (false: it only crosses the sky)",
     "explosion": "a blast (flash, fireball, smoke, then fire): location [x,y,z], start, size",
     "float_up": "no gravity: a character lifts off slowly, upright, arms out, bobbing: character, start, end, "
     "height (m)",

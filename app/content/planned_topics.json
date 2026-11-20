@@ -1,5 +1,279 @@
 [
   {
+    "premise": "¿Qué pasaría si un meteorito cayera a dos calles de ti?",
+    "language": "es",
+    "style": "pov",
+    "category": "space_and_astronomy",
+    "city_style": "new_york",
+    "hook": "Un meteorito viene directo a tu ciudad.",
+    "angle": "One city, one evening: the meteor approaches, hits two streets away, and you live the aftermath. Counter: seconds to impact.",
+    "science_basis": "Chelyabinsk 2013 (a ~20 m rock, ~500 kt, windows broken in thousands of buildings); entry speeds 11-72 km/s.",
+    "notes": "Script written by hand by Claude (Nov 20), remake of the meteor video: used as it is.",
+    "script": {
+      "title_question": "¿Qué pasaría si un meteorito cayera a dos calles de ti?",
+      "hook": "Un meteorito viene directo a tu ciudad.",
+      "scenes": [
+        {
+          "beat": "hook",
+          "narration": "Un meteorito viene directo a tu ciudad.",
+          "visual": "street_watch meteor_sky",
+          "duration_seconds": 2.7,
+          "scale": "street",
+          "human_subject": "tú y la gente de la ciudad",
+          "consequence": "Un meteorito viene directo a tu ciudad.",
+          "claims": [
+            {
+              "text": "Cada año entran en la atmósfera rocas de varios metros; la mayoría se deshacen antes de tocar el suelo.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "IMPACTO EN 60 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "meteor_sky",
+            "time_of_day": "dusk"
+          }
+        },
+        {
+          "beat": "setup",
+          "narration": "Al principio parece una estrella fugaz.",
+          "visual": "park meteor_sky",
+          "duration_seconds": 2.7,
+          "scale": "street",
+          "human_subject": "tú y la gente de la ciudad",
+          "consequence": "Al principio parece una estrella fugaz.",
+          "claims": [
+            {
+              "text": "Un meteoro brilla porque el aire delante de él se calienta a miles de grados.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "IMPACTO EN 40 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "park",
+            "event": "meteor_sky",
+            "time_of_day": "dusk"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Veinte segundos: ya es más grande que la luna.",
+          "visual": "street_watch meteor_sky",
+          "duration_seconds": 2.7,
+          "scale": "street",
+          "human_subject": "tú y la gente de la ciudad",
+          "consequence": "Veinte segundos: ya es más grande que la luna.",
+          "claims": [
+            {
+              "text": "Un meteorito entra a entre 11 y 72 kilómetros por segundo.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "IMPACTO EN 20 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "meteor_sky",
+            "time_of_day": "dusk",
+            "people": "busy"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "La gente deja de mirar y empieza a correr.",
+          "visual": "street_run none",
+          "duration_seconds": 2.7,
+          "scale": "street",
+          "human_subject": "tú y la gente de la ciudad",
+          "consequence": "La gente deja de mirar y empieza a correr.",
+          "claims": [
+            {
+              "text": "En Cheliábinsk, en 2013, mucha gente se acercó a las ventanas a mirar el destello.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "IMPACTO EN 10 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_run",
+            "event": "none",
+            "threat": "panic",
+            "time_of_day": "dusk"
+          }
+        },
+        {
+          "beat": "climax",
+          "narration": "Impacto. A dos calles de ti.",
+          "visual": "street_watch meteor",
+          "duration_seconds": 2.7,
+          "scale": "street",
+          "human_subject": "tú y la gente de la ciudad",
+          "consequence": "Impacto. A dos calles de ti.",
+          "claims": [
+            {
+              "text": "Una roca de unos 20 metros libera la energía de cientos de kilotones.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "IMPACTO",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "meteor",
+            "time_of_day": "dusk"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "La onda expansiva tira los edificios.",
+          "visual": "street_watch collapse",
+          "duration_seconds": 2.7,
+          "scale": "street",
+          "human_subject": "tú y la gente de la ciudad",
+          "consequence": "La onda expansiva tira los edificios.",
+          "claims": [
+            {
+              "text": "La onda expansiva de Cheliábinsk dañó más de 7.000 edificios.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "+2 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "collapse",
+            "time_of_day": "dusk"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "El suelo se parte bajo tus pies.",
+          "visual": "street_watch crack",
+          "duration_seconds": 2.7,
+          "scale": "street",
+          "human_subject": "tú y la gente de la ciudad",
+          "consequence": "El suelo se parte bajo tus pies.",
+          "claims": [
+            {
+              "text": "Un impacto cercano sacude el suelo como un terremoto.",
+              "type": "speculation",
+              "source": ""
+            }
+          ],
+          "hud": "+4 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "crack",
+            "time_of_day": "dusk"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Te levantas mareado. Todo está en llamas.",
+          "visual": "street_watch dazed",
+          "duration_seconds": 2.7,
+          "scale": "street",
+          "human_subject": "tú y la gente de la ciudad",
+          "consequence": "Te levantas mareado. Todo está en llamas.",
+          "claims": [
+            {
+              "text": "Una explosión cercana puede dañar el oído interno y hacerte perder el equilibrio.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "+10 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "dazed",
+            "threat": "fire",
+            "time_of_day": "dusk"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "El cielo se llena de humo y fuego.",
+          "visual": "street_watch meteor_far",
+          "duration_seconds": 2.7,
+          "scale": "street",
+          "human_subject": "tú y la gente de la ciudad",
+          "consequence": "El cielo se llena de humo y fuego.",
+          "claims": [
+            {
+              "text": "Los restos calientes que caen pueden provocar incendios a kilómetros.",
+              "type": "speculation",
+              "source": ""
+            }
+          ],
+          "hud": "+30 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "meteor_far",
+            "time_of_day": "dusk"
+          }
+        },
+        {
+          "beat": "ending",
+          "narration": "Y entonces ves otra luz en el cielo.",
+          "visual": "street_watch meteor_sky",
+          "duration_seconds": 2.7,
+          "scale": "street",
+          "human_subject": "tú y la gente de la ciudad",
+          "consequence": "Y entonces ves otra luz en el cielo.",
+          "claims": [
+            {
+              "text": "Algunos asteroides viajan con fragmentos o lunas que llegan detrás.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "IMPACTO EN 60 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "meteor_sky",
+            "time_of_day": "dusk"
+          }
+        }
+      ],
+      "ending_type": "surprising_conclusion",
+      "ending_line": "Y entonces ves otra luz en el cielo.",
+      "visual_bible": {
+        "look": "toon 3D, New York at dusk",
+        "recurring_subjects": [],
+        "palette": "",
+        "camera_language": "first person",
+        "companion": {},
+        "choice": {
+          "question": "¿Qué haces?",
+          "a": "Correr al metro",
+          "b": "Quedarme mirando"
+        }
+      }
+    }
+  },
+  {
     "premise": "¿Qué pasaría si todos fueran zombis menos tú?",
     "style": "pov",
     "category": "human_body",
