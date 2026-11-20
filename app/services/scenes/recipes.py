@@ -207,9 +207,20 @@ def _ahead(spec: dict, metres: float) -> tuple[float, float]:
     return round(x0 + dx / norm * metres, 2), round(y0 + dy / norm * metres, 2)
 
 
+def _clear_view(spec: dict) -> None:
+    """Off the sidewalk, onto the edge of the road (Nov 20: on the sidewalk a tree, a lamp post or a café
+    parasol stood between you and the meteor's impact, and the screen went brown for a second)."""
+    for shot in spec["camera"].get("shots", []):
+        x, y, z = shot["location"]
+        if abs(y) > 2.6:
+            shot["location"] = [x, math.copysign(2.4, y), z]
+
+
 def _add_event(spec: dict, event: str, d: float, rng: random.Random) -> None:
     env = spec["environment"]
     outdoor = env.get("type") in OUTDOOR
+    if outdoor and env.get("type") == "city" and event not in ("none", "dazed"):
+        _clear_view(spec)
     start = round(min(0.4, d * 0.15), 3)
     near = 2.4 if not outdoor else 6.0
     x, y = _ahead(spec, near)
@@ -298,6 +309,9 @@ def _add_event(spec: dict, event: str, d: float, rng: random.Random) -> None:
         bx, _ = _ahead(spec, 18.0)
         actions.append({"type": "collapse", "x": bx, "start": start, "end": d})
         spec["camera"].setdefault("shakes", []).append({"start": start, "end": start + 0.6, "strength": 0.04})
+        if outdoor:  # look at it: the building that falls is on the north side, up high (Nov 20: not seen)
+            last = spec["camera"]["shots"][-1]
+            last["target"] = [round(bx, 2), 9.0, 12.0]
     elif event == "shatter":
         env["physics"] = True
         actions.append({"type": "shatter_windows", "start": start + 0.2})
