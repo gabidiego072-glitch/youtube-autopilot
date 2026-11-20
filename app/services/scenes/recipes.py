@@ -236,17 +236,36 @@ def _add_event(spec: dict, event: str, d: float, rng: random.Random) -> None:
         )
         spec["camera"].setdefault("shakes", []).append({"start": start + 0.25, "end": start + 0.9, "strength": 0.05})
     elif event in ("meteor", "meteor_far", "meteor_sky"):
-        far = {"meteor": 30.0, "meteor_far": 95.0, "meteor_sky": 160.0}[event]
+        far = {"meteor": 30.0, "meteor_far": 95.0, "meteor_sky": 200.0}[event]
         mx, my = _ahead(spec, far)
         hit = round(max(start + 0.8, d * 0.55), 3)
+        shot = spec["camera"]["shots"][-1]
+        (cx, cy, _), (tx, ty, _) = shot["location"], shot["target"]
+        fx, fy = tx - cx, ty - cy
+        n = max(0.01, (fx * fx + fy * fy) ** 0.5)
+        fx, fy = fx / n, fy / n
+        sx, sy = -fy, fx  # across the view
+        # towards the middle of the street (the camera is on a sidewalk: straight ahead are lamp posts and trees)
+        side = -1.0 if (cx * sx + cy * sy) > 0 else 1.0
+        if event == "meteor_sky":  # crosses high up, from one side of the view to the other
+            # along the street: between the buildings is the only sky you see (Nov 20: from the side it was hidden)
+            origin = [cx + fx * (far + 120) + sx * side * 14.0, cy + fy * (far + 120) + sy * side * 14.0, 150.0]
+            to = [cx + fx * far + sx * side * 4.0, cy + fy * far + sy * side * 4.0, 70.0]
+        else:  # comes down in front of you, from high up, a bit to one side, onto the impact point
+            back = far + 70.0
+            origin = [cx + fx * back + sx * side * 14.0, cy + fy * back + sy * side * 14.0, 0.6 * back]
+            mx, my = mx + sx * side * 7.0, my + sy * side * 7.0
+            to = None
         actions.append(
             {
                 "type": "meteor",
                 "location": [mx, my, 0.0],
                 "start": start,
                 "hit": hit if event != "meteor_sky" else round(d * 0.95, 3),
-                "size": {"meteor": 3.0, "meteor_far": 6.0, "meteor_sky": 7.0}[event],
+                "size": {"meteor": 3.5, "meteor_far": 8.0, "meteor_sky": 22.0}[event],
                 "lands": event != "meteor_sky",
+                "from": [round(v, 2) for v in origin],
+                **({"to": [round(v, 2) for v in to]} if to else {}),
             }
         )
         if event != "meteor_sky":
@@ -255,7 +274,7 @@ def _add_event(spec: dict, event: str, d: float, rng: random.Random) -> None:
                 {"start": hit + (0.05 if event == "meteor" else 0.35), "end": hit + 1.2, "strength": strength}
             )
         for shot in spec["camera"].get("shots", []):  # look up: the sky is where it happens
-            shot["target"][2] = shot["target"][2] + (14.0 if event == "meteor_sky" else 4.0)
+            shot["target"][2] = shot["target"][2] + (12.0 if event == "meteor_sky" else 6.0)
     elif event == "dazed":
         spec["camera"]["handheld"] = 0.09
         spec["camera"].setdefault("shakes", []).append({"start": 0.0, "end": d, "strength": 0.03})

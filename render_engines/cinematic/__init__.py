@@ -390,6 +390,8 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
                 float(action.get("size", 3.0)),
                 ctx.seed + start,
                 bool(action.get("lands", True)),
+                origin=action.get("from"),
+                to=action.get("to"),
             )
         elif kind in ("fire", "smoke", "crack", "flood", "collapse", "snow", "frost", "explosion", "steam"):
             _effect(kind, action, start, end, ctx, urban, env)

@@ -366,6 +366,8 @@ def meteor(
     seed: int = 0,
     lands: bool = True,
     col=None,
+    origin=None,
+    to=None,
 ) -> None:
     """A burning rock crosses the sky and, if it lands, hits at `impact`: flash, fireball, cracks and fire.
 
@@ -377,10 +379,12 @@ def meteor(
     rng = random.Random(seed)
     ix, iy, iz = impact
     direction = Vector((rng.uniform(-0.6, 0.6), 1.0, 0.0)).normalized()  # comes from behind the impact point
-    sky = Vector((ix, iy, iz)) + direction * 140.0 + Vector((0.0, 0.0, 110.0))
-    end = Vector((ix, iy, iz)) if lands else sky + (Vector((ix, iy, 40.0)) - sky) * 0.9
+    # origin/to: points chosen in front of the camera, so the whole fall is in the frame (Nov 20 test: the
+    # rock came from outside the view and only the blast was seen)
+    sky = Vector(origin) if origin else Vector((ix, iy, iz)) + direction * 140.0 + Vector((0.0, 0.0, 110.0))
+    end = Vector((ix, iy, iz)) if lands else (Vector(to) if to else sky + (Vector((ix, iy, 40.0)) - sky) * 0.9)
     rocks = [m for m in assets.available("simple_nature") if m.startswith("Rock")] or []
-    hot = materials.principled(f"{name}_hot", "#5a2a14", emission="#ff6a1a", emission_strength=14.0)
+    hot = materials.principled(f"{name}_hot", "#7a2e10", emission="#ff5a14", emission_strength=2.2)
     if rocks:
         rock = assets.place("simple_nature", rng.choice(rocks), f"{name}_rock", sky, size, 0.0, col)
         rock.data = rock.data.copy()
@@ -391,8 +395,8 @@ def meteor(
     rock.visible_shadow = False
     glow = objects.mesh_object(
         f"{name}_glow",
-        objects.icosphere(size * 0.95, 2),
-        materials.principled(f"{name}_glowmat", "#ffb347", emission="#ffcf6a", emission_strength=30.0),
+        objects.icosphere(size * 1.3, 2),
+        materials.principled(f"{name}_glowmat", "#ff8a2a", emission="#ff7a1a", emission_strength=1.6),
         True,
         sky,
         col=col,
@@ -414,8 +418,8 @@ def meteor(
     # the trail: fire balls left along the path, each shrinking and turning to smoke
     steps = max(6, (hit - start) // 2)
     trail_mats = {
-        "f": materials.principled(f"{name}_trailf", "#ffb347", emission="#ff7a1a", emission_strength=12.0),
-        "s": materials.principled(f"{name}_trails", "#77716b", roughness=1.0),
+        "f": materials.principled(f"{name}_trailf", "#ff9a2a", emission="#ff6a10", emission_strength=1.8),
+        "s": materials.principled(f"{name}_smoke", "#3e3a37", roughness=1.0),  # "smoke": the toon look leaves it dark
     }
     for k in range(steps):
         t = k / steps
@@ -424,7 +428,7 @@ def meteor(
         for kind, life, grow in (("f", 0.5, 1.4), ("s", 2.5, 3.0)):
             ball = objects.mesh_object(
                 f"{name}_trail{kind}{k}",
-                objects.icosphere(size * 0.45, 2),
+                objects.icosphere(size * (0.6 if kind == "f" else 0.5), 2),
                 trail_mats[kind],
                 True,
                 tuple(p),
