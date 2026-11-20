@@ -70,3 +70,13 @@ def test_a_found_model_gets_its_real_size_from_the_ai(monkeypatch):
     ai = SimpleNamespace(generate_json=lambda **_: SimpleNamespace(data={"height_m": 17.0}))
     design = objects.design_object(ai, "airplane")
     assert design["library"] == "file" and design["height"] == 17.0 and design["credit"] == "c"
+
+
+def test_a_model_that_is_a_whole_scene_is_rejected(tmp_path):
+    image = tmp_path / "p.png"
+    image.write_bytes(b"png")
+    verdict = {"shows_it": True, "simple_style": True, "only_the_thing": False}
+    ai = SimpleNamespace(generate_json=lambda **_: SimpleNamespace(data=verdict))
+    assert finder.fits_style(ai, "pizza", image) is False
+    verdict["only_the_thing"] = True
+    assert finder.fits_style(ai, "pizza", image) is True
