@@ -20,3 +20,20 @@ def test_dazed_shakes_the_view_and_parks_have_many_trees():
     spec = build("street_watch", 3.0, seed=1, city="new_york", event="dazed")
     assert spec["camera"]["handheld"] > 0.05 and spec["camera"]["shakes"]
     assert build("park", 3.0, seed=1)["environment"]["trees"] >= 30
+
+
+def test_events_in_the_street_are_seen_from_the_road_edge_not_behind_lamp_posts():
+    for seed in range(6):
+        spec = build("street_watch", 3.0, seed=seed, city="new_york", event="meteor")
+        assert all(abs(s["location"][1]) <= 2.6 for s in spec["camera"]["shots"])
+
+
+def test_a_short_running_line_does_not_end_at_a_door():
+    from app.services.scenes.recipe_planner import SHOT_DEFAULTS, assemble
+
+    picks = [
+        {**SHOT_DEFAULTS, "recipe": "street_run", "threat": "panic"},
+        {**SHOT_DEFAULTS, "recipe": "street_watch", "event": "meteor"},
+    ]
+    specs = assemble(picks, [2.7, 2.7], seed=1, city="new_york", objects={}, companion=None, speaking=[False] * 2)
+    assert not any(a["type"] == "open_door" for a in specs[0]["actions"])

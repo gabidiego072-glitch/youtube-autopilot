@@ -33,6 +33,8 @@ from app.services.scripts.beats import beats_for
 from render_engines.core.spec import SpecError, validate_spec
 
 DOOR_EXITS = {"wake_up", "cafe_news", "street_run"}  # recipes that can end by opening a door
+DOOR_MIN_SECONDS = 3.5
+STREET_RECIPES = {"street_watch", "street_run", "waterfront", "park"}
 TIMES = ("dawn", "day", "golden", "dusk", "night")
 RECIPE_SCHEMA = {
     "type": "object",
@@ -395,7 +397,15 @@ def assemble(
         recipe = pick["recipe"]
         seeds.setdefault(recipe, seed + 97 * (len(seeds) + 1))  # same recipe = same place
         nxt = picks[i + 1] if i + 1 < len(picks) else None
-        door_out = bool(nxt) and recipe in DOOR_EXITS and nxt["recipe"] != recipe
+        # Nov 20: in a 2.7 s line "people start to run" the door ate the scene (a door frame, no one running):
+        # only a long line ends by walking through a door, and only into a different kind of place
+        door_out = (
+            bool(nxt)
+            and recipe in DOOR_EXITS
+            and nxt["recipe"] != recipe
+            and duration >= DOOR_MIN_SECONDS
+            and not (recipe == "street_run" and nxt["recipe"] in STREET_RECIPES)
+        )
         spec = build(
             recipe,
             duration,
