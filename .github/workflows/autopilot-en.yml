@@ -46,6 +46,7 @@ env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
   AI_PROVIDER: ${{ vars.AI_PROVIDER || 'gemini' }}
   GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  SKETCHFAB_API_TOKEN: ${{ secrets.SKETCHFAB_API_TOKEN }}  # free 3D models found by the system (Nov 20)
   # Last verified working with this API key on 2026-11-05 after the newer Flash quotas were exhausted.
   GEMINI_MODEL: gemini-3.5-flash-lite
   GEMINI_FALLBACK_MODELS: ${{ vars.GEMINI_FALLBACK_MODELS }}
@@ -81,6 +82,12 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           voice: en_US-norman-medium
+      - name: 3D models found for earlier videos (the library grows by itself)
+        uses: actions/cache@v4
+        with:
+          path: media/asset_cache
+          key: assets-${{ github.run_id }}
+          restore-keys: assets-
       - run: alembic upgrade head
       - name: Learn from published videos (best effort)
         if: env.YOUTUBE_REFRESH_TOKEN != ''
@@ -154,6 +161,7 @@ jobs:
             media/autopilot/${{ steps.plan.outputs.run_id }}/production.json
             media/autopilot/${{ steps.plan.outputs.run_id }}/voice/
             media/autopilot/${{ steps.plan.outputs.run_id }}/check/scene_check.json
+            media/autopilot/${{ steps.plan.outputs.run_id }}/assets/
           retention-days: 2
           if-no-files-found: ignore
 
@@ -240,6 +248,7 @@ jobs:
             media/autopilot/${{ env.RUN_ID }}/production.json
             media/autopilot/${{ env.RUN_ID }}/voice/
             media/autopilot/${{ env.RUN_ID }}/check/scene_check.json
+            media/autopilot/${{ env.RUN_ID }}/assets/
             media/autopilot/${{ env.RUN_ID }}/*.mp4
             media/autopilot/${{ env.RUN_ID }}/*.report.json
             media/autopilot/${{ env.RUN_ID }}/*_frames.png

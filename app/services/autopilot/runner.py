@@ -16,6 +16,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import shutil
 import traceback
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -633,6 +634,9 @@ def step_storyboard(db, run, services, ai) -> dict:
             if allowed and scene.get("scale") not in allowed:
                 scene["scale"] = allowed[0]
         script.scenes = scenes
+    script.scene_specs, credits = _bundle_models(script.scene_specs, work)
+    if credits:
+        project.features = {**(project.features or {}), "credits": credits}
     db.commit()
     production = {
         "id": f"run_{run.id.hex[:8]}",
@@ -658,6 +662,29 @@ def step_storyboard(db, run, services, ai) -> dict:
     (work / "production.json").write_text(json.dumps(production, ensure_ascii=False, indent=2), encoding="utf-8")
     envs = sorted({s["environment"]["type"] for s in script.scene_specs})
     return {"scenes": len(script.scene_specs), "environments": envs}
+
+
+def _bundle_models(specs: list[dict], work: Path) -> tuple[list[dict], list[str]]:
+    """The free models a video uses go into its work folder (the render machines only get that folder), and
+    their licences' credits are collected for the description."""
+    repo = Path(__file__).resolve().parents[3]
+    specs = [dict(spec) for spec in specs]
+    credits: list[str] = []
+    for spec in specs:
+        if spec.get("credit") and spec["credit"] not in credits:
+            credits.append(spec["credit"])
+        props = []
+        for prop in spec.get("props", []):
+            prop = dict(prop)
+            src = Path(prop.get("file", ""))
+            if prop.get("type") == "file_model" and src.exists() and repo not in src.resolve().parents:
+                dest = work / "assets" / hashlib.md5(str(src.parent).encode()).hexdigest()[:10]
+                if not dest.exists():
+                    shutil.copytree(src.parent, dest)
+                prop["file"] = str(dest / src.name)
+            props.append(prop)
+        spec["props"] = props
+    return specs, credits
 
 
 def _can_render(services) -> bool:
@@ -824,6 +851,9 @@ def step_metadata(db, run, services, ai) -> dict:
     voice = VOICES.get((project.features or {}).get("voice", ""))
     if voice and voice.credit and voice.credit not in draft.description:
         draft.description = f"{draft.description}\n\n{voice.credit}"  # the voice's licence asks for it
+    credits = (project.features or {}).get("credits") or []
+    if credits:  # free 3D models whose licence (CC BY) asks to credit the author
+        draft.description = f"{draft.description}\n\n3D: " + "; ".join(credits)
     db.add(VideoMetadata(project_id=project.id, version=len(project.metadata_versions) + 1, **draft.model_dump()))
     project.status = ProjectStatus.METADATA_READY
     db.commit()

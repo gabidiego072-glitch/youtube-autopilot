@@ -9,6 +9,7 @@ the render.
 from __future__ import annotations
 
 import logging
+import os
 import re
 
 from app.services.ai.base import AIProvider
@@ -244,11 +245,42 @@ def library_model(name: str) -> dict | None:
     return None
 
 
+HEIGHT_SCHEMA = {"type": "object", "properties": {"height_m": {"type": "number"}}, "required": ["height_m"]}
+
+
+def real_height(provider: AIProvider, name: str) -> float:
+    """How tall the thing is in real life (a found model has no size of its own): 1 m if the AI fails."""
+    try:
+        result = provider.generate_json(
+            system="You give the typical real-world height in metres of a thing, as it stands.",
+            prompt=f"Thing: {name}",
+            schema=HEIGHT_SCHEMA,
+        )
+        return round(min(80.0, max(0.05, float(result.data["height_m"]))), 2)
+    except Exception:  # noqa: BLE001
+        return 1.0
+
+
 def design_object(provider: AIProvider, name: str) -> dict | None:
     """A shape design for `name`, or None if the AI fails (the scene then simply goes without it)."""
     known = library_model(name)
     if known is not None:
         return known
+    try:  # Nov 20: a free 3D model found by the system itself (library packs, earlier videos, Sketchfab)
+        from app.services.assets.finder import find_model
+
+        found = find_model(name, ai=provider, blender=os.environ.get("BLENDER_BINARY") or None)
+    except Exception as exc:  # noqa: BLE001 - a missing model is built from shapes instead
+        log.warning("Model search failed for %r: %s", name, exc)
+        found = None
+    if found:
+        return {
+            "name": name,
+            "library": "file",
+            "file": found["file"],
+            "credit": found.get("credit", ""),
+            "height": real_height(provider, name),
+        }
     try:
         result = provider.generate_json(system=SYSTEM_PROMPT, prompt=f"Object: {name}", schema=OBJECT_SCHEMA)
     except Exception as exc:  # noqa: BLE001 - an object is a bonus; the video must not fail for it

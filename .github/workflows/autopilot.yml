@@ -33,7 +33,7 @@ on:
       command:
         description: "Qué hacer"
         type: choice
-        options: [run, approve, resume, status, sync-analytics, ai-check, publish-file, learning, channel-report, image-test, market-report]
+        options: [run, approve, resume, status, sync-analytics, ai-check, publish-file, learning, channel-report, image-test, market-report, asset-test]
         default: run
       run_id:
         description: "run id (approve / resume / status) o carpeta (publish-file)"
@@ -62,6 +62,7 @@ env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
   AI_PROVIDER: ${{ vars.AI_PROVIDER || 'gemini' }}
   GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  SKETCHFAB_API_TOKEN: ${{ secrets.SKETCHFAB_API_TOKEN }}  # free 3D models found by the system (Nov 20)
   # Last verified working with this API key on 2026-11-05 after the newer Flash quotas were exhausted.
   GEMINI_MODEL: gemini-3.5-flash-lite
   GEMINI_FALLBACK_MODELS: ${{ vars.GEMINI_FALLBACK_MODELS }}
@@ -92,6 +93,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
+      - name: 3D models found for earlier videos (the library grows by itself)
+        uses: actions/cache@v4
+        with:
+          path: media/asset_cache
+          key: assets-${{ github.run_id }}
+          restore-keys: assets-
       - run: alembic upgrade head
       - name: Learn from published videos (best effort)
         if: env.YOUTUBE_REFRESH_TOKEN != ''
@@ -144,6 +151,8 @@ jobs:
             python scripts/autopilot.py market-report
           elif [ "$CMD" = "image-test" ]; then
             python scripts/image_test.py --out image_test
+          elif [ "$CMD" = "asset-test" ]; then
+            python scripts/asset_test.py
           elif [ "$CMD" = "ai-check" ]; then
             python scripts/autopilot.py ai-check || true
           elif [ "$CMD" = "sync-analytics" ] || [ "$CMD" = "learning" ]; then
@@ -161,6 +170,14 @@ jobs:
           name: market-report
           path: market_report.json
           retention-days: 30
+          if-no-files-found: ignore
+      - name: Keep the 3D model test
+        if: github.event.inputs.command == 'asset-test'
+        uses: actions/upload-artifact@v4
+        with:
+          name: asset-test
+          path: asset_test/
+          retention-days: 14
           if-no-files-found: ignore
       - name: Keep the image test
         if: github.event.inputs.command == 'image-test'
@@ -187,6 +204,7 @@ jobs:
             media/autopilot/${{ steps.plan.outputs.run_id }}/production.json
             media/autopilot/${{ steps.plan.outputs.run_id }}/voice/
             media/autopilot/${{ steps.plan.outputs.run_id }}/check/scene_check.json
+            media/autopilot/${{ steps.plan.outputs.run_id }}/assets/
           retention-days: 2
           if-no-files-found: ignore
 
@@ -269,6 +287,7 @@ jobs:
             media/autopilot/${{ env.RUN_ID }}/production.json
             media/autopilot/${{ env.RUN_ID }}/voice/
             media/autopilot/${{ env.RUN_ID }}/check/scene_check.json
+            media/autopilot/${{ env.RUN_ID }}/assets/
             media/autopilot/${{ env.RUN_ID }}/*.mp4
             media/autopilot/${{ env.RUN_ID }}/*.report.json
             media/autopilot/${{ env.RUN_ID }}/*_frames.png
