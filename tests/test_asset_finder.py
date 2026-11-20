@@ -24,12 +24,20 @@ def test_sketchfab_results_keep_only_free_simple_models():
             {"uid": "a", "name": "Plane", "license": {"slug": "by"}, "faceCount": 900, "user": {"displayName": "Ann"}},
             {"uid": "b", "name": "Real", "license": {"slug": "by"}, "faceCount": 900_000, "user": {}},
             {"uid": "c", "name": "Paid", "license": {"slug": "st"}, "faceCount": 10, "user": {}},
+            {
+                "uid": "e",
+                "name": "NC",
+                "license": {"label": "CC Attribution-NonCommercial"},
+                "faceCount": 10,
+                "user": {},
+            },
+            {"uid": "f", "name": "Label", "license": {"label": "CC Attribution"}, "faceCount": 10, "user": {}},
             {"uid": "d", "name": "Free", "license": {"slug": "cc0"}, "faceCount": 10, "user": {"username": "z"}},
         ]
     }
     client = SimpleNamespace(get=lambda *a, **k: SimpleNamespace(json=lambda: results))
     found = finder.search_sketchfab("plane", client)
-    assert [f["uid"] for f in found] == ["a", "d"] and found[0]["license"] == "CC BY 4.0"
+    assert [f["uid"] for f in found] == ["a", "f", "d"] and found[0]["license"] == "CC BY 4.0"
 
 
 def test_a_cached_model_is_reused_and_a_recent_miss_is_not_searched_again(tmp_path, monkeypatch):
