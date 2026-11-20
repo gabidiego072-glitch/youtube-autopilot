@@ -301,6 +301,44 @@ def model(
     return Model(name, root, focus_height=max(0.3, float(height) * 0.6))
 
 
+def file_model(name: str, location, facing_deg: float = 0.0, *, file: str = "", height: float = 1.0, **_) -> Model:
+    """A free 3D model the system found (Nov 20): a .glb/.gltf/.obj file, standing at `location`, `height` tall."""
+    import math
+
+    import bpy
+    from mathutils import Vector
+
+    from render_engines.core.blender import objects
+
+    root = objects.empty(f"{name}_root", location=tuple(location))
+    root.rotation_euler = (0, 0, math.radians(facing_deg))
+    before = set(bpy.data.objects)
+    if file.endswith(".obj"):
+        bpy.ops.wm.obj_import(filepath=file, forward_axis="NEGATIVE_Z", up_axis="Y")
+    else:
+        bpy.ops.import_scene.gltf(filepath=file)
+    new = [o for o in bpy.data.objects if o not in before]
+    meshes = [o for o in new if o.type == "MESH"]
+    for o in new:
+        if o.type not in ("MESH", "EMPTY"):  # cameras and lights that came with the file
+            bpy.data.objects.remove(o, do_unlink=True)
+    if meshes:
+        bpy.context.view_layer.update()
+        pts = [o.matrix_world @ Vector(c) for o in meshes for c in o.bound_box]
+        lo = Vector((min(p.x for p in pts), min(p.y for p in pts), min(p.z for p in pts)))
+        hi = Vector((max(p.x for p in pts), max(p.y for p in pts), max(p.z for p in pts)))
+        base = Vector(((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, lo.z))
+        k = max(0.01, float(height)) / max(0.01, hi.z - lo.z)
+        holder = objects.empty(f"{name}_model", location=(0, 0, 0))
+        holder.parent = root
+        holder.scale = (k, k, k)
+        holder.location = tuple(-base * k)
+        for o in new:
+            if o.name in bpy.data.objects and o.parent is None:
+                o.parent = holder
+    return Model(name, root, focus_height=max(0.3, float(height) * 0.6))
+
+
 def _dinosaur(name, location, facing_deg=0.0, **params):
     from render_engines.cinematic.dinosaurs import dinosaur
 
@@ -315,5 +353,6 @@ PROP_BUILDERS = {
     "planet": _planet,
     "bedroll": bedroll,
     "model": model,
+    "file_model": file_model,
     "dinosaur": lambda name, location, facing_deg=0.0, **params: _dinosaur(name, location, facing_deg, **params),
 }

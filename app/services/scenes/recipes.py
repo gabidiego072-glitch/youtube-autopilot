@@ -954,6 +954,10 @@ def _add_object(spec: dict, obj: dict, side: float = 0.0) -> None:
         if obj["kind"] == "trex" and env_type != "interior":
             d = spec["duration_seconds"]
             prop.update(roars=[round(d * 0.35, 3)])
+    elif obj.get("library") == "file":  # a free model found by the system (Nov 20)
+        prop.update(type="file_model", file=obj["file"])
+        if obj.get("credit"):
+            spec["credit"] = obj["credit"]
     else:
         prop.update(type="model", parts=obj["parts"])
     spec["props"].append(prop)
