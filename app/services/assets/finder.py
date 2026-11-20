@@ -27,7 +27,9 @@ log = logging.getLogger(__name__)
 PACKS = Path(__file__).resolve().parents[3] / "render_engines" / "assets"
 SEARCH = "https://api.sketchfab.com/v3/search"
 DOWNLOAD = "https://api.sketchfab.com/v3/models/{uid}/download"
-LICENSES = {"cc0": "CC0", "by": "CC BY 4.0"}  # free to use in monetised videos (CC BY: credit the author)
+# free to use in monetised videos (CC BY: credit the author). The search gives only the licence's label
+# (Nov 20: matching a "slug" kept nothing). NonCommercial, ShareAlike and Sketchfab's own licences are left out.
+LICENSES = {"cc0": "CC0", "by": "CC BY 4.0", "cc0 public domain": "CC0", "cc attribution": "CC BY 4.0"}
 MAX_FACES = 30_000  # more is a detailed, realistic model; the owner wants simple ones
 MAX_BYTES = 25_000_000
 CANDIDATES = 3
@@ -90,7 +92,8 @@ def search_sketchfab(thing: str, client: httpx.Client) -> list[dict]:
     data = client.get(SEARCH, params=params, timeout=30).json()
     found = []
     for m in data.get("results", []):
-        lic = ((m.get("license") or {}).get("slug") or "").lower()
+        info = m.get("license") or {}
+        lic = (info.get("slug") or info.get("label") or "").strip().lower()
         if lic not in LICENSES or int(m.get("faceCount") or 0) > MAX_FACES:
             continue
         found.append(
