@@ -37,15 +37,18 @@ NONE_DAYS = 7
 
 STYLE_SYSTEM = """You check 3D models for a YouTube Shorts channel whose look is simple, geometric, low-poly,
 cartoon-like, "made with code" (flat colours, few polygons), never realistic or photographic. You see one render
-of a model. Answer whether it clearly shows the asked thing AND fits that look."""
+of a model. Answer whether it clearly shows the asked thing AND fits that look, and whether the model is ONLY that
+thing, alone: a whole scene, a diorama, a street, or the thing on a table with other objects is not it
+(Nov 20: "ambulance" picked a street corner with an ambulance in it, "pizza" a student's table)."""
 STYLE_SCHEMA = {
     "type": "object",
     "properties": {
         "shows_it": {"type": "boolean"},
         "simple_style": {"type": "boolean"},
+        "only_the_thing": {"type": "boolean"},
         "note": {"type": "string"},
     },
-    "required": ["shows_it", "simple_style"],
+    "required": ["shows_it", "simple_style", "only_the_thing"],
 }
 
 
@@ -183,7 +186,7 @@ def fits_style(ai, thing: str, image: Path) -> bool:
         log.warning("style check failed for %s: %s", thing, exc)
         return False
     data = result.data if isinstance(result.data, dict) else {}
-    return bool(data.get("shows_it")) and bool(data.get("simple_style"))
+    return all(bool(data.get(k)) for k in ("shows_it", "simple_style", "only_the_thing"))
 
 
 def find_model(thing: str, ai=None, blender: str | None = None, token: str | None = None) -> dict | None:
