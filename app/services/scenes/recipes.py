@@ -188,6 +188,10 @@ EVENTS = (
     "float",
     "fly",
     "freeze",
+    "meteor",  # Nov 20: a burning rock falls and hits the street in front of you
+    "meteor_far",  # it hits far away, behind the buildings: flash, fireball and smoke over the roofs
+    "meteor_sky",  # it only crosses the sky, still coming
+    "dazed",  # you are dizzy after a blast: the view sways and shakes
 )
 # Not offered yet, their test frames did not show them (Nov 15): steam (white balls over the person), shatter
 # (no broken glass visible), snow (flakes not visible). The code stays for when they are fixed.
@@ -231,6 +235,32 @@ def _add_event(spec: dict, event: str, d: float, rng: random.Random) -> None:
             {"type": "explosion", "location": [bx, by, 0.0], "start": start + 0.2, "size": 1.0 if not outdoor else 2.5}
         )
         spec["camera"].setdefault("shakes", []).append({"start": start + 0.25, "end": start + 0.9, "strength": 0.05})
+    elif event in ("meteor", "meteor_far", "meteor_sky"):
+        far = {"meteor": 30.0, "meteor_far": 95.0, "meteor_sky": 160.0}[event]
+        mx, my = _ahead(spec, far)
+        hit = round(max(start + 0.8, d * 0.55), 3)
+        actions.append(
+            {
+                "type": "meteor",
+                "location": [mx, my, 0.0],
+                "start": start,
+                "hit": hit if event != "meteor_sky" else round(d * 0.95, 3),
+                "size": {"meteor": 3.0, "meteor_far": 6.0, "meteor_sky": 7.0}[event],
+                "lands": event != "meteor_sky",
+            }
+        )
+        if event != "meteor_sky":
+            strength = 0.12 if event == "meteor" else 0.06
+            spec["camera"].setdefault("shakes", []).append(
+                {"start": hit + (0.05 if event == "meteor" else 0.35), "end": hit + 1.2, "strength": strength}
+            )
+        for shot in spec["camera"].get("shots", []):  # look up: the sky is where it happens
+            shot["target"][2] = shot["target"][2] + (14.0 if event == "meteor_sky" else 4.0)
+    elif event == "dazed":
+        spec["camera"]["handheld"] = 0.09
+        spec["camera"].setdefault("shakes", []).append({"start": 0.0, "end": d, "strength": 0.03})
+        for shot in spec["camera"].get("shots", []):
+            shot["location"][2] = 1.1  # you are getting up from the ground
     elif event == "flood":
         actions.append({"type": "flood", "start": start, "end": d, "height": 0.5})
     elif event == "crack" or (event in ("collapse", "shatter") and not outdoor):
@@ -759,7 +789,8 @@ def park(d, *, rng, seed, time_of_day, threat, **_):
     env = {
         "type": "meadow",
         "time_of_day": time_of_day if time_of_day in ("dawn", "day", "dusk") else "day",
-        "trees": 14,
+        "trees": 34,  # Nov 20: the owner wants parks full of trees (Quaternius' simple trees)
+        "bushes": 24,
         "flowers": 40,
     }
     if threat == "zombies":

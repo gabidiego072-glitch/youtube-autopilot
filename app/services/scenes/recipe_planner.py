@@ -97,7 +97,9 @@ gesture (what the person in front of you does) for the moments of the story.
 event = what HAPPENS in front of you, in any recipe, whenever the line says it: fire (flames, burning pots),
 smoke, explosion (a blast), flood (water rising), crack (the floor or ground splits), collapse (a building or
 bridge comes down; a PERSON collapsing is gesture fall, not this), float (people and the object lift off:
-no gravity), fly (people and things are thrown through the air), freeze (frost covers the ground). If the line
+no gravity), fly (people and things are thrown through the air), freeze (frost covers the ground), meteor (a
+burning rock falls and hits the street in front of you), meteor_far (it hits far away behind the buildings),
+meteor_sky (it crosses the sky, still coming), dazed (you are dizzy after a blast: the view sways). If the line
 says fire, there IS fire on screen; if it says things float, they float. none only when nothing physical
 happens.
 THE VIEWER MUST SEE WHAT THE NARRATION SAYS. A street where nothing related happens is a failure: every scene

@@ -9,6 +9,7 @@ import bmesh
 import bpy
 from mathutils import Vector
 
+from render_engines.cinematic import assets
 from render_engines.core.blender import lights, materials, objects
 from render_engines.core.blender.animation import add_noise, key
 from render_engines.core.blender.scene import set_sky
@@ -118,14 +119,40 @@ def scatter(env: dict, seed: int, flat_radius: float, amplitude: float, paths=()
     def ground(x, y):
         return flat_radius_height(x, y, seed, flat_radius, amplitude)
 
+    library_trees = [m for m in assets.available("simple_nature") if m.startswith("Tree")]
     placed = 0
     while placed < env.get("trees", 30):
         x, y = rng.uniform(-36, 36), rng.uniform(-20, 36)
         if keep_clear(x, y, paths):
             continue
-        builder = _pine if rng.random() < 0.6 else _round_tree
-        builder(f"tree_{placed}", (x, y, ground(x, y) - 0.1), rng.uniform(3.5, 7.0), rng, leaf_mats, col)
+        if library_trees:  # the owner's choice (Nov 20): Quaternius' simple, geometric trees
+            assets.place(
+                "simple_nature",
+                rng.choice(library_trees),
+                f"tree_{placed}",
+                (x, y, ground(x, y) - 0.05),
+                rng.uniform(4.0, 7.5),
+                rng.uniform(0, 6.28),
+                col,
+            )
+        else:
+            builder = _pine if rng.random() < 0.6 else _round_tree
+            builder(f"tree_{placed}", (x, y, ground(x, y) - 0.1), rng.uniform(3.5, 7.0), rng, leaf_mats, col)
         placed += 1
+    bushes = [m for m in assets.available("simple_nature") if m.startswith("Bush")]
+    for i in range(env.get("bushes", 0) if bushes else 0):
+        x, y = rng.uniform(-24, 24), rng.uniform(-8, 30)
+        if keep_clear(x, y, paths):
+            continue
+        assets.place(
+            "simple_nature",
+            rng.choice(bushes),
+            f"bush_{i}",
+            (x, y, ground(x, y)),
+            rng.uniform(0.6, 1.3),
+            rng.uniform(0, 6.28),
+            col,
+        )
     for i in range(env.get("rocks", 20)):
         x, y = rng.uniform(-20, 20), rng.uniform(-12, 20)
         if math.hypot(x, y) < 3 or any(_segment_distance(x, y, a, b) < 1.2 for a, b in paths):
