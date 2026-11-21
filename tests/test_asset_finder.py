@@ -80,3 +80,20 @@ def test_a_model_that_is_a_whole_scene_is_rejected(tmp_path):
     assert finder.fits_style(ai, "pizza", image) is False
     verdict["only_the_thing"] = True
     assert finder.fits_style(ai, "pizza", image) is True
+
+
+def test_a_cached_model_inside_the_repo_folder_is_still_copied(tmp_path, monkeypatch):
+    """Nov 21: media/asset_cache is inside the checkout; it was not copied and the render failed."""
+    import app.services.autopilot.runner as runner
+
+    repo = Path(runner.__file__).resolve().parents[3]
+    src = repo / "media" / "asset_cache" / "zz_test" / "model" / "model.glb"
+    src.parent.mkdir(parents=True, exist_ok=True)
+    src.write_bytes(b"glb")
+    try:
+        out, _ = _bundle_models([{"props": [{"type": "file_model", "file": str(src)}]}], tmp_path / "work")
+        assert (tmp_path / "work") in Path(out[0]["props"][0]["file"]).parents
+    finally:
+        import shutil
+
+        shutil.rmtree(src.parents[1])

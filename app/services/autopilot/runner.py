@@ -667,7 +667,7 @@ def step_storyboard(db, run, services, ai) -> dict:
 def _bundle_models(specs: list[dict], work: Path) -> tuple[list[dict], list[str]]:
     """The free models a video uses go into its work folder (the render machines only get that folder), and
     their licences' credits are collected for the description."""
-    repo = Path(__file__).resolve().parents[3]
+    packs = Path(__file__).resolve().parents[3] / "render_engines" / "assets"  # in every checkout
     specs = [dict(spec) for spec in specs]
     credits: list[str] = []
     for spec in specs:
@@ -677,7 +677,9 @@ def _bundle_models(specs: list[dict], work: Path) -> tuple[list[dict], list[str]
         for prop in spec.get("props", []):
             prop = dict(prop)
             src = Path(prop.get("file", ""))
-            if prop.get("type") == "file_model" and src.exists() and repo not in src.resolve().parents:
+            # Nov 21: the cache (media/asset_cache) is inside the repo folder but not in git: only the packs are
+            # on the render machines, everything else is copied with the work files
+            if prop.get("type") == "file_model" and src.exists() and packs not in src.resolve().parents:
                 dest = work / "assets" / hashlib.md5(str(src.parent).encode()).hexdigest()[:10]
                 if not dest.exists():
                     shutil.copytree(src.parent, dest)
