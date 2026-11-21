@@ -304,6 +304,7 @@ def model(
 def file_model(name: str, location, facing_deg: float = 0.0, *, file: str = "", height: float = 1.0, **_) -> Model:
     """A free 3D model the system found (Nov 20): a .glb/.gltf/.obj file, standing at `location`, `height` tall."""
     import math
+    from pathlib import Path
 
     import bpy
     from mathutils import Vector
@@ -312,6 +313,9 @@ def file_model(name: str, location, facing_deg: float = 0.0, *, file: str = "", 
 
     root = objects.empty(f"{name}_root", location=tuple(location))
     root.rotation_euler = (0, 0, math.radians(facing_deg))
+    if not file or not Path(file).exists():  # never lose the video for a missing model (Nov 21)
+        print(f"[file_model] missing model file {file!r}: scene goes without it")
+        return Model(name, root, focus_height=max(0.3, float(height) * 0.6))
     before = set(bpy.data.objects)
     if file.endswith(".obj"):
         bpy.ops.wm.obj_import(filepath=file, forward_axis="NEGATIVE_Z", up_axis="Y")
