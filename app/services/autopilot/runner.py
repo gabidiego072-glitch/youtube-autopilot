@@ -242,6 +242,8 @@ def step_topic(db, run, services, ai) -> dict:
         if services.settings.planned_topics_enabled
         else None
     )
+    if services.settings.hand_scripts_only and not (planned and planned.get("script")):
+        raise StepBlocked("No hand-written script queued for this channel (hand_scripts_only): no video today.")
     if planned:  # a topic chosen by hand goes first, once
         idea = Idea(
             channel_id=channel.id,

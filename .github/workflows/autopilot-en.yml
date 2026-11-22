@@ -46,6 +46,7 @@ env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
   AI_PROVIDER: ${{ vars.AI_PROVIDER || 'gemini' }}
   GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+  HAND_SCRIPTS_ONLY: "true"  # Nov 22, the owner: only videos with scripts written by hand
   SKETCHFAB_API_TOKEN: ${{ secrets.SKETCHFAB_API_TOKEN }}  # free 3D models found by the system (Nov 20)
   # Last verified working with this API key on 2026-11-05 after the newer Flash quotas were exhausted.
   GEMINI_MODEL: gemini-3.5-flash-lite

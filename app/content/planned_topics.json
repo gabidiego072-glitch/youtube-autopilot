@@ -1,5 +1,1056 @@
 [
   {
+    "premise": "¿Qué pasaría si el SOL desapareciera? ☀️💀",
+    "language": "es",
+    "style": "pov",
+    "category": "space_and_astronomy",
+    "city_style": "new_york",
+    "hook": "El Sol acaba de desaparecer. Y aún no lo sabes.",
+    "angle": "Minute by minute in one city: the light keeps coming for 8 min 20 s, then darkness, frost, and Earth leaves.",
+    "science_basis": "Light travel time 8 min 20 s; without the Sun, the sky goes black, temperatures fall fast, Earth moves on in a straight line.",
+    "notes": "Script written by hand by Claude (Nov 22), after the market study: used as it is.",
+    "script": {
+      "title_question": "¿Qué pasaría si el SOL desapareciera? ☀️💀",
+      "hook": "El Sol acaba de desaparecer. Y aún no lo sabes.",
+      "scenes": [
+        {
+          "beat": "hook",
+          "narration": "El Sol acaba de desaparecer. Y aún no lo sabes.",
+          "visual": "street_watch none",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú y la gente de tu ciudad",
+          "consequence": "El Sol acaba de desaparecer. Y aún no lo sabes.",
+          "claims": [
+            {
+              "text": "La luz del Sol tarda unos 8 minutos y 20 segundos en llegar a la Tierra.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "LUZ: 8 min 20 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "none",
+            "time_of_day": "day",
+            "people": "busy"
+          }
+        },
+        {
+          "beat": "setup",
+          "narration": "Su luz tarda ocho minutos en llegar. Todo sigue normal.",
+          "visual": "park none",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú y la gente de tu ciudad",
+          "consequence": "Su luz tarda ocho minutos en llegar. Todo sigue normal.",
+          "claims": [
+            {
+              "text": "Durante esos minutos seguiríamos viendo la luz que ya iba de camino.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "LUZ: 5 min",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "park",
+            "event": "none",
+            "time_of_day": "day"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Minuto ocho. El cielo se apaga de golpe.",
+          "visual": "street_watch none",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú y la gente de tu ciudad",
+          "consequence": "Minuto ocho. El cielo se apaga de golpe.",
+          "claims": [
+            {
+              "text": "Sin Sol, el cielo diurno se vuelve negro: su azul es luz solar dispersada por el aire.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "LUZ: 0",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "none",
+            "time_of_day": "night",
+            "people": "busy"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "La gente deja de mirar arriba y empieza a correr.",
+          "visual": "street_run none",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú y la gente de tu ciudad",
+          "consequence": "La gente deja de mirar arriba y empieza a correr.",
+          "claims": [
+            {
+              "text": "Sin luz natural, una ciudad depende solo de su red eléctrica.",
+              "type": "speculation",
+              "source": ""
+            }
+          ],
+          "hud": "+5 min",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_run",
+            "event": "none",
+            "threat": "panic",
+            "time_of_day": "night"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Seis horas después, el suelo empieza a helarse.",
+          "visual": "street_watch freeze",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú y la gente de tu ciudad",
+          "consequence": "Seis horas después, el suelo empieza a helarse.",
+          "claims": [
+            {
+              "text": "Sin la energía del Sol, la superficie se enfría rápido al irradiar calor al espacio.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "−5 °C · +6 h",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "freeze",
+            "time_of_day": "night"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Día dos: el parque está cubierto de escarcha.",
+          "visual": "park freeze",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú y la gente de tu ciudad",
+          "consequence": "Día dos: el parque está cubierto de escarcha.",
+          "claims": [
+            {
+              "text": "Se estima que en una semana la temperatura media bajaría de −17 °C.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "−20 °C · DÍA 2",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "park",
+            "event": "freeze",
+            "time_of_day": "night"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Las plantas mueren. Sin Sol no hay comida.",
+          "visual": "park freeze",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú y la gente de tu ciudad",
+          "consequence": "Las plantas mueren. Sin Sol no hay comida.",
+          "claims": [
+            {
+              "text": "Las plantas necesitan luz para la fotosíntesis; sin ella dejan de producir alimento.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "−30 °C · DÍA 5",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "park",
+            "event": "freeze",
+            "time_of_day": "dusk"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Te encierras en casa con lo poco que queda.",
+          "visual": "dark_room none",
+          "duration_seconds": 2.8,
+          "scale": "interior",
+          "human_subject": "tú y la gente de tu ciudad",
+          "consequence": "Te encierras en casa con lo poco que queda.",
+          "claims": [
+            {
+              "text": "Los océanos guardan calor durante años, pero la superficie se congela mucho antes.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "−45 °C · DÍA 10",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "dark_room",
+            "event": "none",
+            "time_of_day": "night"
+          }
+        },
+        {
+          "beat": "climax",
+          "narration": "Y la Tierra sale disparada al espacio, en línea recta.",
+          "visual": "space none",
+          "duration_seconds": 2.8,
+          "scale": "aerial",
+          "human_subject": "tú y la gente de tu ciudad",
+          "consequence": "Y la Tierra sale disparada al espacio, en línea recta.",
+          "claims": [
+            {
+              "text": "Sin la gravedad del Sol, la Tierra seguiría recta por inercia a unos 30 km/s.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "DÍA 30",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "space",
+            "event": "none"
+          }
+        },
+        {
+          "beat": "ending",
+          "narration": "Tienes ocho minutos de luz. ¿Qué haces?",
+          "visual": "street_watch none",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú y la gente de tu ciudad",
+          "consequence": "Tienes ocho minutos de luz. ¿Qué haces?",
+          "claims": [
+            {
+              "text": "Ocho minutos es lo que tardaría en llegar la noticia… a la velocidad de la luz.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "8 min 20 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "none",
+            "time_of_day": "dusk",
+            "people": "busy"
+          }
+        }
+      ],
+      "ending_type": "question",
+      "ending_line": "Tienes ocho minutos de luz. ¿Qué haces?",
+      "visual_bible": {
+        "look": "toon 3D, New York, day to night",
+        "recurring_subjects": [],
+        "palette": "",
+        "camera_language": "first person",
+        "companion": {},
+        "choice": {
+          "question": "¿Qué haces?",
+          "a": "Llamar a mi familia",
+          "b": "Salir a mirar el cielo"
+        }
+      }
+    }
+  },
+  {
+    "premise": "What if the SUN disappeared? ☀️💀",
+    "language": "en",
+    "style": "pov",
+    "category": "space_and_astronomy",
+    "city_style": "new_york",
+    "hook": "The Sun just vanished. And you don't know yet.",
+    "angle": "Minute by minute in one city: the light keeps coming for 8 min 20 s, then darkness, frost, and Earth leaves.",
+    "science_basis": "Light travel time 8 min 20 s; without the Sun, the sky goes black, temperatures fall fast, Earth moves on in a straight line.",
+    "notes": "Script written by hand by Claude (Nov 22), after the market study: used as it is.",
+    "script": {
+      "title_question": "What if the SUN disappeared? ☀️💀",
+      "hook": "The Sun just vanished. And you don't know yet.",
+      "scenes": [
+        {
+          "beat": "hook",
+          "narration": "The Sun just vanished. And you don't know yet.",
+          "visual": "street_watch none",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you and the people around you",
+          "consequence": "The Sun just vanished. And you don't know yet.",
+          "claims": [
+            {
+              "text": "Sunlight takes about 8 minutes and 20 seconds to reach Earth.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "LIGHT: 8 min 20 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "none",
+            "time_of_day": "day",
+            "people": "busy"
+          }
+        },
+        {
+          "beat": "setup",
+          "narration": "Its light takes eight minutes to reach you. Everything looks normal.",
+          "visual": "park none",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you and the people around you",
+          "consequence": "Its light takes eight minutes to reach you. Everything looks normal.",
+          "claims": [
+            {
+              "text": "For those minutes we would still see the light already on its way.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "LIGHT: 5 min",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "park",
+            "event": "none",
+            "time_of_day": "day"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Minute eight. The sky goes black, all at once.",
+          "visual": "street_watch none",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you and the people around you",
+          "consequence": "Minute eight. The sky goes black, all at once.",
+          "claims": [
+            {
+              "text": "The day sky is blue because air scatters sunlight; without it, the sky is black.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "LIGHT: 0",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "none",
+            "time_of_day": "night",
+            "people": "busy"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "People stop staring up and start to run.",
+          "visual": "street_run none",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you and the people around you",
+          "consequence": "People stop staring up and start to run.",
+          "claims": [
+            {
+              "text": "Without daylight, a city runs only on its power grid.",
+              "type": "speculation",
+              "source": ""
+            }
+          ],
+          "hud": "+5 min",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_run",
+            "event": "none",
+            "threat": "panic",
+            "time_of_day": "night"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Six hours later, the ground starts to freeze.",
+          "visual": "street_watch freeze",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you and the people around you",
+          "consequence": "Six hours later, the ground starts to freeze.",
+          "claims": [
+            {
+              "text": "Without the Sun's energy, the surface cools fast, radiating heat into space.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "23°F · +6 h",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "freeze",
+            "time_of_day": "night"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Day two: the park is covered in frost.",
+          "visual": "park freeze",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you and the people around you",
+          "consequence": "Day two: the park is covered in frost.",
+          "claims": [
+            {
+              "text": "Within a week the average surface temperature would drop below 0°F.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "-4°F · DAY 2",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "park",
+            "event": "freeze",
+            "time_of_day": "night"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Plants start dying. No Sun, no food.",
+          "visual": "park freeze",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you and the people around you",
+          "consequence": "Plants start dying. No Sun, no food.",
+          "claims": [
+            {
+              "text": "Plants need light for photosynthesis; without it they stop making food.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "-22°F · DAY 5",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "park",
+            "event": "freeze",
+            "time_of_day": "dusk"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "You lock yourself inside with what's left.",
+          "visual": "dark_room none",
+          "duration_seconds": 2.8,
+          "scale": "interior",
+          "human_subject": "you and the people around you",
+          "consequence": "You lock yourself inside with what's left.",
+          "claims": [
+            {
+              "text": "The oceans keep heat for years, but the surface freezes much sooner.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "-49°F · DAY 10",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "dark_room",
+            "event": "none",
+            "time_of_day": "night"
+          }
+        },
+        {
+          "beat": "climax",
+          "narration": "And Earth flies off into space, in a straight line.",
+          "visual": "space none",
+          "duration_seconds": 2.8,
+          "scale": "aerial",
+          "human_subject": "you and the people around you",
+          "consequence": "And Earth flies off into space, in a straight line.",
+          "claims": [
+            {
+              "text": "Without the Sun's gravity, Earth would keep going straight at about 30 km/s.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "DAY 30",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "space",
+            "event": "none"
+          }
+        },
+        {
+          "beat": "ending",
+          "narration": "You have eight minutes of light. What do you do?",
+          "visual": "street_watch none",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you and the people around you",
+          "consequence": "You have eight minutes of light. What do you do?",
+          "claims": [
+            {
+              "text": "Eight minutes is how long the news itself would take, at the speed of light.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "8 min 20 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "none",
+            "time_of_day": "dusk",
+            "people": "busy"
+          }
+        }
+      ],
+      "ending_type": "question",
+      "ending_line": "You have eight minutes of light. What do you do?",
+      "visual_bible": {
+        "look": "toon 3D, New York, day to night",
+        "recurring_subjects": [],
+        "palette": "",
+        "camera_language": "first person",
+        "companion": {},
+        "choice": {
+          "question": "What do you do?",
+          "a": "Call my family",
+          "b": "Go outside and look up"
+        }
+      }
+    }
+  },
+  {
+    "premise": "What if gravity switched off for 10 seconds? 😱",
+    "language": "en",
+    "style": "pov",
+    "category": "physics_laws",
+    "city_style": "new_york",
+    "hook": "Gravity switches off. You have ten seconds.",
+    "angle": "One street, second by second: everything floats higher and higher, then gravity comes back.",
+    "science_basis": "Without gravity nothing pulls objects down; when it returns, everything falls from its height.",
+    "notes": "Script written by hand by Claude (Nov 22), after the market study: used as it is.",
+    "script": {
+      "title_question": "What if gravity switched off for 10 seconds? 😱",
+      "hook": "Gravity switches off. You have ten seconds.",
+      "scenes": [
+        {
+          "beat": "hook",
+          "narration": "Gravity switches off. You have ten seconds.",
+          "visual": "street_watch float",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you and the people around you",
+          "consequence": "Gravity switches off. You have ten seconds.",
+          "claims": [
+            {
+              "text": "Without gravity, nothing pulls objects back to the ground.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVITY 0% · 0 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "float",
+            "time_of_day": "golden"
+          }
+        },
+        {
+          "beat": "setup",
+          "narration": "Second one: people start to float.",
+          "visual": "street_watch float",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you and the people around you",
+          "consequence": "Second one: people start to float.",
+          "claims": [
+            {
+              "text": "The small push of a step is enough to leave the ground if nothing pulls you back.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVITY 0% · 1 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "float",
+            "time_of_day": "golden",
+            "people": "busy"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Your coffee drifts off the table.",
+          "visual": "reaction float",
+          "duration_seconds": 2.8,
+          "scale": "interior",
+          "human_subject": "you and the people around you",
+          "consequence": "Your coffee drifts off the table.",
+          "claims": [
+            {
+              "text": "Without gravity, liquids form floating blobs, as seen on the space station.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVITY 0% · 3 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "reaction",
+            "event": "float",
+            "room": "cafe",
+            "time_of_day": "golden",
+            "object": "glass"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Second five: people shoot up into the sky.",
+          "visual": "street_watch fly",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you and the people around you",
+          "consequence": "Second five: people shoot up into the sky.",
+          "claims": [
+            {
+              "text": "Anyone running or jumping keeps their speed and keeps going up (inertia).",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVITY 0% · 5 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "fly",
+            "time_of_day": "golden"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Everyone screams. Nobody has anything to hold on to.",
+          "visual": "street_watch float",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you and the people around you",
+          "consequence": "Everyone screams. Nobody has anything to hold on to.",
+          "claims": [
+            {
+              "text": "Floating with nothing to push against, a person cannot change direction.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVITY 0% · 7 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "float",
+            "threat": "panic",
+            "time_of_day": "golden"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Everything is thirty feet up now.",
+          "visual": "street_watch float",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you and the people around you",
+          "consequence": "Everything is thirty feet up now.",
+          "claims": [
+            {
+              "text": "At a little over a meter per second, eight seconds lifts you about ten meters.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVITY 0% · 8 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "float",
+            "time_of_day": "golden"
+          }
+        },
+        {
+          "beat": "climax",
+          "narration": "Second ten. Gravity comes back.",
+          "visual": "street_watch collapse",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you and the people around you",
+          "consequence": "Second ten. Gravity comes back.",
+          "claims": [
+            {
+              "text": "When gravity returns, everything falls with the same acceleration: 9.8 m/s².",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVITY 100% · 10 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "collapse",
+            "time_of_day": "golden"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Everything falls at once. The street cracks open.",
+          "visual": "street_watch crack",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you and the people around you",
+          "consequence": "Everything falls at once. The street cracks open.",
+          "claims": [
+            {
+              "text": "From ten meters up, an object hits the ground at about 30 mph.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVITY 100% · 11 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "crack",
+            "time_of_day": "golden"
+          }
+        },
+        {
+          "beat": "ending",
+          "narration": "Then it switches off again. Forever. Grab something, or let go?",
+          "visual": "street_watch float",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you and the people around you",
+          "consequence": "Then it switches off again. Forever. Grab something, or let go?",
+          "claims": [
+            {
+              "text": "Without gravity for good, the air and the oceans would drift off into space.",
+              "type": "speculation",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVITY 0% · ∞",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "float",
+            "time_of_day": "dusk"
+          }
+        }
+      ],
+      "ending_type": "question",
+      "ending_line": "Then it switches off again. Forever. Grab something, or let go?",
+      "visual_bible": {
+        "look": "toon 3D, one New York street at golden hour",
+        "recurring_subjects": [],
+        "palette": "",
+        "camera_language": "first person",
+        "companion": {},
+        "choice": {
+          "question": "What do you do?",
+          "a": "Grab something",
+          "b": "Let go"
+        }
+      }
+    }
+  },
+  {
+    "premise": "¿Qué pasaría si la gravedad fuera el DOBLE? 😱",
+    "language": "es",
+    "style": "pov",
+    "category": "physics_laws",
+    "city_style": "new_york",
+    "hook": "La gravedad se duplica. Ahora pesas el DOBLE.",
+    "angle": "Part 2 of the gravity video: one city, minute by minute, with twice the weight.",
+    "science_basis": "At 2 g everything weighs twice as much: bodies, blood, trees, buildings.",
+    "notes": "Script written by hand by Claude (Nov 22), after the market study: used as it is.",
+    "script": {
+      "title_question": "¿Qué pasaría si la gravedad fuera el DOBLE? 😱",
+      "hook": "La gravedad se duplica. Ahora pesas el DOBLE.",
+      "scenes": [
+        {
+          "beat": "hook",
+          "narration": "La gravedad se duplica. Ahora pesas el DOBLE.",
+          "visual": "street_watch none",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú y la gente de tu ciudad",
+          "consequence": "La gravedad se duplica. Ahora pesas el DOBLE.",
+          "claims": [
+            {
+              "text": "Con el doble de gravedad, todo pesa el doble: tu cuerpo, tu sangre, los edificios.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVEDAD 200%",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "none",
+            "time_of_day": "day",
+            "people": "busy"
+          }
+        },
+        {
+          "beat": "setup",
+          "narration": "Intentas correr y cada paso pesa como un saco.",
+          "visual": "street_run none",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú y la gente de tu ciudad",
+          "consequence": "Intentas correr y cada paso pesa como un saco.",
+          "claims": [
+            {
+              "text": "Tus músculos tendrían que mover el doble de peso con la misma fuerza.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVEDAD 200% · 10 s",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_run",
+            "event": "none",
+            "threat": "panic",
+            "time_of_day": "day"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "En la cafetería, la gente se desploma.",
+          "visual": "reaction none",
+          "duration_seconds": 2.8,
+          "scale": "interior",
+          "human_subject": "tú y la gente de tu ciudad",
+          "consequence": "En la cafetería, la gente se desploma.",
+          "claims": [
+            {
+              "text": "A 2 g, a la sangre le cuesta llegar al cerebro y algunas personas se desmayan.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVEDAD 200% · 1 min",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "reaction",
+            "event": "none",
+            "room": "cafe",
+            "gesture": "fall",
+            "time_of_day": "day"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Hasta el suelo del parque se hunde y se agrieta.",
+          "visual": "park crack",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú y la gente de tu ciudad",
+          "consequence": "Hasta el suelo del parque se hunde y se agrieta.",
+          "claims": [
+            {
+              "text": "Con el doble de peso, el terreno blando cede y se agrieta.",
+              "type": "speculation",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVEDAD 200% · 5 min",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "park",
+            "event": "crack",
+            "time_of_day": "day"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Minuto diez: los edificios viejos empiezan a caer.",
+          "visual": "street_watch collapse",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú y la gente de tu ciudad",
+          "consequence": "Minuto diez: los edificios viejos empiezan a caer.",
+          "claims": [
+            {
+              "text": "Los edificios se calculan con margen, pero no todos aguantarían el doble de carga.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVEDAD 200% · 10 min",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "collapse",
+            "time_of_day": "day"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "El suelo de la calle se agrieta bajo tus pies.",
+          "visual": "street_watch crack",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú y la gente de tu ciudad",
+          "consequence": "El suelo de la calle se agrieta bajo tus pies.",
+          "claims": [
+            {
+              "text": "Más peso sobre el asfalto y las tuberías lo agrieta y lo hunde.",
+              "type": "speculation",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVEDAD 200% · 20 min",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "crack",
+            "time_of_day": "day"
+          }
+        },
+        {
+          "beat": "climax",
+          "narration": "El río se queda quieto, plano como un espejo.",
+          "visual": "waterfront none",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú y la gente de tu ciudad",
+          "consequence": "El río se queda quieto, plano como un espejo.",
+          "claims": [
+            {
+              "text": "Con más gravedad, las olas serían más bajas y rápidas.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVEDAD 200% · 1 h",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "waterfront",
+            "event": "none",
+            "time_of_day": "dusk"
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Te mareas solo por estar de pie.",
+          "visual": "street_watch dazed",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú y la gente de tu ciudad",
+          "consequence": "Te mareas solo por estar de pie.",
+          "claims": [
+            {
+              "text": "El corazón tendría que bombear mucho más fuerte para subir la sangre a la cabeza.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVEDAD 200% · 2 h",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "dazed",
+            "time_of_day": "dusk"
+          }
+        },
+        {
+          "beat": "ending",
+          "narration": "¿Te quedarías tumbado… o intentarías llegar a casa?",
+          "visual": "street_watch none",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú y la gente de tu ciudad",
+          "consequence": "¿Te quedarías tumbado… o intentarías llegar a casa?",
+          "claims": [
+            {
+              "text": "Tumbado, el corazón no tiene que subir la sangre tan alto.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVEDAD 200% · ∞",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "none",
+            "time_of_day": "dusk",
+            "people": "busy"
+          }
+        }
+      ],
+      "ending_type": "question",
+      "ending_line": "¿Te quedarías tumbado… o intentarías llegar a casa?",
+      "visual_bible": {
+        "look": "toon 3D, New York, day to dusk",
+        "recurring_subjects": [],
+        "palette": "",
+        "camera_language": "first person",
+        "companion": {},
+        "choice": {
+          "question": "¿Qué haces?",
+          "a": "Quedarme tumbado",
+          "b": "Intentar llegar a casa"
+        }
+      }
+    }
+  },
+  {
     "premise": "¿Qué pasaría si un meteorito cayera a dos calles de ti?",
     "language": "es",
     "style": "pov",
