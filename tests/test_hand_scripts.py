@@ -69,3 +69,25 @@ def test_a_judge_with_no_verdict_does_not_count_as_a_failed_scene():
     ai = SimpleNamespace(generate_json=lambda **_: SimpleNamespace(data={"seen": "?"}))
     with pytest.raises(ValueError):
         check_scene(ai, "line", [])
+
+
+def test_hand_scripts_only_makes_no_ai_video(monkeypatch):
+    """Nov 22: with no hand script queued, the run stops before the AI writes anything."""
+    from app.services.autopilot.runner import StepBlocked, step_topic
+
+    channel = SimpleNamespace(id=1, language="en", niche="", style_guide="")
+
+    class DB:
+        def get(self, *_):
+            return channel
+
+        def scalars(self, *_):
+            return []
+
+        def execute(self, *_):
+            return SimpleNamespace(all=lambda: [])
+
+    monkeypatch.setattr(runner, "next_planned_topic", lambda *a, **k: None)
+    services = SimpleNamespace(settings=SimpleNamespace(hand_scripts_only=True, planned_topics_enabled=True))
+    with pytest.raises(StepBlocked):
+        step_topic(DB(), SimpleNamespace(channel_id=1), services, None)

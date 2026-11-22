@@ -174,6 +174,9 @@ def main() -> int:
             if args.channel and channel is None:
                 print(f"Channel {args.channel!r} has no videos yet: make one.")
                 return 1
+            if settings.hand_scripts_only and channel is not None and not hand_script_waiting(db, channel):
+                print("No hand-written script queued for this channel: no video today (hand_scripts_only).")
+                return 0
             return daily_done(db, channel.id if channel else None)
         if args.command == "learning":
             channel = find_channel(db, args.channel)
@@ -224,6 +227,15 @@ def find_channel(db, name_or_id: str | None):
         return db.get(Channel, uuid.UUID(name_or_id))
     except ValueError:
         return db.scalar(select(Channel).where(Channel.name == name_or_id))
+
+
+def hand_script_waiting(db, channel) -> bool:
+    """A queued hand-written script of this channel's language not made yet."""
+    from app.services.autopilot.runner import _planned_used
+    from app.services.styles import next_planned_topic
+
+    topic = next_planned_topic(_planned_used(db, channel.id), channel.language)
+    return bool(topic and topic.get("script"))
 
 
 def daily_done(db, channel_id=None) -> int:
