@@ -1,5 +1,819 @@
 [
   {
+    "premise": "¿Qué pasaría si cada paso fuera el DOBLE de largo? 😱",
+    "language": "es",
+    "style": "pov",
+    "category": "scale_and_size",
+    "hook": "Cada paso que das mide el doble que el anterior.",
+    "angle": "ONE character, ONE action (a step), each leap starts where the last landed; the world shrinks below; callback ending.",
+    "science_basis": "Exponential growth: 1.5 m doubled 15 times is about 49 km.",
+    "notes": "Hand-made world (render_engines/custom/steps.py) and script by Claude (Nov 23), after the owner's references.",
+    "script": {
+      "title_question": "¿Qué pasaría si cada paso fuera el DOBLE de largo? 😱",
+      "hook": "Cada paso que das mide el doble que el anterior.",
+      "scenes": [
+        {
+          "beat": "hook",
+          "narration": "Cada paso que das mide el doble que el anterior.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Cada paso que das mide el doble que el anterior.",
+          "claims": [
+            {
+              "text": "Doblar 0 veces multiplica el primer paso por 1.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "PASO 1 · 1,5 m",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 0.0,
+              "stride": 1.5,
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "setup",
+          "narration": "Solo querías ir a la panadería de enfrente.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Solo querías ir a la panadería de enfrente.",
+          "claims": [
+            {
+              "text": "Doblar 2 veces multiplica el primer paso por 4.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "PASO 3 · 6 m",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 4.5,
+              "stride": 6.0,
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Paso cinco: saltas por encima de los coches.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Paso cinco: saltas por encima de los coches.",
+          "claims": [
+            {
+              "text": "Doblar 4 veces multiplica el primer paso por 16.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "PASO 5 · 24 m",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 22.5,
+              "stride": 24.0,
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Paso siete: pasas por encima de la noria.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Paso siete: pasas por encima de la noria.",
+          "claims": [
+            {
+              "text": "Doblar 6 veces multiplica el primer paso por 64.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "PASO 7 · 96 m",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 94.5,
+              "stride": 96.0,
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Paso ocho: aterrizas en mitad de la ciudad.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Paso ocho: aterrizas en mitad de la ciudad.",
+          "claims": [
+            {
+              "text": "Doblar 7 veces multiplica el primer paso por 128.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "PASO 8 · 192 m",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 190.5,
+              "stride": 192.0,
+              "outlines": false
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Paso nueve: cruzas el centro de un salto.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Paso nueve: cruzas el centro de un salto.",
+          "claims": [
+            {
+              "text": "Doblar 8 veces multiplica el primer paso por 256.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "PASO 9 · 384 m",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 382.5,
+              "stride": 384.0,
+              "outlines": false
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Paso diez: los rascacielos quedan por debajo.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Paso diez: los rascacielos quedan por debajo.",
+          "claims": [
+            {
+              "text": "Doblar 9 veces multiplica el primer paso por 512.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "PASO 10 · 768 m",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 766.5,
+              "stride": 768.0,
+              "outlines": false
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Paso once: dejas atrás la ciudad entera.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Paso once: dejas atrás la ciudad entera.",
+          "claims": [
+            {
+              "text": "Doblar 10 veces multiplica el primer paso por 1.024.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "PASO 11 · 1,5 km",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 1534.5,
+              "stride": 1536.0,
+              "outlines": false
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Paso doce: ahora solo hay mar debajo.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Paso doce: ahora solo hay mar debajo.",
+          "claims": [
+            {
+              "text": "Doblar 11 veces multiplica el primer paso por 2.048.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "PASO 12 · 3,1 km",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 3070.5,
+              "stride": 3072.0,
+              "outlines": false
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Paso trece: atraviesas las nubes.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Paso trece: atraviesas las nubes.",
+          "claims": [
+            {
+              "text": "Doblar 12 veces multiplica el primer paso por 4.096.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "PASO 13 · 6,1 km",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 6142.5,
+              "stride": 6144.0,
+              "outlines": false
+            }
+          }
+        },
+        {
+          "beat": "climax",
+          "narration": "Paso catorce: cruzas la bahía entera de un salto.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Paso catorce: cruzas la bahía entera de un salto.",
+          "claims": [
+            {
+              "text": "Doblar 13 veces multiplica el primer paso por 8.192.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "PASO 14 · 12,3 km",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 12286.5,
+              "stride": 12288.0,
+              "outlines": false
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Al aterrizar, el suelo se parte bajo tus pies.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Al aterrizar, el suelo se parte bajo tus pies.",
+          "claims": [
+            {
+              "text": "Doblar 14 veces multiplica el primer paso por 16.384.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "PASO 15 · 24,6 km",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 24574.5,
+              "stride": 24576.0,
+              "outlines": false
+            }
+          }
+        },
+        {
+          "beat": "ending",
+          "narration": "Y la panadería estaba a cinco metros. ¿Cómo vuelves?",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Y la panadería estaba a cinco metros. ¿Cómo vuelves?",
+          "claims": [
+            {
+              "text": "Doblar 15 veces multiplica el primer paso por 32.768.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "PASO 16 · 49,2 km",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 49150.5,
+              "stride": 49152.0,
+              "outlines": false
+            }
+          }
+        }
+      ],
+      "ending_type": "question",
+      "ending_line": "Y la panadería estaba a cinco metros. ¿Cómo vuelves?",
+      "visual_bible": {
+        "look": "toon 3D, one person leaping over one world",
+        "recurring_subjects": [],
+        "palette": "",
+        "camera_language": "third person, following",
+        "companion": {},
+        "choice": {
+          "question": "¿Cómo vuelves?",
+          "a": "Andando",
+          "b": "En taxi"
+        }
+      }
+    }
+  },
+  {
+    "premise": "What if every step was twice as long? 😱",
+    "language": "en",
+    "style": "pov",
+    "category": "scale_and_size",
+    "hook": "Every step you take is twice as long as the last.",
+    "angle": "ONE character, ONE action (a step), each leap starts where the last landed; the world shrinks below; callback ending.",
+    "science_basis": "Exponential growth: 1.5 m doubled 15 times is about 49 km.",
+    "notes": "Hand-made world (render_engines/custom/steps.py) and script by Claude (Nov 23), after the owner's references.",
+    "script": {
+      "title_question": "What if every step was twice as long? 😱",
+      "hook": "Every step you take is twice as long as the last.",
+      "scenes": [
+        {
+          "beat": "hook",
+          "narration": "Every step you take is twice as long as the last.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Every step you take is twice as long as the last.",
+          "claims": [
+            {
+              "text": "Doubling 0 times multiplies the first step by 1.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "STEP 1 · 1.5 m",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 0.0,
+              "stride": 1.5,
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "setup",
+          "narration": "You only wanted to get to the bakery across the street.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "You only wanted to get to the bakery across the street.",
+          "claims": [
+            {
+              "text": "Doubling 2 times multiplies the first step by 4.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "STEP 3 · 6 m",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 4.5,
+              "stride": 6.0,
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Step five: you jump right over the cars.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Step five: you jump right over the cars.",
+          "claims": [
+            {
+              "text": "Doubling 4 times multiplies the first step by 16.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "STEP 5 · 24 m",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 22.5,
+              "stride": 24.0,
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Step seven: you sail over the Ferris wheel.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Step seven: you sail over the Ferris wheel.",
+          "claims": [
+            {
+              "text": "Doubling 6 times multiplies the first step by 64.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "STEP 7 · 96 m",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 94.5,
+              "stride": 96.0,
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Step eight: you land in the middle of the city.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Step eight: you land in the middle of the city.",
+          "claims": [
+            {
+              "text": "Doubling 7 times multiplies the first step by 128.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "STEP 8 · 192 m",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 190.5,
+              "stride": 192.0,
+              "outlines": false
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Step nine: downtown, in a single stride.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Step nine: downtown, in a single stride.",
+          "claims": [
+            {
+              "text": "Doubling 8 times multiplies the first step by 256.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "STEP 9 · 384 m",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 382.5,
+              "stride": 384.0,
+              "outlines": false
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Step ten: the skyscrapers are below you now.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Step ten: the skyscrapers are below you now.",
+          "claims": [
+            {
+              "text": "Doubling 9 times multiplies the first step by 512.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "STEP 10 · 768 m",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 766.5,
+              "stride": 768.0,
+              "outlines": false
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Step eleven: you leave the whole city behind.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Step eleven: you leave the whole city behind.",
+          "claims": [
+            {
+              "text": "Doubling 10 times multiplies the first step by 1,024.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "STEP 11 · 1.5 km",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 1534.5,
+              "stride": 1536.0,
+              "outlines": false
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Step twelve: there's only sea underneath.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Step twelve: there's only sea underneath.",
+          "claims": [
+            {
+              "text": "Doubling 11 times multiplies the first step by 2,048.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "STEP 12 · 3.1 km",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 3070.5,
+              "stride": 3072.0,
+              "outlines": false
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Step thirteen: you go through the clouds.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Step thirteen: you go through the clouds.",
+          "claims": [
+            {
+              "text": "Doubling 12 times multiplies the first step by 4,096.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "STEP 13 · 6.1 km",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 6142.5,
+              "stride": 6144.0,
+              "outlines": false
+            }
+          }
+        },
+        {
+          "beat": "climax",
+          "narration": "Step fourteen: you cross the whole bay in one stride.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Step fourteen: you cross the whole bay in one stride.",
+          "claims": [
+            {
+              "text": "Doubling 13 times multiplies the first step by 8,192.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "STEP 14 · 12.3 km",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 12286.5,
+              "stride": 12288.0,
+              "outlines": false
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "You land, and the ground cracks under your feet.",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "You land, and the ground cracks under your feet.",
+          "claims": [
+            {
+              "text": "Doubling 14 times multiplies the first step by 16,384.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "STEP 15 · 24.6 km",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 24574.5,
+              "stride": 24576.0,
+              "outlines": false
+            }
+          }
+        },
+        {
+          "beat": "ending",
+          "narration": "And the bakery was fifteen feet away. How do you get back?",
+          "visual": "custom steps",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "And the bakery was fifteen feet away. How do you get back?",
+          "claims": [
+            {
+              "text": "Doubling 15 times multiplies the first step by 32,768.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "STEP 16 · 49.2 km",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "steps",
+            "params": {
+              "start": 49150.5,
+              "stride": 49152.0,
+              "outlines": false
+            }
+          }
+        }
+      ],
+      "ending_type": "question",
+      "ending_line": "And the bakery was fifteen feet away. How do you get back?",
+      "visual_bible": {
+        "look": "toon 3D, one person leaping over one world",
+        "recurring_subjects": [],
+        "palette": "",
+        "camera_language": "third person, following",
+        "companion": {},
+        "choice": {
+          "question": "How do you get back?",
+          "a": "Walk back",
+          "b": "Call a taxi"
+        }
+      }
+    }
+  },
+  {
     "premise": "¿Qué pasaría si el SOL desapareciera? ☀️💀",
     "language": "es",
     "style": "pov",
@@ -554,7 +1368,7 @@
     "category": "physics_laws",
     "city_style": "new_york",
     "hook": "Gravity switches off. You have ten seconds.",
-    "angle": "One street, second by second: everything floats higher and higher, then gravity comes back.",
+    "angle": "ONE continuous journey (Nov 23): the street, into the café and back out, the same street.",
     "science_basis": "Without gravity nothing pulls objects down; when it returns, everything falls from its height.",
     "notes": "Script written by hand by Claude (Nov 22), after the market study: used as it is.",
     "script": {
@@ -612,12 +1426,12 @@
         },
         {
           "beat": "escalation",
-          "narration": "Your coffee drifts off the table.",
+          "narration": "You dive into a café. Your coffee drifts off the table.",
           "visual": "reaction float",
           "duration_seconds": 2.8,
           "scale": "interior",
           "human_subject": "you and the people around you",
-          "consequence": "Your coffee drifts off the table.",
+          "consequence": "You dive into a café. Your coffee drifts off the table.",
           "claims": [
             {
               "text": "Without gravity, liquids form floating blobs, as seen on the space station.",
@@ -638,12 +1452,12 @@
         },
         {
           "beat": "escalation",
-          "narration": "Second five: people shoot up into the sky.",
+          "narration": "You run back out: people shoot up into the sky.",
           "visual": "street_watch fly",
           "duration_seconds": 2.8,
           "scale": "street",
           "human_subject": "you and the people around you",
-          "consequence": "Second five: people shoot up into the sky.",
+          "consequence": "You run back out: people shoot up into the sky.",
           "claims": [
             {
               "text": "Anyone running or jumping keeps their speed and keeps going up (inertia).",
@@ -804,22 +1618,22 @@
     "style": "pov",
     "category": "physics_laws",
     "city_style": "new_york",
-    "hook": "La gravedad se duplica. Ahora pesas el DOBLE.",
-    "angle": "Part 2 of the gravity video: one city, minute by minute, with twice the weight.",
+    "hook": "Estás en una cafetería. La gravedad se duplica.",
+    "angle": "ONE continuous journey (Nov 23, the owner): the café, out the door, the same street, the river at dusk.",
     "science_basis": "At 2 g everything weighs twice as much: bodies, blood, trees, buildings.",
     "notes": "Script written by hand by Claude (Nov 22), after the market study: used as it is.",
     "script": {
       "title_question": "¿Qué pasaría si la gravedad fuera el DOBLE? 😱",
-      "hook": "La gravedad se duplica. Ahora pesas el DOBLE.",
+      "hook": "Estás en una cafetería. La gravedad se duplica.",
       "scenes": [
         {
           "beat": "hook",
-          "narration": "La gravedad se duplica. Ahora pesas el DOBLE.",
-          "visual": "street_watch none",
+          "narration": "Estás en una cafetería. La gravedad se duplica.",
+          "visual": "reaction none",
           "duration_seconds": 2.8,
-          "scale": "street",
-          "human_subject": "tú y la gente de tu ciudad",
-          "consequence": "La gravedad se duplica. Ahora pesas el DOBLE.",
+          "scale": "interior",
+          "human_subject": "tú y la gente de tu alrededor",
+          "consequence": "Estás en una cafetería. La gravedad se duplica.",
           "claims": [
             {
               "text": "Con el doble de gravedad, todo pesa el doble: tu cuerpo, tu sangre, los edificios.",
@@ -827,49 +1641,24 @@
               "source": ""
             }
           ],
-          "hud": "GRAVEDAD 200%",
+          "hud": "GRAVEDAD 200% · 0 s",
           "speaker": "narrator",
           "phone": "",
           "shot": {
-            "recipe": "street_watch",
+            "recipe": "reaction",
             "event": "none",
-            "time_of_day": "day",
-            "people": "busy"
-          }
-        },
-        {
-          "beat": "setup",
-          "narration": "Intentas correr y cada paso pesa como un saco.",
-          "visual": "street_run none",
-          "duration_seconds": 2.8,
-          "scale": "street",
-          "human_subject": "tú y la gente de tu ciudad",
-          "consequence": "Intentas correr y cada paso pesa como un saco.",
-          "claims": [
-            {
-              "text": "Tus músculos tendrían que mover el doble de peso con la misma fuerza.",
-              "type": "established",
-              "source": ""
-            }
-          ],
-          "hud": "GRAVEDAD 200% · 10 s",
-          "speaker": "narrator",
-          "phone": "",
-          "shot": {
-            "recipe": "street_run",
-            "event": "none",
-            "threat": "panic",
+            "room": "cafe",
             "time_of_day": "day"
           }
         },
         {
-          "beat": "escalation",
-          "narration": "En la cafetería, la gente se desploma.",
+          "beat": "setup",
+          "narration": "La persona de enfrente se desploma sobre la mesa.",
           "visual": "reaction none",
           "duration_seconds": 2.8,
           "scale": "interior",
-          "human_subject": "tú y la gente de tu ciudad",
-          "consequence": "En la cafetería, la gente se desploma.",
+          "human_subject": "tú y la gente de tu alrededor",
+          "consequence": "La persona de enfrente se desploma sobre la mesa.",
           "claims": [
             {
               "text": "A 2 g, a la sangre le cuesta llegar al cerebro y algunas personas se desmayan.",
@@ -877,7 +1666,7 @@
               "source": ""
             }
           ],
-          "hud": "GRAVEDAD 200% · 1 min",
+          "hud": "GRAVEDAD 200% · 20 s",
           "speaker": "narrator",
           "phone": "",
           "shot": {
@@ -890,36 +1679,37 @@
         },
         {
           "beat": "escalation",
-          "narration": "Hasta el suelo del parque se hunde y se agrieta.",
-          "visual": "park crack",
+          "narration": "Sales a la calle. Cada paso pesa como un saco.",
+          "visual": "street_run none",
           "duration_seconds": 2.8,
           "scale": "street",
-          "human_subject": "tú y la gente de tu ciudad",
-          "consequence": "Hasta el suelo del parque se hunde y se agrieta.",
+          "human_subject": "tú y la gente de tu alrededor",
+          "consequence": "Sales a la calle. Cada paso pesa como un saco.",
           "claims": [
             {
-              "text": "Con el doble de peso, el terreno blando cede y se agrieta.",
-              "type": "speculation",
+              "text": "Tus músculos tendrían que mover el doble de peso con la misma fuerza.",
+              "type": "established",
               "source": ""
             }
           ],
-          "hud": "GRAVEDAD 200% · 5 min",
+          "hud": "GRAVEDAD 200% · 2 min",
           "speaker": "narrator",
           "phone": "",
           "shot": {
-            "recipe": "park",
-            "event": "crack",
+            "recipe": "street_run",
+            "event": "none",
+            "threat": "panic",
             "time_of_day": "day"
           }
         },
         {
           "beat": "escalation",
-          "narration": "Minuto diez: los edificios viejos empiezan a caer.",
+          "narration": "Minuto diez: el edificio de enfrente empieza a caer.",
           "visual": "street_watch collapse",
           "duration_seconds": 2.8,
           "scale": "street",
-          "human_subject": "tú y la gente de tu ciudad",
-          "consequence": "Minuto diez: los edificios viejos empiezan a caer.",
+          "human_subject": "tú y la gente de tu alrededor",
+          "consequence": "Minuto diez: el edificio de enfrente empieza a caer.",
           "claims": [
             {
               "text": "Los edificios se calculan con margen, pero no todos aguantarían el doble de carga.",
@@ -938,12 +1728,12 @@
         },
         {
           "beat": "escalation",
-          "narration": "El suelo de la calle se agrieta bajo tus pies.",
+          "narration": "El polvo te alcanza. El suelo se agrieta bajo tus pies.",
           "visual": "street_watch crack",
           "duration_seconds": 2.8,
           "scale": "street",
-          "human_subject": "tú y la gente de tu ciudad",
-          "consequence": "El suelo de la calle se agrieta bajo tus pies.",
+          "human_subject": "tú y la gente de tu alrededor",
+          "consequence": "El polvo te alcanza. El suelo se agrieta bajo tus pies.",
           "claims": [
             {
               "text": "Más peso sobre el asfalto y las tuberías lo agrieta y lo hunde.",
@@ -951,7 +1741,7 @@
               "source": ""
             }
           ],
-          "hud": "GRAVEDAD 200% · 20 min",
+          "hud": "GRAVEDAD 200% · 11 min",
           "speaker": "narrator",
           "phone": "",
           "shot": {
@@ -961,21 +1751,45 @@
           }
         },
         {
+          "beat": "escalation",
+          "narration": "Te mareas. Te sientas en el bordillo para no caer.",
+          "visual": "street_watch dazed",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú y la gente de tu alrededor",
+          "consequence": "Te mareas. Te sientas en el bordillo para no caer.",
+          "claims": [
+            {
+              "text": "De pie, el corazón tiene que bombear mucho más fuerte para subir la sangre a la cabeza.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "GRAVEDAD 200% · 30 min",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "street_watch",
+            "event": "dazed",
+            "time_of_day": "golden"
+          }
+        },
+        {
           "beat": "climax",
-          "narration": "El río se queda quieto, plano como un espejo.",
+          "narration": "Al atardecer llegas al río. El agua está plana como un espejo.",
           "visual": "waterfront none",
           "duration_seconds": 2.8,
           "scale": "street",
-          "human_subject": "tú y la gente de tu ciudad",
-          "consequence": "El río se queda quieto, plano como un espejo.",
+          "human_subject": "tú y la gente de tu alrededor",
+          "consequence": "Al atardecer llegas al río. El agua está plana como un espejo.",
           "claims": [
             {
-              "text": "Con más gravedad, las olas serían más bajas y rápidas.",
+              "text": "Con más gravedad, las olas serían más bajas.",
               "type": "estimate",
               "source": ""
             }
           ],
-          "hud": "GRAVEDAD 200% · 1 h",
+          "hud": "GRAVEDAD 200% · 3 h",
           "speaker": "narrator",
           "phone": "",
           "shot": {
@@ -985,37 +1799,13 @@
           }
         },
         {
-          "beat": "escalation",
-          "narration": "Te mareas solo por estar de pie.",
-          "visual": "street_watch dazed",
-          "duration_seconds": 2.8,
-          "scale": "street",
-          "human_subject": "tú y la gente de tu ciudad",
-          "consequence": "Te mareas solo por estar de pie.",
-          "claims": [
-            {
-              "text": "El corazón tendría que bombear mucho más fuerte para subir la sangre a la cabeza.",
-              "type": "established",
-              "source": ""
-            }
-          ],
-          "hud": "GRAVEDAD 200% · 2 h",
-          "speaker": "narrator",
-          "phone": "",
-          "shot": {
-            "recipe": "street_watch",
-            "event": "dazed",
-            "time_of_day": "dusk"
-          }
-        },
-        {
           "beat": "ending",
-          "narration": "¿Te quedarías tumbado… o intentarías llegar a casa?",
-          "visual": "street_watch none",
+          "narration": "¿Te quedarías aquí tumbado… o seguirías hasta casa?",
+          "visual": "waterfront none",
           "duration_seconds": 2.8,
           "scale": "street",
-          "human_subject": "tú y la gente de tu ciudad",
-          "consequence": "¿Te quedarías tumbado… o intentarías llegar a casa?",
+          "human_subject": "tú y la gente de tu alrededor",
+          "consequence": "¿Te quedarías aquí tumbado… o seguirías hasta casa?",
           "claims": [
             {
               "text": "Tumbado, el corazón no tiene que subir la sangre tan alto.",
@@ -1027,15 +1817,14 @@
           "speaker": "narrator",
           "phone": "",
           "shot": {
-            "recipe": "street_watch",
+            "recipe": "waterfront",
             "event": "none",
-            "time_of_day": "dusk",
-            "people": "busy"
+            "time_of_day": "dusk"
           }
         }
       ],
       "ending_type": "question",
-      "ending_line": "¿Te quedarías tumbado… o intentarías llegar a casa?",
+      "ending_line": "¿Te quedarías aquí tumbado… o seguirías hasta casa?",
       "visual_bible": {
         "look": "toon 3D, New York, day to dusk",
         "recurring_subjects": [],

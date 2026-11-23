@@ -431,6 +431,8 @@ def assemble(
             event=pick["event"],
         )
         takes[recipe] = takes.get(recipe, 0) + 1
+        if recipe == "custom":  # the hand-written scene module and its parameters, from the script's shot
+            spec["custom"] = {"module": pick.get("module", ""), "params": dict(pick.get("params") or {})}
         spec["pick"] = dict(pick)
         if not spec.get("look"):  # the illustrated look of the reference videos, unless the story asks for x-ray
             spec["look"] = "toon"  # what the director chose, to plan this scene again if it fails the check
