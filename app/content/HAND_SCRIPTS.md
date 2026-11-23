@@ -24,3 +24,16 @@ lines; time jumps; dry humour; a twist at the end. Say only what the shot shows.
   Say the move ("Sales a la calle", "Vuelves al parque", "Llegas al río") whenever the place changes.
 - Few places, revisited: the same recipe is the same place (same seed) - start somewhere, go out, come back.
 - No jumps to unrelated places or to space unless the line says how you got there.
+
+## The owner's reference "la firma" (Nov 23, 69 s, blocky 3D, 9.9/10 for the owner)
+What makes it work, to copy in every script:
+1. A protagonist with a goal and a problem in the first 3 s ("everyone shows their fail to their mother...
+   except me: I sign for her").
+2. ONE recurring object / gag in EVERY scene (the blue 3-loop signature + its sound "¡HUS!"), escalating:
+   the exam -> the blackboard -> a bald head -> the whole class pays for it -> the facade -> the football field.
+   Ours: the counter is not enough; give each video one thing that comes back in every line (your coffee cup
+   in the gravity video, the meteor's light, your phone's 8:20 timer...) and one signature sound for it.
+3. Cause -> effect: every scene is the consequence of the previous one, in one small world (school, home).
+4. Close-ups that fill the screen with the object (the exam with the big red "2") between the wide shots.
+5. A callback twist at the end that uses the recurring gag (the tutor... "cien firmas. Todas mías").
+6. Story length: ~70 s works when every second moves the story.
