@@ -585,7 +585,12 @@ def _effect(kind: str, action: dict, start: int, end: int, ctx, urban, env: dict
         if urban is None or not urban.buildings:
             raise ValueError("collapse needs the city or coast environment.")
         x = float(action.get("x", location[0]))
-        pool = [b for b, _side, hero in urban.buildings if not hero] or [b for b, _s, _h in urban.buildings]
+        # Nov 23: a building that was merged away leaves None in the list; it failed a whole render
+        alive = [(b, hero) for b, _side, hero in urban.buildings if b is not None]
+        pool = [b for b, hero in alive if not hero] or [b for b, _h in alive]
+        if not pool:
+            print("[collapse] no building to bring down: scene goes without it")
+            return
 
         def centre(b):  # buildings keep their origin at 0: use the geometry's world centre
             corners = [b.matrix_world @ Vector(c) for c in b.bound_box]

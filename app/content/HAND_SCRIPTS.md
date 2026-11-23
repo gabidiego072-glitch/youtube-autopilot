@@ -18,3 +18,9 @@ Shot vocabulary (only what the 3D engine shows well):
 
 Formula (owner's references): one place, one subject, one continuous journey; a hero counter in `hud`; short
 lines; time jumps; dry humour; a twist at the end. Say only what the shot shows.
+
+## Continuity (Nov 23, the owner: "scene by scene, each one following from the last")
+- ONE journey in time order: each line happens right after the previous one, where the previous one left you.
+  Say the move ("Sales a la calle", "Vuelves al parque", "Llegas al río") whenever the place changes.
+- Few places, revisited: the same recipe is the same place (same seed) - start somewhere, go out, come back.
+- No jumps to unrelated places or to space unless the line says how you got there.
