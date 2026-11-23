@@ -28,6 +28,17 @@ def build(spec: dict, ctx: RenderContext, scene, frames_dir: str) -> None:
     from render_engines.core.blender.scene import add_glow, configure_render
 
     configure_render(scene, ctx, frames_dir, motion_blur=spec.get("motion_blur", True))
+    if spec.get("custom"):  # a scene written by hand for this video (render_engines/custom)
+        from render_engines import custom
+
+        custom.run_custom(spec, ctx, scene)
+        if spec.get("look"):
+            from render_engines.cinematic import looks
+
+            looks.apply(spec["look"], scene)
+            if (spec["custom"].get("params") or {}).get("outlines") is False:
+                scene.render.use_freestyle = False  # outlines over a whole city seen from the sky: noise
+        return
     from render_engines.cinematic import texts
 
     texts.LANG = spec.get("language", "es")  # billboards, TV and menu texts

@@ -1248,7 +1248,15 @@ def room_view(d, *, rng, seed, room, people, threat, time_of_day, **_):
     return spec
 
 
+def custom(d, *, rng, seed, **_):
+    """A scene written by hand for one video (render_engines/custom): the pipeline only keeps its timing here."""
+    spec = _base(d, seed, {"type": "meadow", "trees": 0, "rocks": 0, "flowers": 0})
+    spec["camera"] = {"pov": False, "shots": [_shot(0, (0, -6, 2), (0, 0, 1)), _shot(d, (0, -6, 2), (0, 0, 1))]}
+    return spec
+
+
 BUILDERS = {
+    "custom": custom,
     "wake_up": wake_up,
     "cafe_news": cafe_news,
     "street_run": street_run,
