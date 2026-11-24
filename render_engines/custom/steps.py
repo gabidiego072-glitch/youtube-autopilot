@@ -114,6 +114,7 @@ def _world(scene) -> None:
         if rng.random() < 0.6
     ]
     _boxes("far_town", town, _mat("st_town", "#e3b58c"))
+    _far_detail(rng)
     # clouds over the bay
     cloud = _mat("st_cloud", "#ffffff")
     for _i in range(90):
@@ -150,6 +151,81 @@ def _crack(at: Vector, size: float, frame: int) -> None:
         full = tuple(c.scale)
         key(c, "scale", frame - 1, (0.001, full[1], full[2]))
         key(c, "scale", frame + 6, full)
+
+
+def _far_detail(rng) -> None:
+    """Seen from kilometres up the bay and the far coast must read as a map, never as a flat colour: islands and
+    ships on the water; fields, roads, rivers, towns and mountains on the land (all boxes, so it stays fast)."""
+    # the bay: islands with a beach ring, and ships with a white wake
+    sand, grass = _mat("st_sand", "#ead8a8"), _mat("st_grass", "#6bbf59")
+    isl_s, isl_g = [], []
+    for _ in range(40):
+        x, y, r = rng.uniform(2500, FAR_COAST - 800), rng.uniform(-4000, 4000), rng.uniform(120, 520)
+        if abs(y) < r + 150:
+            y += math.copysign(r + 400, y or 1)  # never under the path: the hero lands in the water
+        isl_s.append(((x, y, -0.28), (r * 2.3, r * 1.7, 0.2)))
+        isl_g.append(((x, y, -0.2), (r * 1.9, r * 1.3, 0.2 + rng.uniform(4, 30))))
+    _boxes("islands_sand", isl_s, sand)
+    _boxes("islands_grass", isl_g, grass)
+    hulls, wakes = [], []
+    for _ in range(220):
+        x, y = rng.uniform(1700, FAR_COAST - 300), rng.gauss(0, 1800)
+        size = rng.choice((40, 70, 120))
+        hulls.append(((x, y, 0), (size, size * 0.25, size * 0.2)))
+        wakes.append(((x - size * 2.2, y, -0.18), (size * 3.2, size * 0.5, 0.05)))
+    _boxes("ships", hulls, _mat("st_ship", "#f5f5f5"))
+    _boxes("wakes", wakes, _mat("st_wake", "#d8ecf7"))
+    _boxes(
+        "waves",
+        [
+            (
+                (rng.uniform(1600, FAR_COAST), rng.uniform(-9000, 9000), -0.27 + 0.02 * rng.random()),  # never coplanar
+                (rng.uniform(120, 420), rng.uniform(30, 90), 0.03),
+            )
+            for _ in range(1100)
+        ],
+        _mat("st_wave", "#4a95d4"),
+    )
+    # the far land: a patchwork of fields in four colours
+    tones = ["#8cc63f", "#5aa83a", "#d9c25a", "#b88a4a"]
+    fields = [[] for _ in tones]
+    for gx in range(int(FAR_COAST) + 200, 110000, 900):
+        for gy in range(-16000, 16000, 900):
+            if rng.random() < 0.85:
+                w, h = rng.uniform(500, 860), rng.uniform(500, 860)
+                fields[rng.randrange(4)].append(((gx + 450, gy + 450, -0.2), (w, h, 0.05)))
+    for i, t in enumerate(tones):
+        _boxes(f"fields{i}", fields[i], _mat(f"st_field{i}", t))
+    # a motorway beside the path, cross roads, and a river winding across
+    road = _mat("st_road", "#5d6066")
+    roads = [((60000, 900, -0.1), (92000, 90, 0.08))]
+    roads += [((x, 0, -0.1), (60, 32000, 0.08)) for x in range(18000, 110000, 7500)]
+    _boxes("far_roads", roads, road)
+    river = []
+    for k in range(260):
+        x = FAR_COAST + 400 + k * 360
+        y = -2600 + 2200 * math.sin(k / 11)
+        river.append(((x, y, -0.12 + 0.006 * (k % 3)), (420, 260, 0.05)))
+    _boxes("river", river, _mat("st_river", "#2f7fc4"))
+    # towns along the way, so every landing is near something
+    houses = []
+    for cx in range(26000, 110000, 11000):
+        cy = rng.uniform(-3000, 3000)
+        for _ in range(140):
+            x, y = cx + rng.gauss(0, 650), cy + rng.gauss(0, 650)
+            houses.append(((x, y, 0), (rng.uniform(25, 60), rng.uniform(25, 60), rng.uniform(8, 40))))
+    _boxes("far_towns", houses, _mat("st_roof", "#c0563b"))
+    # mountains to both sides, with snowy tops
+    rock, snow = _mat("st_rock", "#8a8f99"), _mat("st_snow", "#f4f7fb")
+    for k in range(18):
+        x = rng.uniform(30000, 110000)
+        y = rng.choice((-1, 1)) * rng.uniform(7000, 18000)
+        r, h = rng.uniform(2500, 5000), rng.uniform(1500, 3500)
+        bpy.ops.mesh.primitive_cone_add(vertices=7, radius1=r, depth=h, location=(x, y, h / 2))
+        bpy.context.object.data.materials.append(rock)
+        bpy.ops.mesh.primitive_cone_add(vertices=7, radius1=r * 0.3, depth=h * 0.3, location=(x, y, h * 0.85 + 2))
+        bpy.context.object.data.materials.append(snow)
+        bpy.context.object.name = f"peak{k}"
 
 
 def build(spec: dict, ctx, scene, params: dict) -> None:
@@ -190,7 +266,9 @@ def build(spec: dict, ctx, scene, params: dict) -> None:
     scene.collection.objects.link(cam)
     cam.parent = rig
     dist = 5.5 + min(3.0, stride * 0.01)  # always close: the person stays big, the world shrinks below
-    cam.location = (-dist * 0.55, -dist, dist * 0.42)
+    # high up the camera tilts down over the person, so the frame is the map below, not the sky
+    tilt = min(1.0, max(0.0, math.log10(max(stride, 1.0) / 400.0) / 1.2))  # 0 below 400 m, 1 from ~6 km
+    cam.location = (-dist * 0.55 * (1 - 0.6 * tilt), -dist * (1 - 0.45 * tilt), dist * (0.42 + 1.3 * tilt))
     cam.data.lens = 26
     cam.data.clip_end = 200000
     look = cam.constraints.new("TRACK_TO")
