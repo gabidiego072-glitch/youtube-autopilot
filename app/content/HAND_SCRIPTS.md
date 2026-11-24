@@ -37,3 +37,9 @@ What makes it work, to copy in every script:
 4. Close-ups that fill the screen with the object (the exam with the big red "2") between the wide shots.
 5. A callback twist at the end that uses the recurring gag (the tutor... "cien firmas. Todas mías").
 6. Story length: ~70 s works when every second moves the story.
+
+## Better parts for custom kits (Nov 24)
+
+The owner liked the steps video but asked for better cars, crashes, landings and buildings. New kits must build
+those with `render_engines/custom/parts.py` instead of plain boxes: `car()` + `drive()`, `building()` / `city()`
+(windows, parapet, roof units, door), `landing()` + `shake()`, `crash()`.
