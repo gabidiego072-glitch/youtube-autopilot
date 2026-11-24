@@ -1,5 +1,793 @@
 [
   {
+    "premise": "¿Qué pasaría si arreglaras el atasco con una RAMPA? 😱",
+    "language": "es",
+    "style": "pov",
+    "category": "society_and_technology",
+    "hook": "Esto pasa por arreglar un atasco con una RAMPA.",
+    "angle": "Unnecessary engineering: each fix makes the next, bigger problem, in ONE street and ONE city; flash-forward hook, loop ending.",
+    "science_basis": "Ramps turn speed into height; elastic nets return energy.",
+    "notes": "Hand-made world (render_engines/custom/ramp.py, parts.py) and script by Claude (Nov 24).",
+    "script": {
+      "title_question": "¿Qué pasaría si arreglaras el atasco con una RAMPA? 😱",
+      "hook": "Esto pasa por arreglar un atasco con una RAMPA.",
+      "ending_type": "question",
+      "ending_line": "¿Y ahora qué le añades?",
+      "visual_bible": {
+        "look": "toon 3D, one street that turns into a city of ramps",
+        "recurring_subjects": [],
+        "palette": "",
+        "camera_language": "street level, then aerial",
+        "companion": {},
+        "choice": {
+          "question": "¿Qué le añades?",
+          "a": "Un puente",
+          "b": "Más rampas"
+        }
+      },
+      "scenes": [
+        {
+          "beat": "hook",
+          "narration": "Esto pasa por arreglar un atasco con una RAMPA.",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Esto pasa por arreglar un atasco con una RAMPA.",
+          "claims": [
+            {
+              "text": "Un coche en una rampa sale despedido si va lo bastante rápido.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "hook",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "setup",
+          "narration": "Tu calle lleva una hora atascada. Nadie se mueve.",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Tu calle lleva una hora atascada. Nadie se mueve.",
+          "claims": [
+            {
+              "text": "En un atasco los coches apenas avanzan.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "jam",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Así que pones una rampa al final de la cola.",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Así que pones una rampa al final de la cola.",
+          "claims": [
+            {
+              "text": "Una rampa convierte la velocidad de un coche en altura.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "build",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Funciona: los coches saltan por encima de todo el atasco…",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Funciona: los coches saltan por encima de todo el atasco…",
+          "claims": [
+            {
+              "text": "Lo que sale volando por una rampa sigue una parábola.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "jump",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "…y aterrizan en la calle de al lado. Choque.",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "…y aterrizan en la calle de al lado. Choque.",
+          "claims": [
+            {
+              "text": "Un coche que cae desde varios metros choca con mucha energía.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "cross_crash",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Solución: una red gigante delante del cruce.",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Solución: una red gigante delante del cruce.",
+          "claims": [
+            {
+              "text": "Una red elástica frena lo que choca contra ella.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "net",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Los coches chocan con la red y rebotan…",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Los coches chocan con la red y rebotan…",
+          "claims": [
+            {
+              "text": "Una red elástica devuelve parte de la energía del choque.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "bounce",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "…justo encima de tu casa.",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "…justo encima de tu casa.",
+          "claims": [
+            {
+              "text": "Lo que rebota sale en sentido contrario.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "house",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Así que pones otra rampa en tu tejado.",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Así que pones otra rampa en tu tejado.",
+          "claims": [
+            {
+              "text": "Una rampa más alta lanza los coches más lejos.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "roof_ramp",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Ahora salen disparados por encima de toda la ciudad.",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Ahora salen disparados por encima de toda la ciudad.",
+          "claims": [
+            {
+              "text": "Cuanto más rápido sale un coche de una rampa, más lejos llega.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "city",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "En una semana hay rampas en todos los tejados.",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "En una semana hay rampas en todos los tejados.",
+          "claims": [
+            {
+              "text": "Las rampas en los tejados lanzan coches entre edificios.",
+              "type": "speculation",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "everywhere",
+              "outlines": false
+            }
+          }
+        },
+        {
+          "beat": "climax",
+          "narration": "El atasco ha desaparecido de tu calle… ahora está en el cielo.",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "El atasco ha desaparecido de tu calle… ahora está en el cielo.",
+          "claims": [
+            {
+              "text": "Lo que vuela por encima de la calle deja la calle libre.",
+              "type": "speculation",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "sky_jam",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "ending",
+          "narration": "¿Y ahora qué le añades?",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "¿Y ahora qué le añades?",
+          "claims": [
+            {
+              "text": "Cada solución de esta historia crea un problema nuevo.",
+              "type": "speculation",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "ending",
+              "outlines": false
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "premise": "What if you fixed traffic with a RAMP? 😱",
+    "language": "en",
+    "style": "pov",
+    "category": "society_and_technology",
+    "hook": "This is what happens when you fix traffic with a RAMP.",
+    "angle": "Unnecessary engineering: each fix makes the next, bigger problem, in ONE street and ONE city; flash-forward hook, loop ending.",
+    "science_basis": "Ramps turn speed into height; elastic nets return energy.",
+    "notes": "Hand-made world (render_engines/custom/ramp.py, parts.py) and script by Claude (Nov 24).",
+    "script": {
+      "title_question": "What if you fixed traffic with a RAMP? 😱",
+      "hook": "This is what happens when you fix traffic with a RAMP.",
+      "ending_type": "question",
+      "ending_line": "So what do you add next?",
+      "visual_bible": {
+        "look": "toon 3D, one street that turns into a city of ramps",
+        "recurring_subjects": [],
+        "palette": "",
+        "camera_language": "street level, then aerial",
+        "companion": {},
+        "choice": {
+          "question": "What do you add?",
+          "a": "A bridge",
+          "b": "More ramps"
+        }
+      },
+      "scenes": [
+        {
+          "beat": "hook",
+          "narration": "This is what happens when you fix traffic with a RAMP.",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "This is what happens when you fix traffic with a RAMP.",
+          "claims": [
+            {
+              "text": "A car on a ramp takes off if it is fast enough.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "hook",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "setup",
+          "narration": "Your street has been stuck for an hour. Nobody moves.",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Your street has been stuck for an hour. Nobody moves.",
+          "claims": [
+            {
+              "text": "In a traffic jam, cars barely move.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "jam",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "So you put a ramp at the back of the line.",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "So you put a ramp at the back of the line.",
+          "claims": [
+            {
+              "text": "A ramp turns a car's speed into height.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "build",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "It works: the cars jump over the whole jam…",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "It works: the cars jump over the whole jam…",
+          "claims": [
+            {
+              "text": "Anything launched from a ramp follows a parabola.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "jump",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "…and land on the next street. Crash.",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "…and land on the next street. Crash.",
+          "claims": [
+            {
+              "text": "A car falling from several metres crashes with a lot of energy.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "cross_crash",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "The fix: a giant net in front of the crossing.",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "The fix: a giant net in front of the crossing.",
+          "claims": [
+            {
+              "text": "An elastic net slows down whatever hits it.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "net",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "The cars hit the net and bounce back…",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "The cars hit the net and bounce back…",
+          "claims": [
+            {
+              "text": "An elastic net gives back part of the crash energy.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "bounce",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "…right on top of your house.",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "…right on top of your house.",
+          "claims": [
+            {
+              "text": "Whatever bounces goes back the other way.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "house",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "So you put another ramp on your roof.",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "So you put another ramp on your roof.",
+          "claims": [
+            {
+              "text": "A higher ramp throws cars farther.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "roof_ramp",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Now they launch over the entire city.",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Now they launch over the entire city.",
+          "claims": [
+            {
+              "text": "The faster a car leaves a ramp, the farther it goes.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "city",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "A week later, every roof has a ramp.",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "A week later, every roof has a ramp.",
+          "claims": [
+            {
+              "text": "Ramps on rooftops throw cars between buildings.",
+              "type": "speculation",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "everywhere",
+              "outlines": false
+            }
+          }
+        },
+        {
+          "beat": "climax",
+          "narration": "The jam is gone from your street… it's in the sky now.",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "The jam is gone from your street… it's in the sky now.",
+          "claims": [
+            {
+              "text": "Whatever flies over the street leaves the street empty.",
+              "type": "speculation",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "sky_jam",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "ending",
+          "narration": "So what do you add next?",
+          "visual": "custom ramp",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "So what do you add next?",
+          "claims": [
+            {
+              "text": "Every fix in this story creates a new problem.",
+              "type": "speculation",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "ramp",
+            "params": {
+              "stage": "ending",
+              "outlines": false
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
     "premise": "¿Qué pasaría si cada paso fuera el DOBLE de largo? 😱",
     "language": "es",
     "style": "pov",
