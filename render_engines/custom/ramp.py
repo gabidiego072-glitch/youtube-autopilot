@@ -130,7 +130,7 @@ def _city(rng: random.Random) -> list:
             w, d = rng.uniform(24, 34), rng.uniform(24, 34)
             far.append((gx, gy, w, d, h))
             roofs.append((gx, gy, h))
-    P.city("grid", far, seed=SEED + 1, lit=0.08)
+    P.city("grid", far, seed=SEED + 1, windows=False)
     trees = [((x + rng.uniform(-2, 2), s * 11.5, 0), (0.5, 0.5, 3.2)) for x in range(-280, 300, 24) for s in (1, -1)]
     crowns = [((c[0][0], c[0][1], 3.0), (3.0, 3.0, 2.6)) for c in trees]
     P._mesh_object("trees", [(P.mat("trunk", "#7a4f2a"), trees), (P.mat("leaf", "#3f9b3f"), crowns)])
