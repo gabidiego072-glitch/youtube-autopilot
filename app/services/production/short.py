@@ -109,8 +109,19 @@ def scene_hud(scenes: list[dict], i: int) -> str:
     return hud
 
 
-def cold_open_scene(specs: list[dict], selected: list[int]) -> int | None:
-    """The most striking scene to open the video with (a chase, a collapse, a fire...), never the first."""
+def cold_open_scene(specs: list[dict], selected: list[int], story: list[dict] | None = None) -> int | None:
+    """The most striking scene to open the video with (a chase, a collapse, a fire...), never the first.
+
+    A hand script can name it ("cold_open": true on a scene); hand-coded 3D kits ("custom" recipe) carry no
+    actions to score, so they open on their climax.
+    """
+    story = story or []
+    named = [i for i in selected[1:] if i < len(story) and story[i].get("cold_open")]
+    if named:
+        return named[0]
+    climax = [i for i in selected[1:] if i < len(story) and story[i].get("beat") == "climax"]
+    if climax and specs[climax[0]].get("recipe") == "custom":
+        return climax[0]
 
     def score(i: int) -> int:
         spec = specs[i]
@@ -269,7 +280,7 @@ def produce_short(
     # 5. Edit, opening on the most striking moment with the title over it.
     opening = None
     if mode.full_video and production.get("cold_open", True) and len(selected) > 2:
-        k = cold_open_scene(specs, selected)
+        k = cold_open_scene(specs, selected, script.get("scenes"))
         if k is not None and script.get("title_question"):
             fx_dir = out_dir / "sfx"
             hits = []
