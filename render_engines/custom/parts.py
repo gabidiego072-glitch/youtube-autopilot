@@ -193,7 +193,11 @@ def drive(root, start: int, end: int, distance: float) -> None:
 BUILDING_TONES = ["#d9cbb5", "#b8c4cf", "#e0a37a", "#9aa7b4", "#cf8f6b", "#c9b79c", "#8fa3a6"]
 
 
-def _building_parts(x, y, w, d, h, rng, lit: float):
+def _floors(h: float) -> list:
+    return [4.0 + f * 3.2 + 0.45 for f in range(max(1, int((h - 4.0) / 3.2)))]
+
+
+def _building_parts(x, y, w, d, h, rng, lit: float, windows: bool = True):
     """Boxes for one building, by role: body, trim (parapet + base), windows dark / lit, roof units, door."""
     out = {"body": [], "trim": [], "dark": [], "lit": [], "roof": [], "door": []}
     out["body"].append(((x, y, 0), (w, d, h)))
@@ -201,7 +205,7 @@ def _building_parts(x, y, w, d, h, rng, lit: float):
     out["trim"].append(((x, y, 0), (w + 0.25, d + 0.25, 3.2)))  # ground-floor band
     floor_h, col_w = 3.2, 2.6
     floors = max(1, int((h - 4.0) / floor_h))
-    for face in range(4):
+    for face in range(4 if windows else 0):
         along = w if face % 2 == 0 else d
         cols = max(1, int((along - 1.0) / col_w))
         for f in range(floors):
@@ -245,13 +249,20 @@ def building(name: str, x: float, y: float, w: float, d: float, h: float, tone: 
     return obj
 
 
-def city(name: str, blocks, seed: int = 0, lit: float = 0.12) -> None:
-    """blocks: [(x, y, w, d, h), ...]. All buildings batched by tone and role (fast for thousands)."""
+def city(name: str, blocks, seed: int = 0, lit: float = 0.12, windows: bool = True) -> None:
+    """blocks: [(x, y, w, d, h), ...]. All buildings batched by tone and role (fast for thousands).
+    windows=False (far away) draws one dark glass band per floor around the building instead of single windows:
+    the same look from afar with ~50x less geometry (Nov 25: a city of single windows ran a GitHub runner out of
+    memory)."""
     rng = random.Random(seed)
     batches: dict = {}
     for x, y, w, d, h in blocks:
         tone = rng.randrange(len(BUILDING_TONES))
-        for role, boxes in _building_parts(x, y, w, d, h, rng, lit).items():
+        parts = _building_parts(x, y, w, d, h, rng, lit, windows)
+        if not windows:
+            parts["dark"] = [((x, y, z), (w + 0.12, d + 0.12, 1.5)) for z in _floors(h)]
+            parts["lit"] = []
+        for role, boxes in parts.items():
             batches.setdefault((tone if role == "body" else -1, role), []).extend(boxes)
     for (tone, role), boxes in batches.items():
         mats = _building_materials(max(tone, 0))
