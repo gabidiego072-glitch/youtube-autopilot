@@ -108,3 +108,24 @@ def test_pov_scripts_are_written_like_the_hand_made_videos():
 
     note = pov_script_note("en")
     assert "SHOT FIRST" in note and "ONE CONTINUOUS JOURNEY" in note and "NEVER name stations" in note
+
+
+def test_hand_coded_kits_open_on_their_climax():
+    from app.services.production.short import cold_open_scene
+
+    custom = {"recipe": "custom", "custom": {"module": "ramp", "params": {"stage": "jam"}}}
+    specs = [dict(custom) for _ in range(5)]
+    story = [{"beat": b} for b in ("hook", "setup", "escalation", "climax", "ending")]
+    assert cold_open_scene(specs, list(range(5)), story) == 3
+
+
+def test_a_hand_script_can_name_its_opening_scene():
+    from app.services.production.short import cold_open_scene
+
+    specs = [{"recipe": "custom"} for _ in range(5)]
+    story = [{"beat": b} for b in ("hook", "setup", "escalation", "climax", "ending")]
+    story[2]["cold_open"] = True
+    assert cold_open_scene(specs, list(range(5)), story) == 2
+    story[0]["cold_open"] = True  # never the first scene: that one already follows the opening
+    story[2].pop("cold_open")
+    assert cold_open_scene(specs, list(range(5)), story) == 3
