@@ -1,5 +1,709 @@
 [
   {
+    "premise": "¿Qué pasaría si llenaras tu casa de GLOBOS? 🎈😱",
+    "language": "es",
+    "style": "pov",
+    "category": "society_and_technology",
+    "hook": "Esto pasa por llenar tu casa de GLOBOS.",
+    "angle": "One house, one trip: each step caused by the last (balloons -> lift -> altitude -> thin air -> pop -> fall); flash-forward hook.",
+    "science_basis": "Helium is lighter than air; balloons expand as air pressure drops and burst.",
+    "notes": "Hand-made world (render_engines/custom/balloons.py, parts.py) and script by Claude (Nov 26).",
+    "script": {
+      "title_question": "¿Qué pasaría si llenaras tu casa de GLOBOS? 🎈😱",
+      "hook": "Esto pasa por llenar tu casa de GLOBOS.",
+      "ending_type": "question",
+      "ending_line": "¿Y ahora qué le pones?",
+      "visual_bible": {
+        "look": "toon 3D, a house under a bunch of balloons, from the street to above the clouds",
+        "recurring_subjects": [],
+        "palette": "",
+        "camera_language": "street level, then chase shots in the sky",
+        "companion": {},
+        "choice": {
+          "question": "¿Qué le pones?",
+          "a": "Un paracaídas",
+          "b": "Más globos"
+        }
+      },
+      "scenes": [
+        {
+          "beat": "hook",
+          "narration": "Esto pasa por llenar tu casa de GLOBOS.",
+          "visual": "custom balloons",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Esto pasa por llenar tu casa de GLOBOS.",
+          "claims": [
+            {
+              "text": "El helio pesa menos que el aire; por eso los globos suben.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "balloons",
+            "params": {
+              "stage": "hook",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "setup",
+          "narration": "Un globo de helio apenas levanta un caramelo.",
+          "visual": "custom balloons",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Un globo de helio apenas levanta un caramelo.",
+          "claims": [
+            {
+              "text": "Un globo de fiesta levanta unos diez gramos.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "balloons",
+            "params": {
+              "stage": "one",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Así que metes miles. Salen por las ventanas y la chimenea.",
+          "visual": "custom balloons",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Así que metes miles. Salen por las ventanas y la chimenea.",
+          "claims": [
+            {
+              "text": "Para levantar una casa harían falta millones de globos de fiesta.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "balloons",
+            "params": {
+              "stage": "fill",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Tu casa cruje... y se arranca del suelo.",
+          "visual": "custom balloons",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Tu casa cruje... y se arranca del suelo.",
+          "claims": [
+            {
+              "text": "Si los globos tiran más que lo que pesa la casa, la casa sube.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "balloons",
+            "params": {
+              "stage": "creak",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Tus vecinos ven tu casa subir por delante de su ventana.",
+          "visual": "custom balloons",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Tus vecinos ven tu casa subir por delante de su ventana.",
+          "claims": [
+            {
+              "text": "Un globo de helio sube más o menos un metro por segundo.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "balloons",
+            "params": {
+              "stage": "liftoff",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "A cien metros, tu barrio parece un mapa.",
+          "visual": "custom balloons",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "A cien metros, tu barrio parece un mapa.",
+          "claims": [
+            {
+              "text": "Desde arriba, las calles se ven como una cuadrícula.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "balloons",
+            "params": {
+              "stage": "town",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "A trescientos metros atraviesas las nubes. Dentro, todo es niebla.",
+          "visual": "custom balloons",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "A trescientos metros atraviesas las nubes. Dentro, todo es niebla.",
+          "claims": [
+            {
+              "text": "Las nubes más bajas pueden estar a pocos cientos de metros.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "balloons",
+            "params": {
+              "stage": "clouds",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Un avión pasa a tu lado. El piloto no se lo cree.",
+          "visual": "custom balloons",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Un avión pasa a tu lado. El piloto no se lo cree.",
+          "claims": [
+            {
+              "text": "Cerca de los aeropuertos, los aviones vuelan a menos de mil metros.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "balloons",
+            "params": {
+              "stage": "plane",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Arriba el aire es más fino, y los globos se hinchan.",
+          "visual": "custom balloons",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Arriba el aire es más fino, y los globos se hinchan.",
+          "claims": [
+            {
+              "text": "Con menos presión fuera, el gas de dentro se expande.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "balloons",
+            "params": {
+              "stage": "swell",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Hasta que empiezan a explotar. Uno, diez, cientos.",
+          "visual": "custom balloons",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Hasta que empiezan a explotar. Uno, diez, cientos.",
+          "claims": [
+            {
+              "text": "Un globo estalla cuando su goma se estira demasiado.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "balloons",
+            "params": {
+              "stage": "pop",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "climax",
+          "narration": "Con tan pocos globos, tu casa cae a través de las nubes.",
+          "visual": "custom balloons",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Con tan pocos globos, tu casa cae a través de las nubes.",
+          "claims": [
+            {
+              "text": "Sin empuje suficiente, el peso gana y la casa baja.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "balloons",
+            "params": {
+              "stage": "fall",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "ending",
+          "narration": "¡Plof! Aterrizas en el lago. ¿Y ahora qué le pones?",
+          "visual": "custom balloons",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "¡Plof! Aterrizas en el lago. ¿Y ahora qué le pones?",
+          "claims": [
+            {
+              "text": "El agua frena una caída mejor que el suelo.",
+              "type": "speculation",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "balloons",
+            "params": {
+              "stage": "splash",
+              "outlines": true
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "premise": "What if you built a ZIPLINE to school? 😱",
+    "language": "en",
+    "style": "pov",
+    "category": "society_and_technology",
+    "hook": "This is what happens when you zipline to SCHOOL.",
+    "angle": "One cable, one trip across one town: each step caused by the last (late -> cable -> park -> traffic -> river -> speed -> wall); flash-forward hook.",
+    "science_basis": "Gravity on a slope accelerates you; a sudden stop turns speed into impact.",
+    "notes": "Hand-made world (render_engines/custom/zipline.py, parts.py) and script by Claude (Nov 26).",
+    "script": {
+      "title_question": "What if you built a ZIPLINE to school? 😱",
+      "hook": "This is what happens when you zipline to SCHOOL.",
+      "ending_type": "question",
+      "ending_line": "What would you add?",
+      "visual_bible": {
+        "look": "toon 3D, one long cable from a house on a hill across a town to a school",
+        "recurring_subjects": [],
+        "palette": "",
+        "camera_language": "chase shots hanging under the cable, then aerial",
+        "companion": {},
+        "choice": {
+          "question": "What do you add?",
+          "a": "A brake",
+          "b": "More cables"
+        }
+      },
+      "scenes": [
+        {
+          "beat": "hook",
+          "narration": "This is what happens when you zipline to SCHOOL.",
+          "visual": "custom zipline",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "This is what happens when you zipline to SCHOOL.",
+          "claims": [
+            {
+              "text": "On a zipline, gravity pulls you down the cable.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "zipline",
+            "params": {
+              "stage": "hook",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "setup",
+          "narration": "You're late. School is almost a kilometre away.",
+          "visual": "custom zipline",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "You're late. School is almost a kilometre away.",
+          "claims": [
+            {
+              "text": "Walking a kilometre takes about twelve minutes.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "zipline",
+            "params": {
+              "stage": "late",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "So you run a cable from your roof to the school.",
+          "visual": "custom zipline",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "So you run a cable from your roof to the school.",
+          "claims": [
+            {
+              "text": "A thin steel cable can hold several tonnes.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "zipline",
+            "params": {
+              "stage": "shoot",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "You clip on, push off, and gravity does the rest.",
+          "visual": "custom zipline",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "You clip on, push off, and gravity does the rest.",
+          "claims": [
+            {
+              "text": "On a slope, gravity pulls you down the line.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "zipline",
+            "params": {
+              "stage": "push",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "You fly over the park. Everyone looks up.",
+          "visual": "custom zipline",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "You fly over the park. Everyone looks up.",
+          "claims": [
+            {
+              "text": "A cable sags in the middle under your weight.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "zipline",
+            "params": {
+              "stage": "park",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Over the traffic jam. Nobody below is moving. You are.",
+          "visual": "custom zipline",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Over the traffic jam. Nobody below is moving. You are.",
+          "claims": [
+            {
+              "text": "In rush hour, city traffic can be slower than walking.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "zipline",
+            "params": {
+              "stage": "road",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Over the river. No bridge, no boat, no waiting.",
+          "visual": "custom zipline",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Over the river. No bridge, no boat, no waiting.",
+          "claims": [
+            {
+              "text": "A long zipline ride can reach fifty kilometres per hour.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "zipline",
+            "params": {
+              "stage": "river",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "But the line keeps dropping, and you keep speeding up.",
+          "visual": "custom zipline",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "But the line keeps dropping, and you keep speeding up.",
+          "claims": [
+            {
+              "text": "Going downhill, gravity keeps adding speed.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "zipline",
+            "params": {
+              "stage": "faster",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "The school wall gets bigger. Fast. You forgot one thing.",
+          "visual": "custom zipline",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "The school wall gets bigger. Fast. You forgot one thing.",
+          "claims": [
+            {
+              "text": "Real ziplines need a brake at the end.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "zipline",
+            "params": {
+              "stage": "school",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "climax",
+          "narration": "A brake. SPLAT. Right on time for class.",
+          "visual": "custom zipline",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "A brake. SPLAT. Right on time for class.",
+          "claims": [
+            {
+              "text": "Stopping suddenly turns all your speed into one hard hit.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "zipline",
+            "params": {
+              "stage": "splat",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "ending",
+          "narration": "Tomorrow, every kid in town has a cable. What now?",
+          "visual": "custom zipline",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Tomorrow, every kid in town has a cable. What now?",
+          "claims": [
+            {
+              "text": "With hundreds of cables, the sky would get a traffic jam.",
+              "type": "speculation",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "zipline",
+            "params": {
+              "stage": "everyone",
+              "outlines": true
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
     "premise": "¿Qué pasaría si arreglaras el atasco con una RAMPA? 😱",
     "language": "es",
     "style": "pov",
