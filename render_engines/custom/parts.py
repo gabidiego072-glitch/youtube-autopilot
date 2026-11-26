@@ -391,3 +391,123 @@ def crash(name: str, car_root, frame: int, fps: int, direction=(1, 0, 0), force:
 
     rest = start + d * 6 * force
     puffs(f"{name}_smoke", (rest.x, rest.y, 0.8), frame + fly, frame + fly + fps * 3, fps, count=10, rise=4, seed=seed)
+
+
+# ---------------------------------------------------------------- ropes, balloons, clouds, houses
+
+
+def rope(name: str, points, radius: float, material):
+    """A thin square tube through `points` (strings, cables, power lines): one object."""
+    pts = [Vector(p) for p in points]
+    verts, faces = [], []
+    for i, p in enumerate(pts):
+        d = (pts[min(i + 1, len(pts) - 1)] - pts[max(i - 1, 0)]).normalized()
+        side = d.cross(Vector((0, 0, 1)))
+        side = side.normalized() if side.length > 1e-4 else Vector((1, 0, 0))
+        up = side.cross(d).normalized()
+        for k in range(4):
+            a = k * math.pi / 2
+            verts.append(tuple(p + (side * math.cos(a) + up * math.sin(a)) * radius))
+    for i in range(len(pts) - 1):
+        b = i * 4
+        faces += [(b + k, b + (k + 1) % 4, b + 4 + (k + 1) % 4, b + 4 + k) for k in range(4)]
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(verts, [], faces)
+    mesh.materials.append(material)
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.scene.collection.objects.link(obj)
+    return obj
+
+
+def ball_mesh(name: str, radius: float = 1.0, stretch: float = 1.0, subdivisions: int = 2):
+    """A smooth ico sphere mesh to share between many objects (balloons, puffs)."""
+    import bmesh
+
+    me = bpy.data.meshes.get(name)
+    if me:
+        return me
+    bm = bmesh.new()
+    bmesh.ops.create_icosphere(bm, subdivisions=subdivisions, radius=radius)
+    for v in bm.verts:
+        v.co.z *= stretch
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    for p in me.polygons:
+        p.use_smooth = True
+    return me
+
+
+def instance(name: str, mesh, material, location, scale=1.0, parent=None):
+    obj = bpy.data.objects.new(name, mesh)
+    if material is not None:  # object-linked, so one shared mesh can wear many colours
+        if not mesh.materials:
+            mesh.materials.append(material)
+        obj.material_slots[0].link = "OBJECT"
+        obj.material_slots[0].material = material
+    obj.location = tuple(location)
+    obj.scale = (scale, scale, scale) if isinstance(scale, (int, float)) else tuple(scale)
+    if parent is not None:
+        obj.parent = parent
+    bpy.context.scene.collection.objects.link(obj)
+    return obj
+
+
+def clouds(name: str, centre, spread: float, count: int, z0: float, z1: float, seed: int = 0, size=(14, 30)):
+    """A layer of soft cumulus: each cloud is 4-7 overlapping white puffs."""
+    rng = random.Random(seed)
+    white = _soft(f"{name}_white", "#ffffff")
+    puff = ball_mesh(f"{name}_puff", 1.0, 0.7)
+    cx, cy = centre[0], centre[1]
+    for c in range(count):
+        x, y, z = cx + rng.uniform(-spread, spread), cy + rng.uniform(-spread, spread), rng.uniform(z0, z1)
+        s = rng.uniform(*size)
+        for k in range(rng.randint(4, 7)):
+            o = instance(
+                f"{name}{c}_{k}",
+                puff,
+                white,
+                (x + rng.uniform(-1.2, 1.2) * s, y + rng.uniform(-0.8, 0.8) * s, z + rng.uniform(-0.2, 0.3) * s),
+                s * rng.uniform(0.55, 1.0),
+            )
+            o.visible_shadow = False
+
+
+def houses(name: str, lots, seed: int = 0) -> None:
+    """Suburban houses (x, y, w, d, h, facing_y): walls, a pitched roof, windows and a door, batched."""
+    rng = random.Random(seed)
+    walls = ["#f3e2c7", "#e8d0b0", "#dfe6ea", "#f0c9a8", "#d7e3c8", "#f5ecd9"]
+    roofs = ["#c0392b", "#7f4f3a", "#4d5a6b", "#a5482f"]
+    glass, door = mat("bld_glass", "#33475c", rough=0.2), mat("bld_door", "#3b2a1e")
+    wall_parts = {k: [] for k in range(len(walls))}
+    roof_verts = {k: ([], []) for k in range(len(roofs))}
+    glass_parts, door_parts = [], []
+    for x, y, w, d, h, face in lots:
+        wall_parts[rng.randrange(len(walls))].append(((x, y, 0), (w, d, h)))
+        fy = y + face * (d / 2 + 0.05)
+        for dx in (-w * 0.27, w * 0.27):
+            glass_parts.append(((x + dx, fy, h * 0.3), (w * 0.18, 0.12, h * 0.32)))
+        door_parts.append(((x, fy + face * 0.01, 0), (w * 0.15, 0.14, h * 0.5)))
+        verts, faces = roof_verts[rng.randrange(len(roofs))]
+        b = len(verts)
+        ov = 0.6
+        verts += [
+            (x - w / 2 - ov, y - d / 2 - ov, h),
+            (x + w / 2 + ov, y - d / 2 - ov, h),
+            (x + w / 2 + ov, y + d / 2 + ov, h),
+            (x - w / 2 - ov, y + d / 2 + ov, h),
+            (x - w / 2 - ov, y, h + d * 0.4),
+            (x + w / 2 + ov, y, h + d * 0.4),
+        ]
+        faces += [(b, b + 1, b + 5, b + 4), (b + 3, b + 4, b + 5, b + 2), (b, b + 4, b + 3), (b + 1, b + 2, b + 5)]
+    parts = [(mat(f"house_wall{k}", walls[k], rough=0.9), boxes) for k, boxes in wall_parts.items() if boxes]
+    parts += [(glass, glass_parts), (door, door_parts)]
+    _mesh_object(name, parts)
+    for k, (verts, faces) in roof_verts.items():
+        if not verts:
+            continue
+        mesh = bpy.data.meshes.new(f"{name}_roof{k}")
+        mesh.from_pydata(verts, [], faces)
+        mesh.materials.append(mat(f"house_roof{k}", roofs[k], rough=0.8))
+        obj = bpy.data.objects.new(f"{name}_roof{k}", mesh)
+        bpy.context.scene.collection.objects.link(obj)

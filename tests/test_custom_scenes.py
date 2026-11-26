@@ -3,6 +3,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from app.services.scenes.recipe_planner import SHOT_DEFAULTS, assemble, plan_from_shots
 from render_engines.core.spec import validate_spec
 
@@ -38,3 +40,22 @@ def test_the_ramp_scripts_pass_the_structure_rules_and_use_every_stage():
         assert len(set(stages)) == len(stages) == 13
         specs = plan_from_shots(None, scenes=topic["script"]["scenes"], durations=[2.8] * 13, seed=3)
         assert all(s.get("custom", {}).get("module") == "ramp" for s in specs)
+
+
+@pytest.mark.parametrize(("module", "language", "count"), [("balloons", "es", 12), ("zipline", "en", 11)])
+def test_the_nov26_scripts_pass_the_structure_rules_and_use_every_stage(module, language, count):
+    from app.models.enums import VideoFormat
+    from app.services.scripts.generator import ScriptDraft, structure_problems
+
+    topics = json.loads(Path("app/content/planned_topics.json").read_text(encoding="utf-8"))
+    mine = [t for t in topics if f'"module": "{module}"' in json.dumps(t.get("script", {}))]
+    assert [t["language"] for t in mine] == [language]  # a different idea for each channel
+    topic = mine[0]
+    draft = ScriptDraft(**topic["script"], provider="claude", model="hand-written")
+    assert structure_problems(draft, VideoFormat.SHORT, topic["language"]) == []
+    stages = [s["shot"]["params"]["stage"] for s in topic["script"]["scenes"]]
+    assert len(set(stages)) == len(stages) == count
+    source = Path(f"render_engines/custom/{module}.py").read_text(encoding="utf-8")
+    assert all(f'"{stage}"' in source for stage in stages)
+    specs = plan_from_shots(None, scenes=topic["script"]["scenes"], durations=[2.8] * count, seed=3)
+    assert all(s.get("custom", {}).get("module") == module for s in specs)
