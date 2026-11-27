@@ -852,6 +852,10 @@ def step_metadata(db, run, services, ai) -> dict:
         ending_line=script.call_to_action,
         sources=project.research_briefs[-1].sources if project.research_briefs else None,
     )
+    if script.model == "hand-written" and script.title_question and len(script.title_question) <= 100:
+        # Nov 27: the title written with the script is the one tested on the cold open card; the AI rewrote
+        # "¿Qué pasaría si arreglaras el atasco con una RAMPA?" into a different question.
+        draft.title = script.title_question
     voice = VOICES.get((project.features or {}).get("voice", ""))
     if voice and voice.credit and voice.credit not in draft.description:
         draft.description = f"{draft.description}\n\n{voice.credit}"  # the voice's licence asks for it

@@ -44,6 +44,13 @@ class FakeAPI:
                 ],
                 "rows": [[i / 100, 1 - i / 200, 0.5] for i in range(1, 101)],
             }
+        if dims == "country":
+            return {
+                "columnHeaders": [{"name": "country"}, {"name": "views"}, {"name": "averageViewPercentage"}],
+                "rows": [["MX", 700, 61.2], ["ES", 300, 55.0]],
+            }
+        if dims == "ageGroup,gender":
+            raise ProviderError("not enough data")
         if dims == "insightTrafficSourceType":
             return {"columnHeaders": [{"name": "insightTrafficSourceType"}, {"name": "views"}], "rows": [["SHORTS", 9]]}
         return {"columnHeaders": [{"name": "day"}, {"name": "views"}], "rows": [["2026-11-01", 5]]}
@@ -61,3 +68,10 @@ def test_report_uses_only_returned_data():
     assert newest["retention"]["hook"] == 0.95 and newest["traffic"] == {"SHORTS": 9}
     assert report["by_publish_slot"]["hour"][18]["median_views"] == 1200
     assert any("engagedViews" in n for n in report["notes"])
+
+
+def test_report_says_where_the_viewers_are_and_never_guesses_the_rest():
+    report = ChannelReport(FakeAPI()).report(date(2026, 9, 1), date(2026, 11, 7))
+    assert report["audience"]["countries"][0] == {"country": "MX", "views": 700, "avg_pct": 61.2}
+    assert "age_gender" not in report["audience"] and any("age/gender" in n for n in report["notes"])
+    assert report["channel"]["subscribers"] == 0 and report["channel"]["title"] is None

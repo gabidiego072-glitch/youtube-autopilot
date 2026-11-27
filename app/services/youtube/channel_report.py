@@ -72,11 +72,69 @@ class ChannelReport:
             video["traffic"] = self.traffic(video["id"], start, end)
         return {
             "period": [start.isoformat(), end.isoformat()],
+            "channel": self.channel(),
+            "audience": self.audience(start, end),
             "videos": videos,
             "by_publish_slot": by_publish_slot(videos),
             "daily_channel": self.daily(start, end),
             "notes": self.notes,
         }
+
+    def channel(self) -> dict | None:
+        """Who the channel is: name, totals and the settings that decide who YouTube shows it to (Nov 27)."""
+        try:
+            data = self.api.json(
+                "GET", f"{DATA}/channels", params={"part": "snippet,statistics,brandingSettings,status", "mine": "true"}
+            )
+        except ProviderError as exc:
+            self.notes.append(f"channel: {exc}")
+            return None
+        items = data.get("items") or []
+        if not items:
+            return None
+        item = items[0]
+        snippet, stats = item.get("snippet", {}), item.get("statistics", {})
+        branding = (item.get("brandingSettings") or {}).get("channel", {})
+        return {
+            "title": snippet.get("title"),
+            "handle": snippet.get("customUrl"),
+            "created": (snippet.get("publishedAt") or "")[:10],
+            "country": snippet.get("country") or branding.get("country"),
+            "default_language": snippet.get("defaultLanguage") or branding.get("defaultLanguage"),
+            "description_chars": len(snippet.get("description") or ""),
+            "keywords": branding.get("keywords"),
+            "made_for_kids": (item.get("status") or {}).get("madeForKids"),
+            "subscribers": None if stats.get("hiddenSubscriberCount") else int(stats.get("subscriberCount", 0) or 0),
+            "videos": int(stats.get("videoCount", 0) or 0),
+            "views": int(stats.get("viewCount", 0) or 0),
+        }
+
+    def audience(self, start: date, end: date) -> dict:
+        """Where the viewers are and how old: which Spanish (Spain or Latin America) and which English to write."""
+        out: dict = {}
+        common = {"startDate": start.isoformat(), "endDate": end.isoformat()}
+        try:
+            rows = self._report(dimensions="country", metrics="views,averageViewPercentage", sort="-views",
+                                maxResults=15, **common)  # fmt: skip
+            out["countries"] = [
+                {
+                    "country": r["country"],
+                    "views": int(r["views"]),
+                    "avg_pct": round(float(r["averageViewPercentage"]), 1),
+                }
+                for r in rows
+            ]
+        except (ProviderError, KeyError, ValueError) as exc:
+            self.notes.append(f"countries: {exc!r}")
+        try:
+            rows = self._report(dimensions="ageGroup,gender", metrics="viewerPercentage", **common)
+            out["age_gender"] = [
+                {"age": r["ageGroup"], "gender": r["gender"], "pct": round(float(r["viewerPercentage"]), 1)}
+                for r in rows
+            ]
+        except (ProviderError, KeyError, ValueError) as exc:
+            self.notes.append(f"age/gender: {exc!r}")
+        return out
 
     # --- Data API ---------------------------------------------------------------------------------
     def uploads(self) -> list[dict]:
