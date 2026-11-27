@@ -19,6 +19,7 @@ from app.services.rendering.ffmpeg import FFmpeg, ProbeResult, escape_filter_val
 
 SCENE_PAUSE = 0.3  # breathing room after each line
 VOICE_LEAD = 0.06  # voice starts just after the cut
+OPEN_VOICE_DELAY = 0.22  # under an overlapping cold open, after its impact
 MIN_SCENE = 1.5
 TRANSITIONS = {"cut": 0.0, "fade": 0.35, "flash": 0.3}  # flash: through white, same place, new look
 SFX_GAIN = {
@@ -89,6 +90,10 @@ class ColdOpen:
     length: float
     title: str
     sfx: list = field(default_factory=list)
+    # True: the opening covers the first seconds of the story instead of coming before it, so the narrator's
+    # first line ("This is what happens when...") plays over the climax from the first second (Nov 27: ~60 %
+    # of viewers swiped away in the first seconds, and the prepended opening had no voice for 1.6 s).
+    overlap: bool = False
 
 
 def title_card(title: str, length: float, path: Path, portrait: bool = True) -> Path:
@@ -163,8 +168,9 @@ def subtitle_cues(scenes: list[EditScene], words_per_cue: int) -> list[dict]:
 
 FISHEYE = "lenscorrection=k1=-0.18:k2=-0.02:i=bilinear"  # barrel: straight lines bow outwards at the edges
 STORY_WORDS = {
-    "es": {"message": "Mensaje", "now": "ahora", "or": "o", "comment": "Comenta A o B · parte 2"},
-    "en": {"message": "Message", "now": "now", "or": "or", "comment": "Comment A or B · part 2"},
+    # Nov 27: no "part 2" promise - no part 2 was ever made, and 39 videos got 0-2 comments each.
+    "es": {"message": "Mensaje", "now": "ahora", "or": "o", "comment": "Comenta A o B"},
+    "en": {"message": "Message", "now": "now", "or": "or", "comment": "Comment A or B"},
 }
 COMPANION_COLOUR = '<font color="#FFD27F">'  # the companion's words in warm yellow, the narrator's in white
 
@@ -294,7 +300,9 @@ def assemble_video(
         raise ValueError("Nothing to assemble.")
     work_dir.mkdir(parents=True, exist_ok=True)
     w, h, fps = spec.width, spec.height, spec.fps
-    lead = cold_open.length if cold_open else 0.0  # everything of the story starts after the opening
+    # everything of the story starts after a prepended opening; an overlapping one hides the story's first seconds
+    lead = cold_open.length if cold_open and not cold_open.overlap else 0.0
+    hidden = cold_open.length if cold_open and cold_open.overlap else 0.0
     total = scenes[-1].slot.start + scenes[-1].slot.duration + lead
     args = [ffmpeg.ffmpeg_binary, "-y", "-hide_banner", "-loglevel", "error"]
     graph = []
@@ -323,19 +331,20 @@ def assemble_video(
             f"format=yuv420p,tpad=stop_mode=clone:stop_duration=3,trim=start={cold_open.start:.4f}:"
             f"duration={cold_open.length:.4f},setpts=PTS-STARTPTS[co]"
         )
-        graph.append(f"[{current}]fade=t=in:st=0:d=0.25:color=white[story]")
+        cut = f"trim=start={hidden:.4f},setpts=PTS-STARTPTS," if hidden else ""
+        graph.append(f"[{current}]{cut}fade=t=in:st=0:d=0.25:color=white[story]")
         graph.append("[co][story]concat=n=2:v=1:a=0[opened]")
         card = title_card(cold_open.title, cold_open.length, work_dir / "title.ass", portrait=h > w)
         graph.append(f"[opened]subtitles=filename={escape_filter_value(str(card))}[titled]")
         current = "titled"
     hud_cues = [
         {
-            "start": round(s.slot.start + lead, 3),
+            "start": round(max(s.slot.start + lead, hidden), 3),
             "end": round(s.slot.start + s.slot.duration + lead, 3),
             "text": s.hud.strip(),
         }
         for s in scenes
-        if s.hud.strip()
+        if s.hud.strip() and s.slot.start + s.slot.duration > hidden
     ]
     if hud_cues:  # e.g. "DÍA 2 · 21:10", top of the frame, above everything
         hud = write_srt(hud_cues, work_dir / "hud.srt")
@@ -344,8 +353,10 @@ def assemble_video(
         )
         current = "hud"
     if subtitles:
-        cues = [
-            {**c, "start": c["start"] + lead, "end": c["end"] + lead} for c in subtitle_cues(scenes, 4 if h > w else 8)
+        cues = [  # under an overlapping opening only its title is on screen: words start when the story shows
+            {**c, "start": max(c["start"] + lead, hidden), "end": c["end"] + lead}
+            for c in subtitle_cues(scenes, 4 if h > w else 8)
+            if c["end"] + lead > hidden + 0.15
         ]
         srt = write_srt(cues, work_dir / "subtitles.srt")
         graph.append(
@@ -365,7 +376,9 @@ def assemble_video(
     voice_labels, sfx_labels = [], []
     for i, scene in enumerate(scenes):
         args += ["-i", str(scene.voice)]
-        delay = round((scene.slot.start + VOICE_LEAD + lead) * 1000)
+        # under an overlapping opening the first line waits for the opening hit to land
+        first = OPEN_VOICE_DELAY if hidden and i == 0 else 0.0
+        delay = round((scene.slot.start + VOICE_LEAD + lead + first) * 1000)
         graph.append(f"[{index}:a]aresample=48000,aformat=channel_layouts=stereo,adelay={delay}:all=1[vo{i}]")
         voice_labels.append(f"[vo{i}]")
         index += 1

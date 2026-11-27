@@ -129,3 +129,36 @@ def test_a_hand_script_can_name_its_opening_scene():
     story[0]["cold_open"] = True  # never the first scene: that one already follows the opening
     story[2].pop("cold_open")
     assert cold_open_scene(specs, list(range(5)), story) == 3
+
+
+@needs_ffmpeg
+def test_an_overlapping_opening_keeps_the_length_and_the_voice_from_the_first_second(tmp_path):
+    """Nov 27: the opening covers the story's first seconds; the narrator's first line plays under it."""
+    ffmpeg = FFmpeg("ffmpeg", "ffprobe")
+    clips, voices = [], []
+    for i, colour in enumerate(("red", "green", "blue")):
+        clip, voice = tmp_path / f"c{i}.mp4", tmp_path / f"v{i}.wav"
+        subprocess.run(
+            ["ffmpeg", "-loglevel", "error", "-y", "-f", "lavfi", "-i", f"color={colour}:s=270x480:d=4:r=24",
+             "-pix_fmt", "yuv420p", str(clip)],
+            check=True,
+        )  # fmt: skip
+        subprocess.run(
+            ["ffmpeg", "-loglevel", "error", "-y", "-f", "lavfi", "-i", "sine=f=400:d=2.5", str(voice)], check=True
+        )
+        clips.append(clip)
+        voices.append(voice)
+    slots = plan_timeline([2.5, 2.5, 2.5], ["fade", "flash", "fade"], fps=24)
+    scenes = [EditScene(clips[i], voices[i], "esto pasa por llenar tu casa", 2.5, slots[i], [], "") for i in range(3)]
+    opening = ColdOpen(clips[2], 0.5, 1.6, "¿Y si llenaras tu casa de globos?", [], overlap=True)
+    spec = FormatSpec(VideoFormat.SHORT, 270, 480, 24, 1, None, "", "")
+    probe = assemble_video(
+        scenes, tmp_path / "out.mp4", spec=spec, ffmpeg=ffmpeg, work_dir=tmp_path / "edit", cold_open=opening
+    )
+    story = slots[-1].start + slots[-1].duration
+    assert abs(probe.duration_seconds - story) < 0.15  # nothing added in front
+    graph = (tmp_path / "edit" / "filter_graph.txt").read_text(encoding="utf-8")
+    assert "trim=start=1.6000" in graph and "adelay=280:" in graph  # the first line starts at 0.28 s
+    srt = (tmp_path / "edit" / "subtitles.srt").read_text(encoding="utf-8")
+    first = srt.split("\n\n")[0].splitlines()[1]
+    assert first.startswith("00:00:01,6")  # only the title is on screen during the opening

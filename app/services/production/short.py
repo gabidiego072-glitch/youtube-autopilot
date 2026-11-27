@@ -89,6 +89,7 @@ def scene_effects(ffmpeg: FFmpeg, spec: dict, slot, cache_dir: Path) -> list:
 
 
 COLD_OPEN_SECONDS = 1.6
+COLD_OPEN_OVERLAP = True  # the narrator's first line plays over the opening (Nov 27), see ColdOpen.overlap
 _STRIKING = ("collapse", "fire", "flood", "surge", "fling", "inertia_shock", "shatter_windows", "fall")
 
 
@@ -290,7 +291,9 @@ def produce_short(
                     generate_sfx(ffmpeg, kind, path)
                 hits.append((path, kind, at))
             excerpt = max(0.0, min(slots[k].duration * 0.45, slots[k].clip_length - COLD_OPEN_SECONDS))
-            opening = ColdOpen(clips[k], excerpt, COLD_OPEN_SECONDS, script.get("title_question", ""), hits)
+            opening = ColdOpen(
+                clips[k], excerpt, COLD_OPEN_SECONDS, script.get("title_question", ""), hits, overlap=COLD_OPEN_OVERLAP
+            )
     spec = output_format(production.get("format", "short"), mode.output_quality or mode.quality)
     output = out_dir / f"{production.get('id', 'short')}_{mode.name}.mp4"
     t0 = time.monotonic()
@@ -310,9 +313,11 @@ def produce_short(
         fisheye=any(s.get("look") == "toon" for s in specs),
     )
     report = {
-        "cold_open": {"clip": str(opening.clip), "start": opening.start} if opening else None,
+        "cold_open": {"clip": str(opening.clip), "start": opening.start, "overlap": opening.overlap}
+        if opening
+        else None,
         # The story starts after the opening: scene starts below are story times, add this for video times.
-        "lead_seconds": opening.length if opening else 0.0,
+        "lead_seconds": opening.length if opening and not opening.overlap else 0.0,
         "output": str(output),
         "mode": mode.name,
         "resolution": f"{probe.width}x{probe.height}",
