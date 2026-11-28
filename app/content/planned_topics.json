@@ -612,6 +612,617 @@
     }
   },
   {
+    "premise": "¿Qué pasaría si le pusieras RUEDAS a tu casa? 😱",
+    "language": "es",
+    "style": "pov",
+    "category": "society_and_technology",
+    "hook": "Esto pasa por ponerle RUEDAS a tu casa.",
+    "angle": "One house on one hill, one trip down to school through the same town as the zipline video: hill -> park -> road -> river -> town -> school; flash-forward hook.",
+    "science_basis": "Gravity pulls anything on wheels down a slope and keeps adding speed; friction slows it on the flat.",
+    "notes": "Hand-made world (render_engines/custom/wheels.py, parts.py) and script by Claude (Nov 28).",
+    "script": {
+      "title_question": "¿Qué pasaría si le pusieras RUEDAS a tu casa? 😱",
+      "hook": "Esto pasa por ponerle RUEDAS a tu casa.",
+      "ending_type": "question",
+      "ending_line": "Y frenas justo en la puerta del cole. Ahora, ¿cómo vuelves a casa?",
+      "visual_bible": {
+        "look": "toon 3D, a house on giant wheels rolling from a hilltop down through a town",
+        "recurring_subjects": [],
+        "palette": "",
+        "camera_language": "from the hilltop, chase shots down the hill and through town",
+        "companion": {}
+      },
+      "scenes": [
+        {
+          "beat": "hook",
+          "narration": "Esto pasa por ponerle RUEDAS a tu casa.",
+          "visual": "custom wheels",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Esto pasa por ponerle RUEDAS a tu casa.",
+          "claims": [
+            {
+              "text": "En una cuesta, la gravedad empuja hacia abajo cualquier cosa con ruedas.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "wheels",
+            "params": {
+              "stage": "hook",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "setup",
+          "narration": "Tu casa está en lo alto de la colina. El cole, abajo del todo.",
+          "visual": "custom wheels",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Tu casa está en lo alto de la colina. El cole, abajo del todo.",
+          "claims": [
+            {
+              "text": "Bajar andando un kilómetro cuesta unos doce minutos.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "wheels",
+            "params": {
+              "stage": "top",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Así que le pones cuatro ruedas gigantes.",
+          "visual": "custom wheels",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Así que le pones cuatro ruedas gigantes.",
+          "claims": [
+            {
+              "text": "Una casa puede pesar más de cien toneladas.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "wheels",
+            "params": {
+              "stage": "wheels",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Quitas el freno... y la casa empieza a rodar.",
+          "visual": "custom wheels",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Quitas el freno... y la casa empieza a rodar.",
+          "claims": [
+            {
+              "text": "Sin freno, una cuesta basta para que algo pesado empiece a moverse.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "wheels",
+            "params": {
+              "stage": "roll",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Cuesta abajo, cada segundo va más rápido.",
+          "visual": "custom wheels",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Cuesta abajo, cada segundo va más rápido.",
+          "claims": [
+            {
+              "text": "Bajando una cuesta, la gravedad no deja de sumar velocidad.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "wheels",
+            "params": {
+              "stage": "hill",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Atraviesas el parque. La gente salta a un lado.",
+          "visual": "custom wheels",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Atraviesas el parque. La gente salta a un lado.",
+          "claims": [
+            {
+              "text": "Algo tan pesado necesita muchísimo espacio para frenar.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "wheels",
+            "params": {
+              "stage": "park",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Cruzas la carretera. Los coches frenan en seco.",
+          "visual": "custom wheels",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Cruzas la carretera. Los coches frenan en seco.",
+          "claims": [
+            {
+              "text": "Un coche a cincuenta por hora necesita unos veinticinco metros para frenar.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "wheels",
+            "params": {
+              "stage": "road",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Llegas al río... y tu casa flota.",
+          "visual": "custom wheels",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Llegas al río... y tu casa flota.",
+          "claims": [
+            {
+              "text": "Una casa de madera vacía podría flotar un rato.",
+              "type": "speculation",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "wheels",
+            "params": {
+              "stage": "river",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "climax",
+          "narration": "Sales del río y bajas por las calles a toda velocidad.",
+          "visual": "custom wheels",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Sales del río y bajas por las calles a toda velocidad.",
+          "claims": [
+            {
+              "text": "En llano, el rozamiento acabaría frenando la casa.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "wheels",
+            "params": {
+              "stage": "town",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "ending",
+          "narration": "Y frenas justo en la puerta del cole. Ahora, ¿cómo vuelves a casa?",
+          "visual": "custom wheels",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Y frenas justo en la puerta del cole. Ahora, ¿cómo vuelves a casa?",
+          "claims": [
+            {
+              "text": "Ninguna casa con ruedas frenaría tan justo.",
+              "type": "speculation",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "wheels",
+            "params": {
+              "stage": "school",
+              "outlines": true
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "premise": "What if your umbrella could LIFT you? 😱",
+    "language": "en",
+    "style": "pov",
+    "category": "society_and_technology",
+    "hook": "This is what happens when your umbrella can LIFT you.",
+    "angle": "One windy day, one street, one umbrella: each gust lifts you higher, street -> rooftops -> city -> storm -> lightning -> fall -> rooftop pool; flash-forward hook.",
+    "science_basis": "Wind on a curved surface makes lift; storm clouds have strong updrafts; lightning is hotter than the Sun's surface.",
+    "notes": "Hand-made world (render_engines/custom/umbrella.py, parts.py) and script by Claude (Nov 28).",
+    "script": {
+      "title_question": "What if your umbrella could LIFT you? 😱",
+      "hook": "This is what happens when your umbrella can LIFT you.",
+      "ending_type": "surprising_conclusion",
+      "ending_line": "Splash. Right into a rooftop pool. And it's still windy.",
+      "visual_bible": {
+        "look": "toon 3D, a kid under a red umbrella rising through a city into a storm",
+        "recurring_subjects": [],
+        "palette": "",
+        "camera_language": "street level, then chase shots up through the city and the storm",
+        "companion": {}
+      },
+      "scenes": [
+        {
+          "beat": "hook",
+          "narration": "This is what happens when your umbrella can LIFT you.",
+          "visual": "custom umbrella",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "This is what happens when your umbrella can LIFT you.",
+          "claims": [
+            {
+              "text": "Wind pushing on a curved surface can create lift.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "umbrella",
+            "params": {
+              "stage": "hook",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "setup",
+          "narration": "It's the windiest day of the year.",
+          "visual": "custom umbrella",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "It's the windiest day of the year.",
+          "claims": [
+            {
+              "text": "Strong gusts can blow faster than a hundred kilometres per hour.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "umbrella",
+            "params": {
+              "stage": "windy",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "You open your umbrella... and your feet leave the ground.",
+          "visual": "custom umbrella",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "You open your umbrella... and your feet leave the ground.",
+          "claims": [
+            {
+              "text": "A normal umbrella is far too small to lift a person.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "umbrella",
+            "params": {
+              "stage": "open",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Five metres up. The cars pass right under you.",
+          "visual": "custom umbrella",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Five metres up. The cars pass right under you.",
+          "claims": [
+            {
+              "text": "Five metres is about as high as a two-storey house.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "umbrella",
+            "params": {
+              "stage": "cars",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Thirty metres. People on the rooftops can't believe it.",
+          "visual": "custom umbrella",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Thirty metres. People on the rooftops can't believe it.",
+          "claims": [
+            {
+              "text": "Thirty metres is roughly a ten-storey building.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "umbrella",
+            "params": {
+              "stage": "roofs",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Then the whole city looks tiny beneath you.",
+          "visual": "custom umbrella",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Then the whole city looks tiny beneath you.",
+          "claims": [
+            {
+              "text": "Winds usually get stronger the higher you go.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "umbrella",
+            "params": {
+              "stage": "city",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "And you fly straight into a storm cloud.",
+          "visual": "custom umbrella",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "And you fly straight into a storm cloud.",
+          "claims": [
+            {
+              "text": "Storm clouds have powerful winds rising inside them.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "umbrella",
+            "params": {
+              "stage": "storm",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Lightning strikes right next to you.",
+          "visual": "custom umbrella",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Lightning strikes right next to you.",
+          "claims": [
+            {
+              "text": "A lightning bolt is hotter than the surface of the Sun.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "umbrella",
+            "params": {
+              "stage": "lightning",
+              "outlines": true
+            }
+          },
+          "cold_open": true
+        },
+        {
+          "beat": "climax",
+          "narration": "Your umbrella flips inside out. And you fall.",
+          "visual": "custom umbrella",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Your umbrella flips inside out. And you fall.",
+          "claims": [
+            {
+              "text": "An umbrella turned inside out catches much less air.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "umbrella",
+            "params": {
+              "stage": "flip",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "ending",
+          "narration": "Splash. Right into a rooftop pool. And it's still windy.",
+          "visual": "custom umbrella",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Splash. Right into a rooftop pool. And it's still windy.",
+          "claims": [
+            {
+              "text": "Water only softens a fall from a small height.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "umbrella",
+            "params": {
+              "stage": "pool",
+              "outlines": true
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
     "premise": "¿Qué pasaría si llenaras tu casa de GLOBOS? 🎈😱",
     "language": "es",
     "style": "pov",
