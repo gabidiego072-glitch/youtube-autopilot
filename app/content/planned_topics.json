@@ -1,5 +1,617 @@
 [
   {
+    "premise": "¿Qué pasaría si tu cama fuera una CAMA ELÁSTICA? 😱",
+    "language": "es",
+    "style": "pov",
+    "category": "society_and_technology",
+    "hook": "Esto pasa cuando tu cama es una cama ELÁSTICA.",
+    "angle": "One kid, one bed, one house: every bounce higher than the last, from the bedroom to a plane, then straight back into bed (loop ending); flash-forward hook.",
+    "science_basis": "A trampoline returns most of the energy of a jump, never more; falling from hundreds of metres you reach terminal speed.",
+    "notes": "Hand-made world (render_engines/custom/trampoline.py, parts.py) and script by Claude (Nov 28). Loop ending: the last line leads back into the first.",
+    "script": {
+      "title_question": "¿Qué pasaría si tu cama fuera una CAMA ELÁSTICA? 😱",
+      "hook": "Esto pasa cuando tu cama es una cama ELÁSTICA.",
+      "ending_type": "surprising_conclusion",
+      "ending_line": "Aterrizas en tu cama... que sigue siendo elástica.",
+      "visual_bible": {
+        "look": "toon 3D, a bedroom, your house and the sky above the town",
+        "recurring_subjects": [],
+        "palette": "",
+        "camera_language": "inside the bedroom, then chase shots in the sky",
+        "companion": {}
+      },
+      "scenes": [
+        {
+          "beat": "hook",
+          "narration": "Esto pasa cuando tu cama es una cama ELÁSTICA.",
+          "visual": "custom trampoline",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Esto pasa cuando tu cama es una cama ELÁSTICA.",
+          "claims": [
+            {
+              "text": "Una cama elástica devuelve casi toda la energía de cada salto.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "trampoline",
+            "params": {
+              "stage": "hook",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "setup",
+          "narration": "Primer salto: medio metro. Divertido.",
+          "visual": "custom trampoline",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Primer salto: medio metro. Divertido.",
+          "claims": [
+            {
+              "text": "En una cama elástica normal se sube uno o dos metros.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "trampoline",
+            "params": {
+              "stage": "bed",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Pero esta te lanza más alto cada vez. Al tercero, tocas el techo.",
+          "visual": "custom trampoline",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Pero esta te lanza más alto cada vez. Al tercero, tocas el techo.",
+          "claims": [
+            {
+              "text": "Una cama elástica real nunca te devuelve más energía de la que le das.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "trampoline",
+            "params": {
+              "stage": "ceiling",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Al quinto, atraviesas el tejado.",
+          "visual": "custom trampoline",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Al quinto, atraviesas el tejado.",
+          "claims": [
+            {
+              "text": "Romper un tejado exige mucha más fuerza que un salto.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "trampoline",
+            "params": {
+              "stage": "roof",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Al sexto, tus vecinos te ven pasar a cuarenta metros.",
+          "visual": "custom trampoline",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Al sexto, tus vecinos te ven pasar a cuarenta metros.",
+          "claims": [
+            {
+              "text": "Cuarenta metros es la altura de un edificio de unos trece pisos.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "trampoline",
+            "params": {
+              "stage": "street",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Al séptimo, ves todo tu barrio desde cien metros.",
+          "visual": "custom trampoline",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Al séptimo, ves todo tu barrio desde cien metros.",
+          "claims": [
+            {
+              "text": "Desde cien metros, las calles parecen un mapa.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "trampoline",
+            "params": {
+              "stage": "town",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Al octavo, atraviesas las nubes.",
+          "visual": "custom trampoline",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Al octavo, atraviesas las nubes.",
+          "claims": [
+            {
+              "text": "Las nubes más bajas pueden estar a pocos cientos de metros.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "trampoline",
+            "params": {
+              "stage": "clouds",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Al noveno, un avión pasa justo debajo de tus pies.",
+          "visual": "custom trampoline",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Al noveno, un avión pasa justo debajo de tus pies.",
+          "claims": [
+            {
+              "text": "Cerca de los aeropuertos, los aviones vuelan por debajo de mil metros.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "trampoline",
+            "params": {
+              "stage": "plane",
+              "outlines": true
+            }
+          },
+          "cold_open": true
+        },
+        {
+          "beat": "climax",
+          "narration": "Y entonces empiezas a caer. Directo a tu casa.",
+          "visual": "custom trampoline",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Y entonces empiezas a caer. Directo a tu casa.",
+          "claims": [
+            {
+              "text": "Desde esa altura caerías a casi doscientos kilómetros por hora.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "trampoline",
+            "params": {
+              "stage": "fall",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "ending",
+          "narration": "Aterrizas en tu cama... que sigue siendo elástica.",
+          "visual": "custom trampoline",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Aterrizas en tu cama... que sigue siendo elástica.",
+          "claims": [
+            {
+              "text": "Ninguna cama aguantaría un aterrizaje así.",
+              "type": "speculation",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "trampoline",
+            "params": {
+              "stage": "land",
+              "outlines": true
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "premise": "What if you filled your house with BOUNCY BALLS? 😱",
+    "language": "en",
+    "style": "pov",
+    "category": "society_and_technology",
+    "hook": "This is what happens when you fill your house with BOUNCY BALLS.",
+    "angle": "One room, one house, one street: the balls go where the last scene left them, room -> street -> neighbourhood -> lake, then one ball comes home (loop ending); flash-forward hook.",
+    "science_basis": "Loose balls flow like a liquid (granular flow); bouncy balls return most of their drop height.",
+    "notes": "Hand-made world (render_engines/custom/bouncyballs.py, parts.py) and script by Claude (Nov 28). Loop ending: the last line leads back into the first.",
+    "script": {
+      "title_question": "What if you filled your house with BOUNCY BALLS? 😱",
+      "hook": "This is what happens when you fill your house with BOUNCY BALLS.",
+      "ending_type": "surprising_conclusion",
+      "ending_line": "One ball bounces all the way back home. And you still have one bag.",
+      "visual_bible": {
+        "look": "toon 3D, a bedroom, then your street and the whole neighbourhood full of coloured balls",
+        "recurring_subjects": [],
+        "palette": "",
+        "camera_language": "inside the room, street level, then aerial",
+        "companion": {}
+      },
+      "scenes": [
+        {
+          "beat": "hook",
+          "narration": "This is what happens when you fill your house with BOUNCY BALLS.",
+          "visual": "custom bouncyballs",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "This is what happens when you fill your house with BOUNCY BALLS.",
+          "claims": [
+            {
+              "text": "A bouncy ball can bounce back to most of the height it fell from.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "bouncyballs",
+            "params": {
+              "stage": "hook",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "setup",
+          "narration": "One bag of bouncy balls. They go everywhere.",
+          "visual": "custom bouncyballs",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "One bag of bouncy balls. They go everywhere.",
+          "claims": [
+            {
+              "text": "A bag of small bouncy balls holds about a hundred balls.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "bouncyballs",
+            "params": {
+              "stage": "bag",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "A few thousand bags later, they're up to your knees.",
+          "visual": "custom bouncyballs",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "A few thousand bags later, they're up to your knees.",
+          "claims": [
+            {
+              "text": "Filling a room knee-deep takes hundreds of thousands of small balls.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "bouncyballs",
+            "params": {
+              "stage": "knees",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "A few more, and your room is full to the ceiling.",
+          "visual": "custom bouncyballs",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "A few more, and your room is full to the ceiling.",
+          "claims": [
+            {
+              "text": "A small bedroom holds about thirty cubic metres.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "bouncyballs",
+            "params": {
+              "stage": "ceiling",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Then the windows give way.",
+          "visual": "custom bouncyballs",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Then the windows give way.",
+          "claims": [
+            {
+              "text": "Enough weight pushing on a window can break the glass.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "bouncyballs",
+            "params": {
+              "stage": "burst",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Millions of balls pour into the street. Cars disappear.",
+          "visual": "custom bouncyballs",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Millions of balls pour into the street. Cars disappear.",
+          "claims": [
+            {
+              "text": "Loose balls flow like a liquid when there are enough of them.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "bouncyballs",
+            "params": {
+              "stage": "street",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "They roll down the road like a river.",
+          "visual": "custom bouncyballs",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "They roll down the road like a river.",
+          "claims": [
+            {
+              "text": "Piles of grains or balls can flow downhill like water.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "bouncyballs",
+            "params": {
+              "stage": "river",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "By lunchtime, your whole neighbourhood is a ball pit.",
+          "visual": "custom bouncyballs",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "By lunchtime, your whole neighbourhood is a ball pit.",
+          "claims": [
+            {
+              "text": "A ball pit needs thousands of balls for just a few square metres.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "bouncyballs",
+            "params": {
+              "stage": "town",
+              "outlines": true
+            }
+          },
+          "cold_open": true
+        },
+        {
+          "beat": "climax",
+          "narration": "And then they reach the lake.",
+          "visual": "custom bouncyballs",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "And then they reach the lake.",
+          "claims": [
+            {
+              "text": "A wave of balls hitting water would throw them everywhere.",
+              "type": "speculation",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "bouncyballs",
+            "params": {
+              "stage": "lake",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "ending",
+          "narration": "One ball bounces all the way back home. And you still have one bag.",
+          "visual": "custom bouncyballs",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "One ball bounces all the way back home. And you still have one bag.",
+          "claims": [
+            {
+              "text": "Super bouncy balls can bounce many times before they stop.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "bouncyballs",
+            "params": {
+              "stage": "home",
+              "outlines": true
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
     "premise": "¿Qué pasaría si llenaras tu casa de GLOBOS? 🎈😱",
     "language": "es",
     "style": "pov",

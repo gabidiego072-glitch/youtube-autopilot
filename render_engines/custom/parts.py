@@ -511,3 +511,89 @@ def houses(name: str, lots, seed: int = 0) -> None:
         mesh.materials.append(mat(f"house_roof{k}", roofs[k], rough=0.8))
         obj = bpy.data.objects.new(f"{name}_roof{k}", mesh)
         bpy.context.scene.collection.objects.link(obj)
+
+
+def ball_batch(name: str, centres, radius: float, colours, seed: int = 0, subdivisions: int = 1) -> list:
+    """Many balls in a few meshes (one per colour), so thousands stay fast. centres: [(x, y, z)].
+    Returns the objects in colour order; animate them as whole layers."""
+    import bmesh
+
+    bm = bmesh.new()
+    bmesh.ops.create_icosphere(bm, subdivisions=subdivisions, radius=1.0)
+    base = [tuple(v.co) for v in bm.verts]
+    tris = [tuple(v.index for v in f.verts) for f in bm.faces]
+    bm.free()
+    rng = random.Random(seed)
+    groups: dict[int, list] = {}
+    for c in centres:
+        groups.setdefault(rng.randrange(len(colours)), []).append(c)
+    out = []
+    for k, pts in sorted(groups.items()):
+        verts, faces = [], []
+        for x, y, z in pts:
+            r = radius * rng.uniform(0.85, 1.15)
+            b = len(verts)
+            verts += [(x + vx * r, y + vy * r, z + vz * r) for vx, vy, vz in base]
+            faces += [tuple(b + i for i in t) for t in tris]
+        mesh = bpy.data.meshes.new(f"{name}{k}")
+        mesh.from_pydata(verts, [], faces)
+        mesh.polygons.foreach_set("use_smooth", [True] * len(mesh.polygons))
+        mesh.materials.append(mat(f"toyball{k}", colours[k], rough=0.3))
+        obj = bpy.data.objects.new(f"{name}{k}", mesh)
+        bpy.context.scene.collection.objects.link(obj)
+        out.append(obj)
+    return out
+
+
+def bedroom(name: str, origin, seed: int = 0) -> dict:
+    """A kid's bedroom set (floor, three walls, ceiling, window, bed, desk, posters, a hanging lamp), open toward -y
+    for the camera. Returns {"bed": top centre of the mattress, "lamp": the lamp object, "size": (w, d, h)}."""
+    ox, oy, oz = origin
+    w, d, h = 6.0, 5.0, 3.0
+    rng = random.Random(seed)
+    wall, floor = mat(f"{name}_wall", "#a9cbe8", rough=0.9), mat(f"{name}_floor", "#b07a4f", rough=0.7)
+    ceiling, wood = mat(f"{name}_ceiling", "#f4efe6", rough=0.9), mat(f"{name}_wood", "#6b4a2e", rough=0.6)
+    frame, sky = mat(f"{name}_frame", "#ffffff", rough=0.6), mat(f"{name}_sky", "#bfe6ff", rough=0.3, emit=1.5)
+    posters = [mat(f"{name}_poster{k}", c, rough=0.8) for k, c in enumerate(("#ff7043", "#7e57c2", "#26a69a"))]
+    _mesh_object(
+        name,
+        [
+            (floor, [((ox, oy, oz - 0.1), (w, d, 0.1))]),
+            (wall, [((ox, oy + d / 2 + 0.1, oz), (w + 0.4, 0.2, h)), ((ox - w / 2 - 0.1, oy, oz), (0.2, d, h)),
+                    ((ox + w / 2 + 0.1, oy, oz), (0.2, d, h))]),
+            (ceiling, [((ox, oy, oz + h), (w + 0.4, d + 0.4, 0.15))]),
+            (sky, [((ox + 1.3, oy + d / 2 - 0.01, oz + 1.1), (1.6, 0.04, 1.2))]),
+            (frame, [((ox + 1.3 + sx * 0.82, oy + d / 2 - 0.04, oz + 1.06), (0.08, 0.06, 1.28)) for sx in (-1, 1)]
+                    + [((ox + 1.3, oy + d / 2 - 0.04, oz + 1.06), (1.7, 0.06, 0.08)),
+                       ((ox + 1.3, oy + d / 2 - 0.04, oz + 2.26), (1.7, 0.06, 0.08)),
+                       ((ox + 1.3, oy + d / 2 - 0.04, oz + 1.1), (0.06, 0.06, 1.2))]),
+            (wood, [((ox + 2.0, oy + 1.6, oz), (1.6, 0.7, 0.75)), ((ox + 2.0, oy + 1.0, oz), (0.5, 0.5, 0.45))]),
+            *[(p, [((ox - w / 2 + 0.02, oy - 1.2 + 1.2 * k, oz + 1.5 + rng.uniform(-0.2, 0.3)), (0.04, 0.8, 1.0))])
+              for k, p in enumerate(posters)],
+            (mat(f"{name}_rug", "#f6c453", rough=1.0), [((ox + 0.6, oy - 0.2, oz), (1.6, 1.2, 0.02))]),
+        ],
+    )  # fmt: skip
+    bed_x, bed_y = ox - 1.2, oy + 1.0
+    _mesh_object(
+        f"{name}_bed",
+        [
+            (wood, [((bed_x, bed_y, oz), (2.4, 1.6, 0.42))]),
+            (mat(f"{name}_pad", "#1e88e5", rough=0.5), [((bed_x, bed_y, oz + 0.42), (2.4, 1.6, 0.08))]),
+            (mat(f"{name}_mat", "#202124", rough=0.4), [((bed_x, bed_y, oz + 0.43), (2.0, 1.25, 0.08))]),
+            (mat(f"{name}_pillow", "#ffffff", rough=0.9), [((bed_x - 0.95, bed_y, oz + 0.5), (0.4, 1.0, 0.18))]),
+        ],
+    )
+    lamp = _empty(f"{name}_lamp", (ox + 1.2, oy + 0.4, oz + h))  # beside the bed, never in front of it
+    shade = _mesh_object(
+        f"{name}_shade",
+        [
+            (mat(f"{name}_cord", "#222222"), [((0, 0, -0.8), (0.03, 0.03, 0.8))]),
+            (mat(f"{name}_bulb", "#ffd98a", rough=0.4, emit=4.0), [((0, 0, -1.05), (0.5, 0.5, 0.28))]),
+        ],
+    )
+    shade.parent = lamp
+    light = bpy.data.objects.new(f"{name}_light", bpy.data.lights.new(f"{name}_light", "AREA"))
+    light.data.energy, light.data.size = 260, 3.0
+    light.location = (ox, oy, oz + h - 0.2)
+    bpy.context.scene.collection.objects.link(light)
+    return {"bed": Vector((bed_x, bed_y, oz + 0.51)), "lamp": lamp, "size": (w, d, h)}
