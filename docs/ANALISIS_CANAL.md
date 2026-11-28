@@ -96,3 +96,51 @@ YouTube tarda unos 3 días en dar retención, así que los vídeos del 8-10 nov 
   que ser un cambio grande, absoluto y visible.
 - Siguiente revisión: cuando lleguen los datos de retención de sin hogar, lluvia, envejecer y dinosaurios
   (TikTok), comparar el sistema nuevo con el anterior.
+
+## Informe del 27 de noviembre de 2026 (los dos canales, datos de `channel-report`)
+
+Periodo: 30 jul – 27 nov. Solo datos devueltos por la API; lo que falta no se estima.
+
+| | Español | Inglés |
+|---|---|---|
+| Vídeos públicos | 21 | 16 |
+| Vistas totales del canal | 18.411 | 9.648 |
+| Suscriptores (ganados − perdidos) | +31 − 6 = **25** | +7 − 3 = **4** |
+| Vistas que vienen del feed de Shorts | 89–98 % | 87–98 % |
+| Comentarios por vídeo | 0–2 | 0–1 |
+
+### Lo que dicen
+
+1. **Las vistas llegan solo el día en que se publica.** Días sin vídeo nuevo en español: 6 nov → 24 vistas,
+   13 nov → 6, 19 nov → 135, 23 nov → 96 (el de la gravedad doble se quedó en privado). Días con vídeo:
+   1.000–2.300. No hay cola larga: **cada día sin vídeo es un día casi a cero.**
+2. **El techo está en ~1.000–1.800 vistas por vídeo**: YouTube enseña el vídeo a una primera tanda y no lo
+   amplía. Entre el 55 % y el 70 % desliza en los primeros segundos (engaged ratio mediano 0,36 en español y
+   0,40 en inglés). Las guías de Shorts sitúan la ampliación por encima del 60–70 % de gente que se queda.
+3. **En español, lo que más acompaña a las vistas es la retención de la primera mitad** (correlación con
+   log(vistas): 50 % del vídeo +0,53; 25 % +0,47; % medio visto +0,45; quedarse al principio +0,34). En inglés
+   no hay relación clara con 14 vídeos.
+4. **Frente a Shorts de duración parecida, perdemos gente al principio y ganamos al final**: retención
+   relativa 0,35–0,58 en el primer cuarto y 0,73–0,93 al final.
+5. **El vídeo que mejor retuvo fue el de los pasos dobles** (108 % de media vista: la gente lo repite; 88 %
+   llega al final), pero se quedó en 1.127 vistas: retener al final no basta si se desliza al principio.
+6. **Temas.** Los cambios grandes de física que se entienden en un fotograma rinden igual siempre
+   (Tierra que frena 1.692, gravedad 10 s 1.790, meteorito 1.448, Sol 1.358 / 1.055, aire 1.226, ascensor
+   1.235). Lo abstracto o pequeño se hunde (metales 108, CO₂ 101, «un 1 %» 304). Zombis, poco (130 / 87).
+   Los hipotéticos hechos a mano: pasos dobles 1.127 / 1.068; rampa 43 / 213; globos 840 y tirolina 379 en
+   sus primeras 13 h (aún sin analítica).
+7. **El final A/B no genera comentarios** (0–2 por vídeo en 39 vídeos) y prometía una «parte 2» que nunca
+   se hizo.
+8. **La cola de guiones a mano se había quedado vacía** (`HAND_SCRIPTS_ONLY`): desde el 28 nov no se habría
+   hecho ningún vídeo.
+
+### Cambios aplicados (27–28 nov)
+
+- **La voz empieza en el segundo 0,28** sobre el clímax con el título (antes, 1,6 s sin voz). PR #103.
+- **Guiones de ~30 s (10 escenas) con final en bucle**: la última frase lleva a la primera; sin tarjeta A/B.
+- **El título escrito con el guion se sube tal cual** (la IA lo reescribía).
+- **`channel-report` añade países, edad y totales del canal**, para decidir el español (España o
+  Latinoamérica) y el inglés de los guiones.
+- **Cola llena para el 28 nov**: cama elástica (ES) y piscina de bolas (EN), cada canal con su idea.
+
+Plan completo y siguientes pasos: `docs/PLAN_CRECIMIENTO.md`.

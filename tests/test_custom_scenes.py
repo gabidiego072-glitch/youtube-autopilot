@@ -42,7 +42,10 @@ def test_the_ramp_scripts_pass_the_structure_rules_and_use_every_stage():
         assert all(s.get("custom", {}).get("module") == "ramp" for s in specs)
 
 
-@pytest.mark.parametrize(("module", "language", "count"), [("balloons", "es", 12), ("zipline", "en", 11)])
+@pytest.mark.parametrize(
+    ("module", "language", "count"),
+    [("balloons", "es", 12), ("zipline", "en", 11), ("trampoline", "es", 10), ("bouncyballs", "en", 10)],
+)
 def test_the_nov26_scripts_pass_the_structure_rules_and_use_every_stage(module, language, count):
     from app.models.enums import VideoFormat
     from app.services.scripts.generator import ScriptDraft, structure_problems

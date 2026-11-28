@@ -43,3 +43,21 @@ What makes it work, to copy in every script:
 The owner liked the steps video but asked for better cars, crashes, landings and buildings. New kits must build
 those with `render_engines/custom/parts.py` instead of plain boxes: `car()` + `drive()`, `building()` / `city()`
 (windows, parapet, roof units, door), `landing()` + `shake()`, `crash()`.
+
+## Shorter, looping, opening on the climax (Nov 28, from the channel data)
+
+- 9-10 scenes (~30 s). Since 16 Nov, 55-70 % of viewers swipe away in the first seconds. The best retention so
+  far is the steps video, which looped (108 % average viewed).
+- Loop ending: the last line leads back into the first (bed → "...que sigue siendo elástica" → the hook).
+  `ending_type: "surprising_conclusion"`, `ending_line` = the last line, and no `visual_bible.choice` (the A/B
+  card got 0-2 comments per video).
+- The video opens on the `climax` scene (1.6 s, with the title) and the hook line plays over it from 0.28 s.
+  Put `"cold_open": true` on another scene to open on that one instead (e.g. the plane, the neighbourhood ball
+  pit).
+- Parts for new kits: `parts.bedroom()` (a kid's room set), `parts.ball_batch()` (thousands of balls in one
+  mesh per colour), `rope`, `clouds`, `houses`. Balloon, trampoline and bouncy-ball kits reuse the suburb from
+  `balloons.py`.
+- Ico subdivisions: 1 = 20 faces (faceted, fine far away), 2 = 80 faces (round, near the camera). Keep a stage
+  under ~500k faces.
+- Before shipping, test-render every stage: a camera inside a tree crown (street trees at y = STREET_Y ± 8)
+  or a house shows a wall of green or white.
