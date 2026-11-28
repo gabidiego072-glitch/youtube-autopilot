@@ -51,6 +51,8 @@ def test_the_ramp_scripts_pass_the_structure_rules_and_use_every_stage():
         ("bouncyballs", "en", 10),
         ("wheels", "es", 10),
         ("umbrella", "en", 10),
+        ("elevator", "es", 10),
+        ("doors", "en", 9),
     ],
 )
 def test_the_nov26_scripts_pass_the_structure_rules_and_use_every_stage(module, language, count):

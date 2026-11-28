@@ -1223,6 +1223,588 @@
     }
   },
   {
+    "premise": "¿Qué pasaría si tu ascensor no parara en el último piso? 😱",
+    "language": "es",
+    "style": "pov",
+    "category": "society_and_technology",
+    "hook": "Esto pasa si tu ascensor no para en el último piso.",
+    "angle": "The reverse of the channel's free-fall elevator video: one glass lift on one tower that never stops going up, then drops straight back into its shaft; flash-forward hook.",
+    "science_basis": "Lifts run on cables and guide rails with brakes and buffers; the fastest go over 70 km/h; a fall from hundreds of metres reaches ~200 km/h.",
+    "notes": "Hand-made world (render_engines/custom/elevator.py, parts.py) and script by Claude (Nov 28).",
+    "script": {
+      "title_question": "¿Qué pasaría si tu ascensor no parara en el último piso? 😱",
+      "hook": "Esto pasa si tu ascensor no para en el último piso.",
+      "ending_type": "surprising_conclusion",
+      "ending_line": "Vuelves a entrar justo por el hueco. Planta baja. Que tengas buen día.",
+      "visual_bible": {
+        "look": "toon 3D, a glass lift climbing the outside of a tower and flying over the city",
+        "recurring_subjects": [],
+        "palette": "",
+        "camera_language": "inside the lift, then chase shots up the tower and into the sky",
+        "companion": {}
+      },
+      "scenes": [
+        {
+          "beat": "hook",
+          "narration": "Esto pasa si tu ascensor no para en el último piso.",
+          "visual": "custom elevator",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Esto pasa si tu ascensor no para en el último piso.",
+          "claims": [
+            {
+              "text": "Los ascensores tienen frenos que los paran si van demasiado rápido.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "elevator",
+            "params": {
+              "stage": "hook",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "setup",
+          "narration": "Pulsas el cuarenta. Como cada día.",
+          "visual": "custom elevator",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Pulsas el cuarenta. Como cada día.",
+          "claims": [
+            {
+              "text": "Un edificio de cuarenta plantas mide unos ciento veinte metros.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "elevator",
+            "params": {
+              "stage": "button",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Subes por fuera de la torre, cada vez más rápido.",
+          "visual": "custom elevator",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Subes por fuera de la torre, cada vez más rápido.",
+          "claims": [
+            {
+              "text": "Los ascensores más rápidos suben a más de setenta kilómetros por hora.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "elevator",
+            "params": {
+              "stage": "climb",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Planta cuarenta... y no para.",
+          "visual": "custom elevator",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Planta cuarenta... y no para.",
+          "claims": [
+            {
+              "text": "Todos los ascensores tienen topes al final del hueco.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "elevator",
+            "params": {
+              "stage": "top",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Atraviesa el tejado y sale al cielo.",
+          "visual": "custom elevator",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Atraviesa el tejado y sale al cielo.",
+          "claims": [
+            {
+              "text": "Un ascensor real va sujeto por cables y guías.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "elevator",
+            "params": {
+              "stage": "roof",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Ves toda la ciudad debajo de tus pies.",
+          "visual": "custom elevator",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Ves toda la ciudad debajo de tus pies.",
+          "claims": [
+            {
+              "text": "Desde doscientos metros se ven barrios enteros de un vistazo.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "elevator",
+            "params": {
+              "stage": "city",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Atraviesas las nubes. Dentro, todo es blanco.",
+          "visual": "custom elevator",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Atraviesas las nubes. Dentro, todo es blanco.",
+          "claims": [
+            {
+              "text": "Las nubes más bajas pueden estar a pocos cientos de metros.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "elevator",
+            "params": {
+              "stage": "clouds",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Adelantas a una bandada de pájaros.",
+          "visual": "custom elevator",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Adelantas a una bandada de pájaros.",
+          "claims": [
+            {
+              "text": "Algunas aves migratorias vuelan a más de mil metros de altura.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "elevator",
+            "params": {
+              "stage": "birds",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "climax",
+          "narration": "Y entonces se acaba el cable.",
+          "visual": "custom elevator",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Y entonces se acaba el cable.",
+          "claims": [
+            {
+              "text": "Sin cable ni freno, caerías a casi doscientos kilómetros por hora.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "elevator",
+            "params": {
+              "stage": "fall",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "ending",
+          "narration": "Vuelves a entrar justo por el hueco. Planta baja. Que tengas buen día.",
+          "visual": "custom elevator",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "tú",
+          "consequence": "Vuelves a entrar justo por el hueco. Planta baja. Que tengas buen día.",
+          "claims": [
+            {
+              "text": "Encajar justo en el hueco sería casi imposible.",
+              "type": "speculation",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "elevator",
+            "params": {
+              "stage": "ground",
+              "outlines": true
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "premise": "What if every door led somewhere RANDOM? 😱",
+    "language": "en",
+    "style": "pov",
+    "category": "society_and_technology",
+    "hook": "This is what happens when every door leads somewhere RANDOM.",
+    "angle": "One kid late for school; every door drops them somewhere stranger: beach, snow, jungle, desert, a skyscraper roof, the Moon, then school on a Saturday; flash-forward hook.",
+    "science_basis": "Snow is mostly air; deserts get almost no rain; on the Moon you weigh a sixth.",
+    "notes": "Hand-made world (render_engines/custom/doors.py, parts.py) and script by Claude (Nov 28).",
+    "script": {
+      "title_question": "What if every door led somewhere RANDOM? 😱",
+      "hook": "This is what happens when every door leads somewhere RANDOM.",
+      "ending_type": "surprising_conclusion",
+      "ending_line": "The last door finally takes you to school. It's Saturday.",
+      "visual_bible": {
+        "look": "toon 3D, a free-standing door in a different world in every scene",
+        "recurring_subjects": [],
+        "palette": "",
+        "camera_language": "the door and you stepping out of it, a new place each time",
+        "companion": {}
+      },
+      "scenes": [
+        {
+          "beat": "hook",
+          "narration": "This is what happens when every door leads somewhere RANDOM.",
+          "visual": "custom doors",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "This is what happens when every door leads somewhere RANDOM.",
+          "claims": [
+            {
+              "text": "No door can really take you somewhere else instantly.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "doors",
+            "params": {
+              "stage": "hook",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "setup",
+          "narration": "You're late for school. You open your bedroom door...",
+          "visual": "custom doors",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "You're late for school. You open your bedroom door...",
+          "claims": [
+            {
+              "text": "Most people open dozens of doors every day.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "doors",
+            "params": {
+              "stage": "room",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "...and step onto a beach. Wrong door.",
+          "visual": "custom doors",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "...and step onto a beach. Wrong door.",
+          "claims": [
+            {
+              "text": "Beach sand can get hotter than fifty degrees in the sun.",
+              "type": "estimate",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "doors",
+            "params": {
+              "stage": "beach",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Next door: a snowy mountain. Your shoes fill with snow.",
+          "visual": "custom doors",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Next door: a snowy mountain. Your shoes fill with snow.",
+          "claims": [
+            {
+              "text": "Fresh snow is mostly air, so you sink into it.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "doors",
+            "params": {
+              "stage": "snow",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Next: a jungle. Something is watching you.",
+          "visual": "custom doors",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Next: a jungle. Something is watching you.",
+          "claims": [
+            {
+              "text": "Rainforests are home to more than half of all land animals.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "doors",
+            "params": {
+              "stage": "jungle",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Then a desert. Not a drop of water anywhere.",
+          "visual": "custom doors",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Then a desert. Not a drop of water anywhere.",
+          "claims": [
+            {
+              "text": "Some deserts get less than a centimetre of rain a year.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "doors",
+            "params": {
+              "stage": "desert",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "escalation",
+          "narration": "Then the roof of a skyscraper. Don't look down.",
+          "visual": "custom doors",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Then the roof of a skyscraper. Don't look down.",
+          "claims": [
+            {
+              "text": "The tallest skyscrapers are over eight hundred metres tall.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "doors",
+            "params": {
+              "stage": "rooftop",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "climax",
+          "narration": "Then the Moon. You can see Earth from here.",
+          "visual": "custom doors",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "Then the Moon. You can see Earth from here.",
+          "claims": [
+            {
+              "text": "On the Moon you weigh about one sixth of what you weigh on Earth.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "doors",
+            "params": {
+              "stage": "moon",
+              "outlines": true
+            }
+          }
+        },
+        {
+          "beat": "ending",
+          "narration": "The last door finally takes you to school. It's Saturday.",
+          "visual": "custom doors",
+          "duration_seconds": 2.8,
+          "scale": "street",
+          "human_subject": "you",
+          "consequence": "The last door finally takes you to school. It's Saturday.",
+          "claims": [
+            {
+              "text": "Most schools are closed on Saturdays.",
+              "type": "established",
+              "source": ""
+            }
+          ],
+          "hud": "",
+          "speaker": "narrator",
+          "phone": "",
+          "shot": {
+            "recipe": "custom",
+            "event": "none",
+            "module": "doors",
+            "params": {
+              "stage": "school",
+              "outlines": true
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
     "premise": "¿Qué pasaría si llenaras tu casa de GLOBOS? 🎈😱",
     "language": "es",
     "style": "pov",

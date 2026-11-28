@@ -597,3 +597,18 @@ def bedroom(name: str, origin, seed: int = 0) -> dict:
     light.location = (ox, oy, oz + h - 0.2)
     bpy.context.scene.collection.objects.link(light)
     return {"bed": Vector((bed_x, bed_y, oz + 0.51)), "lamp": lamp, "size": (w, d, h)}
+
+
+def clear_glass(name: str, tint: str = "#e8f6ff"):
+    """See-through glass (Cycles transmission), for a lift, a shaft or a shop window you must see inside."""
+    m = bpy.data.materials.get(name)
+    if m:
+        return m
+    m = mat(name, tint, rough=0.03)
+    bsdf = m.node_tree.nodes["Principled BSDF"]
+    for socket in ("Transmission Weight", "Transmission"):
+        if socket in bsdf.inputs:
+            bsdf.inputs[socket].default_value = 1.0
+            break
+    bsdf.inputs["IOR"].default_value = 1.2
+    return m
